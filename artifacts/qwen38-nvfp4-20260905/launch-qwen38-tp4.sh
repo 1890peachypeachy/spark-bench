@@ -74,6 +74,16 @@ MAX_NUM_SEQS=${MAX_NUM_SEQS:-16}
 # filed the answer under message.reasoning — half a fix). Request-level
 # chat_template_kwargs.enable_thinking=true still opts in per call.
 THINKING_DEFAULT=${THINKING_DEFAULT:-off}   # off|on
+# Chat template variant (2026-09-05, opt-in experiment). stock = checkpoint's
+# built-in template. froggeric = hash-pinned upstream Qwen-Fixed-Chat-Templates
+# v22.5 (tool-call token parity across consecutive tool_call blocks, broader
+# reasoning-history extraction incl. message.reasoning). The Sharp terseness
+# fork was explicitly REJECTED (persona change + invalidates bench baseline).
+# This flag is bench-gated: default stays stock until Eva's role-suite +
+# tool-fixture run shows quality parity AND meaningful prefix-cache/tool-parse
+# movement. File must sit next to this launcher.
+TEMPLATE_VARIANT=${TEMPLATE_VARIANT:-stock}   # stock|froggeric
+TEMPLATE_SHA256_FROGGERIC=e57684bae4156211a55473c5a63be976a405a37ab5be5ae0e5abf1df5349c4b2
 MAX_NUM_BATCHED_TOKENS=${MAX_NUM_BATCHED_TOKENS:-8192}  # tsw2k: use 2048 for deep (>32k) prompts
 MTP_TOKENS=${MTP_TOKENS:-2}
 KV_CACHE_DTYPE=${KV_CACHE_DTYPE:-auto}   # auto = bf16 (default, tsw2k-proven). fp8 = opt-in lane
@@ -108,6 +118,21 @@ SPLIT='["vllm::unified_attention_with_output","vllm::unified_mla_attention_with_
 say() { echo "[qwen38-tp4] $*"; }
 
 PATCHES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)/patches"
+LAUNCH_DIR="$(dirname "$PATCHES_DIR")"
+
+# Resolve + hash-verify the opt-in chat template (fails closed on drift).
+TEMPLATE_HOST_FILE=""
+if [ "$TEMPLATE_VARIANT" != "stock" ]; then
+  case "$TEMPLATE_VARIANT" in
+    froggeric) TEMPLATE_HOST_FILE="$LAUNCH_DIR/chat_template_froggeric_v22.5.jinja"
+               TEMPLATE_WANT_SHA="$TEMPLATE_SHA256_FROGGERIC" ;;
+    *) say "FATAL: unknown TEMPLATE_VARIANT=$TEMPLATE_VARIANT"; exit 1 ;;
+  esac
+  [ -f "$TEMPLATE_HOST_FILE" ] || { say "FATAL: template missing: $TEMPLATE_HOST_FILE"; exit 1; }
+  GOT=$(sha256sum "$TEMPLATE_HOST_FILE" | awk '{print $1}')
+  [ "$GOT" = "$TEMPLATE_WANT_SHA" ] || { say "FATAL: template sha256 mismatch ($GOT != $TEMPLATE_WANT_SHA)"; exit 1; }
+  say "template variant: $TEMPLATE_VARIANT (sha256 verified)"
+fi
 
 remote() {
   local h="$1"; shift
@@ -325,6 +350,11 @@ if [ "${THINKING_DEFAULT:-off}" = "off" ]; then
     ARGS+=(--default-chat-template-kwargs '{"enable_thinking": false}')
 fi
 
+# Opt-in chat template variant (outer launcher hash-verified + staged it).
+if [ "${TEMPLATE_VARIANT:-stock}" != "stock" ]; then
+    ARGS+=(--chat-template /opt/qwen38-templates/chat_template.jinja)
+fi
+
 if [ -n "${EXTRA_ARGS:-}" ]; then
     EXTRA=(${EXTRA_ARGS})
     ARGS+=("${EXTRA[@]}")
@@ -346,9 +376,23 @@ write_inner() {
   fi
 }
 
+# Stage the opt-in chat template per rank (same /tmp pattern as the inner script).
+write_template() {
+  local h="$1"
+  [ -z "$TEMPLATE_HOST_FILE" ] && return 0
+  if [ "$h" = local ]; then
+    cp "$TEMPLATE_HOST_FILE" /tmp/qwen38-template.jinja
+  else
+    scp -q -o BatchMode=yes "$TEMPLATE_HOST_FILE" "$h:/tmp/qwen38-template.jinja"
+  fi
+}
+
 launch_rank() {
   local rank="$1" h="$2" ip="$3"
   write_inner "$h"
+  write_template "$h"
+  local tmpl_mnt=""
+  [ -n "$TEMPLATE_HOST_FILE" ] && tmpl_mnt="-v /tmp/qwen38-template.jinja:/opt/qwen38-templates/chat_template.jinja:ro"
   local nccl_mnt="-v $NCCL_HOST:/nccl:ro -e LD_PRELOAD=/nccl/$NCCL_SO"
   local ple_env=""
   case "$PLE_MODE" in
@@ -375,6 +419,7 @@ docker run -d --name $CONTAINER --restart no \
   -v $VLLM_CACHE_HOST:/root/.cache/vllm \
   -v $VLLM_CACHE_HOST/triton:/root/.triton/cache \
   -v /tmp/qwen38-start.sh:/start.sh:ro \
+  $tmpl_mnt \
   $nccl_mnt \
   -e NODE_RANK=$rank \
   -e MODEL_DIR=$MODEL_DIR -e SERVED_MODEL_NAME="$SERVED_MODEL_NAME" \
@@ -383,6 +428,7 @@ docker run -d --name $CONTAINER --restart no \
   -e MAX_NUM_SEQS=$MAX_NUM_SEQS -e MAX_NUM_BATCHED_TOKENS=$MAX_NUM_BATCHED_TOKENS \
   -e KV_CACHE_DTYPE=$KV_CACHE_DTYPE -e MTP_TOKENS=$MTP_TOKENS \
   -e THINKING_DEFAULT=$THINKING_DEFAULT \
+  -e TEMPLATE_VARIANT=$TEMPLATE_VARIANT \
   -e CUDAGRAPH_MODE=$CUDAGRAPH_MODE -e MOE_BACKEND="${MOE_BACKEND}" \
   -e PLE_MODE=$PLE_MODE \
   -e SPLIT_OPS=${SPLIT@Q} \
