@@ -88,6 +88,20 @@ GLM-specific recovery watchdogs and cache-warming service were stopped for this
 campaign. They must not resurrect GLM on Qwen's occupied devices. No Qwen-specific
 production recovery policy is established by these benchmark results.
 
+## Known gotcha: prefix caching under mamba align mode
+
+`--enable-prefix-caching` is accepted and the meters report queries, but on this
+GDN/QSA hybrid vLLM forces **mamba cache mode `align`**: states are snapshotted
+only when a scheduler step ends exactly on an 800-token block boundary (attention
+block size is forced up to the mamba page). Prefills under one chunk (< 8k tokens)
+never align, so **short shared prefixes get 0 cache hits** — verified: 1.5k probes
+0.0 across every fixture, while a 9.8k shared prefix scored +8,800 hits/call and
+6.5s → 0.4s resume. `--mamba-cache-mode all` is refused for this model class
+(boot warning, silent fallback to align). Workaround paths under evaluation:
+smaller alignment quantum (`mamba_block_size` / `prefix_match_unit` /
+`mamba_page_size_padded`) vs canonicalizing shared preambles to 800-token
+multiples. Measure resume with wall-clock TTFT, not just the metrics counter.
+
 ## Patch provenance and startup fixes
 
 Sources:
