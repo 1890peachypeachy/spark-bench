@@ -1,0 +1,107 @@
+{
+  "generated": "2026-09-07",
+  "models": [
+    "aeon27",
+    "flash38"
+  ],
+  "categories": {
+    "intelligence\u00b7partnerships-b2b": {
+      "aeon27": {
+        "pass": 3,
+        "total": 5,
+        "med_tok": 25.2
+      },
+      "flash38": {
+        "pass": 4,
+        "total": 5,
+        "med_tok": 45.0
+      }
+    },
+    "intelligence\u00b7escalation-judgment": {
+      "aeon27": {
+        "pass": 3,
+        "total": 4,
+        "med_tok": 25.0
+      },
+      "flash38": {
+        "pass": 3,
+        "total": 4,
+        "med_tok": 47.4
+      }
+    },
+    "instruction\u00b7instruction-following": {
+      "aeon27": {
+        "pass": 5,
+        "total": 5,
+        "med_tok": 27.7
+      },
+      "flash38": {
+        "pass": 5,
+        "total": 5,
+        "med_tok": 59.3
+      }
+    },
+    "accuracy\u00b7marketing-copy": {
+      "aeon27": {
+        "pass": 4,
+        "total": 5,
+        "med_tok": 25.7
+      },
+      "flash38": {
+        "pass": 3,
+        "total": 5,
+        "med_tok": 47.2
+      }
+    },
+    "intelligence\u00b7intelligence-logic": {
+      "aeon27": {
+        "pass": 5,
+        "total": 5,
+        "med_tok": 26.6
+      },
+      "flash38": {
+        "pass": 5,
+        "total": 5,
+        "med_tok": 53.9
+      }
+    },
+    "accuracy\u00b7accuracy-arithmetic": {
+      "aeon27": {
+        "pass": 5,
+        "total": 5,
+        "med_tok": 28.5
+      },
+      "flash38": {
+        "pass": 5,
+        "total": 5,
+        "med_tok": 58.9
+      }
+    },
+    "accuracy\u00b7accuracy-extraction": {
+      "aeon27": {
+        "pass": 4,
+        "total": 4,
+        "med_tok": 29.0
+      },
+      "flash38": {
+        "pass": 4,
+        "total": 4,
+        "med_tok": 61.2
+      }
+    }
+  },
+  "overall": {
+    "aeon27": [
+      29,
+      33
+    ],
+    "flash38": [
+      29,
+      33
+    ]
+  },
+  "median_tok_s": {
+    "aeon27": 27.0,
+    "flash38": 53.0
+  }
+}

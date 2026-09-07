@@ -1,0 +1,83 @@
+{
+  "ts": "2026-09-07T14:17:50.507121",
+  "endpoint": "http://100.99.120.29:8000/v1",
+  "model": "qwen3.8-flash-next",
+  "label": "flash38-off",
+  "tag": "c1",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "flash38-off-c1-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "flash38-off-c1-agent0-structured",
+              "type": "single",
+              "wall_s": 5.146,
+              "ttft_s": 0.232,
+              "completion": 222,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c1-agent0-code",
+              "type": "single",
+              "wall_s": 4.434,
+              "ttft_s": 0.245,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c1-agent0-prose",
+              "type": "single",
+              "wall_s": 8.812,
+              "ttft_s": 0.245,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 18.392
+        },
+        {
+          "label": "flash38-off-c1-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 24,
+              "cached_tokens": null,
+              "wall_s": 0.806,
+              "ttft_s": 0.253,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 204,
+              "completion_tokens": 23,
+              "cached_tokens": null,
+              "wall_s": 0.71,
+              "ttft_s": 0.391,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 319,
+              "completion_tokens": 25,
+              "cached_tokens": null,
+              "wall_s": 1.244,
+              "ttft_s": 0.912,
+              "err": null
+            }
+          ],
+          "total_s": 2.76,
+          "total_completion": 72
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 21.175
+}

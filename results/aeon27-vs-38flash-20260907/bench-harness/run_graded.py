@@ -18,26 +18,28 @@ TIMEOUT_S = 300
 
 MODELS = {
     "deepseek": {"url": "http://100.106.81.35:8888/v1/chat/completions",
-                 "id": "deepseek-v4-flash-0731"},
+                 "id": "deepseek-v4-flash-0731", "reasoning_effort": "high"},
     "qwen":     {"url": "http://100.99.120.29:8888/v1/chat/completions",
-                 "id": "qwen38-27b-unsloth-nvfp4"},
+                 "id": "qwen38-27b-unsloth-nvfp4", "reasoning_effort": "high"},
     "orinth":   {"url": "http://100.91.114.22:8100/v1/chat/completions",
-                 "id": "ornith-1.5-35b-a3b-nvfp4"},
-    # New fleet candidates — endpoints TBD, verify /v1/models served id before run
-    "aeon27":   {"url": "http://10.73.0.2:8000/v1/chat/completions",
-                 "id": "qwen38-27b-aeon-nvfp4-mixed"},
-    "flash38":  {"url": "http://10.73.0.3:8000/v1/chat/completions",
-                 "id": "qwen3.8-flash-next"},
+                 "id": "ornith-1.5-35b-a3b-nvfp4", "reasoning_effort": "high"},
+    # New fleet lanes — ids verified from /v1/models 2026-09-07.
+    # Both vLLM lanes only accept xhigh/medium/low (NOT 'high'), so they pin xhigh.
+    # Reach via Tailscale (100.x) — the CX7 10.73.0.x fabric is Spark-only, not Mac-routable.
+    "aeon27":   {"url": "http://100.71.248.116:8000/v1/chat/completions",
+                 "id": "aeon", "reasoning_effort": "xhigh"},
+    "flash38":  {"url": "http://100.99.120.29:8000/v1/chat/completions",
+                 "id": "qwen3.8-flash-next", "reasoning_effort": "xhigh"},
 }
 
 
-def call(url, model_id, prompt, max_tokens):
+def call(url, model_id, prompt, max_tokens, reasoning_effort="high"):
     payload = json.dumps({
         "model": model_id,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.3,
         "max_tokens": max_tokens,
-        "reasoning_effort": "high",          # pinned high for a true measure
+        "reasoning_effort": reasoning_effort,  # pinned per-model max
         "chat_template_kwargs": {"enable_thinking": True},
     }).encode()
     req = urllib.request.Request(url, data=payload,
@@ -220,11 +222,15 @@ def main():
         for mk in only:
             m = MODELS[mk]
             rec = {"category": cat, "kind": kind, "model": mk, "model_id": m["id"],
-                   "reasoning_effort": "high",
+                   "reasoning_effort": m.get("reasoning_effort", "high"),
                    "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "cases": []}
             for case in spec["cases"]:
-                r = call(m["url"], m["id"], case["prompt"], spec["max_tokens"])
+                r = call(m["url"], m["id"], case["prompt"], spec["max_tokens"],
+                         m.get("reasoning_effort", "high"))
                 entry = {"case": case["id"], "tier": case.get("tier"), **r}
+                # per-case tok/s: completion_tokens / latency (wall, incl TTFT) — a lower bound
+                entry["tok_s"] = round(r["completion_tokens"] / r["latency_s"], 2) \
+                    if (r.get("completion_tokens") and r["latency_s"]) else None
                 if r["ok"]:
                     s = score_case(case, r["output"])
                     entry["score"] = s
