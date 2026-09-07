@@ -48,15 +48,17 @@ set -uo pipefail
 
 IMAGE=${IMAGE:-ghcr.io/neko-legends/qwen38-flash-next-nvfp4-gb10:e1}
 CONTAINER=qwen38-nvfp4
-MODEL_HOST=$HOME/models/qwen38-flash-next-nvfp4
+MODEL_HOST='$HOME/models/qwen38-flash-next-nvfp4'   # literal $HOME: re-expanded per node
+LOCAL_MODEL_HOST=$(eval echo "$MODEL_HOST")
 MODEL_DIR=/models/qwen38
 VLLM_CACHE_HOST=/var/tmp/qwen38-vllm-cache
-NCCL_HOST="$HOME/nccl-2.30.7"
+NCCL_HOST='$HOME/nccl-2.30.7'   # literal $HOME: re-expanded per node
+LOCAL_NCCL_HOST=$(eval echo "$NCCL_HOST")
 NCCL_SO=libnccl.so.2
 NCCL_SRC_IMAGE=${NCCL_SRC_IMAGE:-local/glm53-exl3:e2}   # pip nvidia-nccl-cu13 2.30.7 donor
 
-PORT=8000            # GLM FP8 owns 8001 — never collide
-MASTER_PORT=25100    # GLM uses 29521; keep clear while both live
+PORT=8000            # GLM owns 18888 — never collide
+MASTER_PORT=25100    # GLM uses 25000; keep clear while both live
 SERVED_MODEL_NAME=qwen3.8-flash-next
 HEAD_IP=10.73.0.1
 TP=4
@@ -89,7 +91,7 @@ MTP_TOKENS=${MTP_TOKENS:-2}
 KV_CACHE_DTYPE=${KV_CACHE_DTYPE:-auto}   # auto = bf16 (default, tsw2k-proven). fp8 = opt-in lane
                                      # (image patch 10, ~1.7x KV pool, quality trade — validate!).
 ALL2ALL_BACKEND=${ALL2ALL_BACKEND:-} # empty = stock (tsw2k-proven). allgather_reducescatter = MiaAI TP2 shape.
-CFG_STAGE_HOST=/var/tmp/qwen38-config-alias   # MTP layer-index alias staging (MiaAI merge); common path all nodes
+CFG_STAGE_HOST=/var/tmp/qwen38-config-alias   # MTP layer-index alias staging (MiaAI merge)
 PLE_MODE=${PLE_MODE:-mmap}     # mmap | resident | offload
 CUDAGRAPH_MODE=${CUDAGRAPH_MODE:-piecewise}   # piecewise | full | eager
 MOE_BACKEND=${MOE_BACKEND:-marlin}  # marlin = spec fallback lane; stock = tsw2k-proven flashinfer_cutlass (omit flag).
@@ -159,11 +161,11 @@ if [ "${SKIP_PREFLIGHT:-0}" != "1" ]; then
     remote "$h" "
       set -e
       # crash-log snapshot BEFORE any rm (GLM pattern)
-      mkdir -p $HOME/qwen38-crash-logs
+      mkdir -p \$HOME/qwen38-crash-logs
       for c in $CONTAINER; do
-        docker inspect \"\$c\" >/dev/null 2>&1 && docker logs --tail 4000 \"\$c\" > $HOME/qwen38-crash-logs/\$(date +%Y%m%d-%H%M%S)-\$(hostname)-\$c.log 2>&1 || true
+        docker inspect \"\$c\" >/dev/null 2>&1 && docker logs --tail 4000 \"\$c\" > \$HOME/qwen38-crash-logs/\$(date +%Y%m%d-%H%M%S)-\$(hostname)-\$c.log 2>&1 || true
       done
-      ls -t $HOME/qwen38-crash-logs/*.log 2>/dev/null | tail -n +21 | xargs -r rm -f
+      ls -t \$HOME/qwen38-crash-logs/*.log 2>/dev/null | tail -n +21 | xargs -r rm -f
       # GPU + driver
       nvidia-smi --query-gpu=name,memory.total --format=csv,noheader || { echo '  PREFLIGHT FAIL rank$i: nvidia-smi'; exit 1; }
       # co-residency guard: this launcher NEVER kills GPU processes (GLM lives here).
@@ -194,7 +196,7 @@ if [ "${SKIP_PREFLIGHT:-0}" != "1" ]; then
       n=\$(ls $MODEL_HOST/model-*.safetensors 2>/dev/null | wc -l)
       [ \"\$n\" -eq 11 ] || echo \"  WARN rank$i: \$n of 11 safetensors present (download still running?)\"
       # image present (digest/ID equality is checked fleet-wide below)
-      docker image inspect $IMAGE >/dev/null 2>&1 || { echo \"  PREFLIGHT FAIL rank$i: image $IMAGE missing (build on forge, fan out per report runbook)\"; exit 1; }
+      docker image inspect $IMAGE >/dev/null 2>&1 || { echo \"  PREFLIGHT FAIL rank$i: image $IMAGE missing (pull ghcr.io/neko-legends/qwen38-flash-next-nvfp4-gb10:e1, fan out per report runbook)\"; exit 1; }
       # drop_caches attempt, sudo-or-skip (spec: drop_caches before loads)
       sync; echo 3 | sudo -n tee /proc/sys/vm/drop_caches >/dev/null 2>&1 || echo '  (drop_caches skipped: no passwordless sudo)'
       mkdir -p $VLLM_CACHE_HOST
@@ -244,14 +246,14 @@ done
 # config paths. The NVMe copy is never modified.
 CFG_MOUNTS=""
 rm -rf "$CFG_STAGE_HOST"; mkdir -p "$CFG_STAGE_HOST"
-PATCHED=$(python3 "$PATCHES_DIR/patch_checkpoint_config.py" "$MODEL_HOST" "$CFG_STAGE_HOST") || {
+PATCHED=$(python3 "$PATCHES_DIR/patch_checkpoint_config.py" "$LOCAL_MODEL_HOST" "$CFG_STAGE_HOST") || {
   say "FATAL: MTP config alias patch failed on $MODEL_HOST"; exit 1; }
 if [ -n "$PATCHED" ]; then
   say "MTP layer-index alias: patched $PATCHED (relative -> absolute MTP layer indices)"
   # MTP expert algo preflight: fail in SECONDS if the dispatch cannot build it
   # (the failure otherwise surfaces ~7 min into the weight load).
   if [ "$MTP_TOKENS" != "0" ]; then
-    ALGO=$(python3 "$PATCHES_DIR/patch_checkpoint_config.py" --mtp-moe-algo "$MODEL_HOST") && ARC=0 || ARC=$?
+    ALGO=$(python3 "$PATCHES_DIR/patch_checkpoint_config.py" --mtp-moe-algo "$LOCAL_MODEL_HOST") && ARC=0 || ARC=$?
     if [ "$ARC" = "3" ]; then
       say "REFUSING: MTP experts are ${ALGO}, which the image's mixed-precision MoE"
       say "  dispatch cannot build. Set MTP_TOKENS=0 to serve without speculative"
