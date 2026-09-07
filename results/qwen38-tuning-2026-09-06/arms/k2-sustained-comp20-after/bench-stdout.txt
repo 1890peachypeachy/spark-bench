@@ -1,0 +1,15 @@
+{
+ "mode": "sustained",
+ "ts": "2026-09-07T00:06:04.158Z",
+ "max_tokens": 1400,
+ "sustained": {
+  "ok": true,
+  "wall_s": 199.8,
+  "requests": 10,
+  "errors": 0,
+  "total_tokens": 14000,
+  "mean_tok_s": 70.1,
+  "gaps_over_500ms": []
+ },
+ "OK": true
+}

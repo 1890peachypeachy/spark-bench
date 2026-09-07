@@ -1,0 +1,40 @@
+{
+ "mode": "single",
+ "ts": "2026-09-06T23:49:25.873Z",
+ "max_tokens": 1000,
+ "code": [
+  {
+   "ok": true,
+   "result": {
+    "ttft_s": 0.136,
+    "decode_tok_s": 70.2,
+    "e2e_s": 14.359,
+    "completion_tokens": 1000,
+    "prompt_tokens": 55,
+    "chars": 4368,
+    "chunks": 346,
+    "tag": "code0",
+    "ts": "2026-09-06T23:49:40.233Z"
+   },
+   "failures": []
+  }
+ ],
+ "prose": [
+  {
+   "ok": true,
+   "result": {
+    "ttft_s": 0.085,
+    "decode_tok_s": 54.2,
+    "e2e_s": 18.515,
+    "completion_tokens": 1000,
+    "prompt_tokens": 50,
+    "chars": 5124,
+    "chunks": 452,
+    "tag": "prose0",
+    "ts": "2026-09-06T23:49:58.748Z"
+   },
+   "failures": []
+  }
+ ],
+ "OK": true
+}

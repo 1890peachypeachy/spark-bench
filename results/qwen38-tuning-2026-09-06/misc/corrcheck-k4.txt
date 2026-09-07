@@ -1,0 +1,8 @@
+PASS models_endpoint — ['qwen3.8-flash-next']
+PASS chat_nonempty — Canberra
+PASS temp0_deterministic — ['b36f06bee2e4', 'b36f06bee2e4']
+PASS tool_call_explicit — [{'id': 'chatcmpl-tool-b69881f0261bb7fe', 'type': 'function', 'function': {'name': 'get_weather', 'arguments': '{"city": "Paris"}'}}]
+PASS tool_history_roundtrip — The weather in Paris is currently **cloudy** with a temperature of **18°C**.
+PASS structured_json — {'name': 'Tokyo', 'population': 13960000}
+PASS thinking_optin — {'content': '\n\n391', 'reasoning_len': 89}
+{"label": "k4", "ts": "2026-09-07T00:52:09.101775+00:00", "ok": true, "checks": [{"check": "models_endpoint", "ok": true, "detail": "['qwen3.8-flash-next']"}, {"check": "chat_nonempty", "ok": true, "detail": "Canberra"}, {"check": "temp0_deterministic", "ok": true, "detail": "['b36f06bee2e4', 'b36f06bee2e4']"}, {"check": "tool_call_explicit", "ok": true, "detail": "[{'id': 'chatcmpl-tool-b69881f0261bb7fe', 'type': 'function', 'function': {'name': 'get_weather', 'arguments': '{\"city\": \"Paris\"}'}}]"}, {"check": "tool_history_roundtrip", "ok": true, "detail": "The weather in Paris is currently **cloudy** with a temperature of **18\u00b0C**."}, {"check": "structured_json", "ok": true, "detail": "{'name': 'Tokyo', 'population': 13960000}"}, {"check": "thinking_optin", "ok": true, "detail": "{'content': '\\n\\n391', 'reasoning_len': 89}"}]}

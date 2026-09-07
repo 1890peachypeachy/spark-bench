@@ -1,0 +1,5 @@
+{"arm": "k2-single-repeat", "ts": "2026-09-07T01:31:03Z", "bench_rc": 0,
+ "args": "single --repeats 3 --max-tokens 1400",
+ "mtp_tokens_env": "",
+ "compaction": "20",
+ "cpuset": ""}

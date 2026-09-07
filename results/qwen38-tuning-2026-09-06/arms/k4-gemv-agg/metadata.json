@@ -1,0 +1,5 @@
+{"arm": "k4-gemv-agg", "ts": "2026-09-07T01:57:13Z", "bench_rc": 0,
+ "args": "agg --repeats 3 --concurrencies 4,8,16 --max-tokens 1200",
+ "mtp_tokens_env": "",
+ "compaction": "20",
+ "cpuset": ""}

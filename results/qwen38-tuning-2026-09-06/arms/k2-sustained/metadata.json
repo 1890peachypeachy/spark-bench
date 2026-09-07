@@ -1,0 +1,5 @@
+{"arm": "k2-sustained", "ts": "2026-09-07T00:01:03Z", "bench_rc": 0,
+ "args": "sustained --seconds 180 --max-tokens 1400",
+ "mtp_tokens_env": "",
+ "compaction": "20",
+ "cpuset": ""}
