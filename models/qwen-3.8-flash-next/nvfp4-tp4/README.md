@@ -1,6 +1,20 @@
 # Qwen 3.8 Flash Next — official NVIDIA NVFP4 on four DGX Sparks
 
-## State: 2026-09-05
+## Upgrade: 2026-09-06 (PDT)
+
+The live campaign-selected configuration is **MTP k=4 + the local GEMV image
+`local/qwen38-gb10:e1-gemv-on`**: 91.3 tok/s C1 code and 600.5 tok/s C16
+end-to-end aggregate (three-repeat medians), with a **7.9% C1 prose regression**
+against the fresh k2 baseline. The official NVIDIA weights are unchanged.
+
+See the [dated update and screenshot](../../../README.md#qwen-3-8-flash),
+[campaign report, configuration and rollback](../../../results/qwen38-tuning-2026-09-06/REPORT.md),
+and [GEMV build recipe](../../../results/qwen38-tuning-2026-09-06/gemv-candidate-image/).
+The public GHCR `e1` tag below remains the original image, **not** the GEMV variant.
+Campaign qualification is limited: 30-minute soak omitted C16; C16 was tested
+separately. This is not production qualification.
+
+## Historical baseline: 2026-09-05
 
 Current endpoint: `http://forge:8000/v1`, served ID `qwen3.8-flash-next`.
 Four GB10 nodes, TP4 **plus expert parallel**, one endpoint. The GLM and

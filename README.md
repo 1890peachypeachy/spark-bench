@@ -1,7 +1,7 @@
 # spark-bench
 
 > ### 4 DGX Sparks. Three model lanes. One shared TP4 cluster.
-> **Qwen 3.8 Flash Next · official NVIDIA NVFP4:** **70.0 tok/s single-stream code** and **510.6 tok/s aggregate at 16 streams** in the first resident-PLE/full-graph tests.
+> **Qwen 3.8 Flash Next · official NVIDIA NVFP4:** **91.3 tok/s single-stream code** and **600.5 tok/s aggregate at 16 streams** with MTP k=4 + GEMV (2026-09-06 PDT upgrade; medians of three repeats).
 > Native **262,144-token context**, **4.02M-token bf16 KV pool**. Preliminary workload-specific results—not a throughput guarantee.
 > **→ [Qwen configs & measurements](#qwen-3-8-flash)** · [GLM archive](#glm-5-3-flash) · [DeepSeek archive](#deepseek-v4-flash)
 
@@ -15,7 +15,7 @@ prerequisites, reproduction limits and operator/agent handoff instructions:
 
 | Lane | Stack | Status | Headline (this cluster) |
 |---|---|---|---|
-| **[Qwen 3.8 Flash Next](#qwen-3-8-flash)** | vLLM · official NVIDIA NVFP4 · TP4+EP · MTP k=2 · 262k ctx | **serving · stability testing in progress** (`forge:8000`) | 70.0 tok/s C1 code · 510.6 tok/s aggregate @16 · 4.02M-token KV pool; preliminary |
+| **[Qwen 3.8 Flash Next](#qwen-3-8-flash)** | vLLM · official NVIDIA NVFP4 · TP4+EP · MTP k=4 + GEMV · 262k ctx | **serving · campaign-qualified, not production-qualified** (`forge:8000`) | 91.3 tok/s C1 code · 600.5 tok/s aggregate @16; C1 prose −7.9% vs fresh k2 baseline |
 | **[GLM 5.3 Flash](#glm-5-3-flash)** | vLLM · EXL3 4bpw · DFlash2 · 1M ctx | stopped; recipe and results retained | 128.9 tok/s 4-stream agg · 1560 tok/s cold prefill @100k · 96 tok/s structured C1 |
 | **[DeepSeek V4 Flash](#deepseek-v4-flash)** | vLLM · abliterated NVFP4 · MTP | recipe kept, not serving | 136 tok/s C1 median (145.5 peak) · 290.3 engine record · 182 tok/s C4 |
 
@@ -33,6 +33,59 @@ chronological order. Every number carries its date, its ruler, and its config.
 
 ## Qwen 3.8 Flash Next (NVFP4) — 4× DGX Spark
 
+### Upgrade — 2026-09-06 (PDT): MTP k=4 + opt-in GEMV
+
+The official NVIDIA checkpoint is unchanged. After a controlled tuning campaign,
+all four nodes serve `local/qwen38-gb10:e1-gemv-on` with **MTP k=4**;
+resident PLE, FULL_DECODE_ONLY, TP4+EP, 262,144 context and 16 sequences remain.
+The original `e1` image is retained for rollback.
+
+![Depths's September 6 upgrade announcement: C1 code 70.7 to 91.3 tok/s; C4/C8/C16 aggregate 198.6/344.4/526.8 to 247.9/404.3/600.5 tok/s, using MTP k4 and an opt-in GEMV image.](docs/images/qwen38-k4-gemv-upgrade-2026-09-06.webp)
+
+*Chat screenshot supplied by Jun, published with the September 6, 2026 PDT update.
+Raw measurement timestamps span September 6–7 UTC. The screenshot is a summary,
+not the primary benchmark evidence; see the linked report and raw results below.*
+
+| Metric (median tok/s, three repeats) | Fresh k2 baseline | k4 + GEMV | Change |
+|---|---:|---:|---:|
+| C1 code, streaming decode | 70.7 | **91.3** | **+29.1%** |
+| C1 prose, streaming decode | 53.4 | 49.2 | **−7.9%** |
+| C4 code, end-to-end aggregate | 198.6 | **247.9** | +24.8% |
+| C8 code, end-to-end aggregate | 344.4 | **404.3** | +17.4% |
+| C16 code, end-to-end aggregate | 526.8 | **600.5** | +14.0% |
+
+Temperature 0, thinking off; C1 budgets 1,400 output tokens, aggregates 1,200
+per stream. These are **fresh same-campaign baselines**, not the September 5
+first-pass figures below. C1 decode and end-to-end aggregate use different timing
+boundaries. Workload-specific observations, not a universal speed guarantee.
+
+- **Retained:** k=4 drafting and a gated M=1 BF16 vocabulary GEMV, adapted from
+  [bilikaz's recipe](https://github.com/bilikaz/qwen38-flash-next-cluster-recipe)
+  / myllmbox-runner's b12x kernel. Exact TP4-shape microbench: 1.47×;
+  incremental server A/B at k4: +4.0% C1 code, +3.2% C16 (smaller than the
+  combined upgrade; aggregate variation warrants further repeats).
+- **Rejected:** compaction 20→0 (no measurable benefit or compaction events in
+  our A/B/A windows) and performance-core pinning (−3.1% C1 code). Restored;
+  no persistent host tuning. This does not establish why another topology stalls.
+- **Validation:** reported 7/7 correctness gates, 19/19 tokenizer-calibrated
+  retrieval checks, and a 30-minute soak with 110 rounds / 364k tokens / zero
+  failures. **The soak missed C16** due to phase-selection logic; C16 was
+  benchmarked separately. Long-run production qualification remains open.
+- **Tradeoff:** single-stream prose is ~8% slower. Their TP2 peak of 80 tok/s
+  used different weights and steady engine windows, so it is not a direct
+  comparison with our streaming rate. We have not reached 100 tok/s here.
+
+**[Campaign report and rollback](results/qwen38-tuning-2026-09-06/REPORT.md)**
+· [Raw arm results](results/qwen38-tuning-2026-09-06/arms/)
+· [Benchmark harness](models/qwen-3.8-flash-next/benchmarks/README.md)
+· [GEMV candidate image recipe](results/qwen38-tuning-2026-09-06/gemv-candidate-image/)
+
+**Image availability:** the GEMV variant is currently a **local build**, not a
+published GHCR tag. The public `ghcr.io/neko-legends/qwen38-flash-next-nvfp4-gb10:e1`
+remains the original image and does not include this GEMV upgrade.
+
+### Initial resident-PLE benchmark — 2026-09-05
+
 ![Qwen 3.8 Flash Next on four DGX Sparks: resident PLE with FULL_DECODE_ONLY; 70.0 tok/s single-stream code, 51.4 tok/s single-stream prose, and 510.6 tok/s aggregate at 16 streams.](docs/images/qwen38-resident-ple-benchmark-2026-09-05.webp)
 
 *2026-09-05 benchmark overview. The graphic's mmap and external-reference comparisons
@@ -48,9 +101,9 @@ CX-7 RoCE between all four GB10s. No checkpoint conversion or TP2 pairs.
 **Status: serving, with stability testing in progress.** The benchmarks below
 are preliminary; long-run stability and production qualification are not yet established.
 
-### Tested configurations and measurements
+### Tested configurations and measurements (2026-09-05, archived k2 results)
 
-| Metric | NVMe mmap PLE + PIECEWISE | Resident PLE + FULL_DECODE_ONLY (current) |
+| Metric | NVMe mmap PLE + PIECEWISE | Resident PLE + FULL_DECODE_ONLY (September 5) |
 |---|---:|---:|
 | GPU memory utilization setting | 0.80 | 0.78 |
 | bf16 KV pool | 5,055,959 tokens | **4,016,501 tokens** (15.32× native context) |
@@ -71,7 +124,7 @@ estimates. MTP ratios cover each boot's accumulated traffic, not isolated bench
 windows. The initial 26.3/24.8 C1 figures had thinking **on** and must not be used
 as a direct baseline for the 70.0/51.4 thinking-off figures.
 
-The current configuration improved both observed aggregate throughput and C1
+The September 5 resident configuration improved both observed aggregate throughput and C1
 speed, at the cost of ~1.04M KV tokens. PLE residency, graph mode and memory
 budget changed together; we have **not isolated their individual contributions**.
 The earlier claim that mmap adds 0.4–1.3 seconds to *every decode step* was not
@@ -90,9 +143,9 @@ on all five tasks** (Builder 0.99, Reviewer/IF/Batch 1.00, Synthesis 0.96) at
 tasks. Honest caveat: batch classification is *slower* locally (12s vs ~5s
 cloud) — small-prompt traffic doesn't amortize the TP4 collective overhead.
 
-### Configuration, validation and references
+### September 5 configuration, validation and references (historical)
 
-Current launch settings: **resident PLE, FULL_DECODE_ONLY**, graph capture sizes
+September 5 launch settings: **resident PLE, FULL_DECODE_ONLY**, graph capture sizes
 `[1,2,4,8]`, MTP k=2, bf16 KV, 262,144 native context, 16 sequences, MNBT 8192,
 GPU memory utilization 0.78, stock-selected MoE backend, TP4+EP. Native context
 is the supported target; **1M YaRN is not our production default**.
