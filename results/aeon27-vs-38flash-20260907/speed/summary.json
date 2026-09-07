@@ -1,0 +1,28 @@
+{
+  "generated": "2026-09-07",
+  "harness": "agent_sim.py (mixed = structured/code/prose + tool_loop), ctx target 100K",
+  "note": "tok/s = completion_tokens / wall_s (includes TTFT; wall-clock per task). clean-decode discipline: flash38 thinking-off (executor), aeon27 thinking-low (brain).",
+  "medians": {
+    "flash38-off-c1": {
+      "tok_s": 37.8,
+      "ttft_s": 0.25
+    },
+    "flash38-off-c3": {
+      "tok_s": 24.1,
+      "ttft_s": 0.44
+    },
+    "aeon27-low-c1": {
+      "tok_s": 27.4,
+      "ttft_s": 3.59
+    },
+    "aeon27-low-c3": {
+      "tok_s": 21.2,
+      "ttft_s": 5.07
+    }
+  },
+  "headline": {
+    "flash38_speedup_vs_aeon_c1": "1.38x",
+    "flash38_speedup_vs_aeon_c3": "1.14x",
+    "flash38_ttft_vs_aeon": "~14-16x faster TTFT"
+  }
+}

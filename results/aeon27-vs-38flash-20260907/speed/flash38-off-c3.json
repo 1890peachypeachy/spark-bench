@@ -1,0 +1,225 @@
+{
+  "ts": "2026-09-07T14:18:11.807641",
+  "endpoint": "http://100.99.120.29:8000/v1",
+  "model": "qwen3.8-flash-next",
+  "label": "flash38-off",
+  "tag": "c3",
+  "concurrency": 3,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "flash38-off-c3-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "flash38-off-c3-agent0-structured",
+              "type": "single",
+              "wall_s": 9.059,
+              "ttft_s": 0.266,
+              "completion": 249,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c3-agent0-code",
+              "type": "single",
+              "wall_s": 7.495,
+              "ttft_s": 0.402,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c3-agent0-prose",
+              "type": "single",
+              "wall_s": 15.83,
+              "ttft_s": 0.417,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 32.384
+        },
+        {
+          "label": "flash38-off-c3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 42,
+              "cached_tokens": null,
+              "wall_s": 2.652,
+              "ttft_s": 0.387,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 207,
+              "completion_tokens": 7,
+              "cached_tokens": null,
+              "wall_s": 0.869,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 300,
+              "completion_tokens": 7,
+              "cached_tokens": null,
+              "wall_s": 1.258,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 4.779,
+          "total_completion": 56
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "flash38-off-c3-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "flash38-off-c3-agent1-structured",
+              "type": "single",
+              "wall_s": 10.131,
+              "ttft_s": 0.57,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c3-agent1-code",
+              "type": "single",
+              "wall_s": 7.41,
+              "ttft_s": 0.436,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c3-agent1-prose",
+              "type": "single",
+              "wall_s": 15.657,
+              "ttft_s": 0.448,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 33.198
+        },
+        {
+          "label": "flash38-off-c3-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 42,
+              "cached_tokens": null,
+              "wall_s": 2.341,
+              "ttft_s": 0.392,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 195,
+              "completion_tokens": 26,
+              "cached_tokens": null,
+              "wall_s": 1.684,
+              "ttft_s": 0.963,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 306,
+              "completion_tokens": 18,
+              "cached_tokens": null,
+              "wall_s": 1.08,
+              "ttft_s": 0.861,
+              "err": null
+            }
+          ],
+          "total_s": 5.105,
+          "total_completion": 86
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "flash38-off-c3-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "flash38-off-c3-agent2-structured",
+              "type": "single",
+              "wall_s": 7.386,
+              "ttft_s": 0.569,
+              "completion": 216,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c3-agent2-code",
+              "type": "single",
+              "wall_s": 7.813,
+              "ttft_s": 0.437,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "flash38-off-c3-agent2-prose",
+              "type": "single",
+              "wall_s": 15.518,
+              "ttft_s": 0.464,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 30.717
+        },
+        {
+          "label": "flash38-off-c3-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 42,
+              "cached_tokens": null,
+              "wall_s": 1.832,
+              "ttft_s": 0.394,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 207,
+              "completion_tokens": 27,
+              "cached_tokens": null,
+              "wall_s": 1.508,
+              "ttft_s": 0.557,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 319,
+              "completion_tokens": 21,
+              "cached_tokens": null,
+              "wall_s": 1.674,
+              "ttft_s": 1.093,
+              "err": null
+            }
+          ],
+          "total_s": 5.014,
+          "total_completion": 90
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 38.323
+}

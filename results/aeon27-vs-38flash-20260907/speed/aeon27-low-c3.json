@@ -1,0 +1,225 @@
+{
+  "ts": "2026-09-07T14:20:15.260753",
+  "endpoint": "http://100.71.248.116:8000/v1",
+  "model": "aeon",
+  "label": "aeon27-low",
+  "tag": "c3",
+  "concurrency": 3,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "aeon27-low-c3-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "aeon27-low-c3-agent0-structured",
+              "type": "single",
+              "wall_s": 14.421,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "aeon27-low-c3-agent0-code",
+              "type": "single",
+              "wall_s": 14.232,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "aeon27-low-c3-agent0-prose",
+              "type": "single",
+              "wall_s": 23.891,
+              "ttft_s": 5.189,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 52.544
+        },
+        {
+          "label": "aeon27-low-c3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 114,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 18.757,
+              "ttft_s": 13.226,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 323,
+              "completion_tokens": 86,
+              "cached_tokens": null,
+              "wall_s": 3.631,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 416,
+              "completion_tokens": 106,
+              "cached_tokens": null,
+              "wall_s": 6.7,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 29.088,
+          "total_completion": 592
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "aeon27-low-c3-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "aeon27-low-c3-agent1-structured",
+              "type": "single",
+              "wall_s": 13.491,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "aeon27-low-c3-agent1-code",
+              "type": "single",
+              "wall_s": 15.161,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "aeon27-low-c3-agent1-prose",
+              "type": "single",
+              "wall_s": 26.437,
+              "ttft_s": 22.029,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 55.089
+        },
+        {
+          "label": "aeon27-low-c3-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 114,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 21.048,
+              "ttft_s": 16.632,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 284,
+              "completion_tokens": 231,
+              "cached_tokens": null,
+              "wall_s": 10.583,
+              "ttft_s": 2.549,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 548,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 15.305,
+              "ttft_s": 3.174,
+              "err": null
+            }
+          ],
+          "total_s": 46.936,
+          "total_completion": 1031
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "aeon27-low-c3-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "aeon27-low-c3-agent2-structured",
+              "type": "single",
+              "wall_s": 15.35,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "aeon27-low-c3-agent2-code",
+              "type": "single",
+              "wall_s": 14.91,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "aeon27-low-c3-agent2-prose",
+              "type": "single",
+              "wall_s": 22.636,
+              "ttft_s": 4.957,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 52.896
+        },
+        {
+          "label": "aeon27-low-c3-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 114,
+              "completion_tokens": 387,
+              "cached_tokens": null,
+              "wall_s": 17.822,
+              "ttft_s": 6.377,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 451,
+              "completion_tokens": 303,
+              "cached_tokens": null,
+              "wall_s": 13.493,
+              "ttft_s": 4.358,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 758,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 14.429,
+              "ttft_s": 3.957,
+              "err": null
+            }
+          ],
+          "total_s": 45.744,
+          "total_completion": 1090
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 102.047
+}
