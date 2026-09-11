@@ -1,0 +1,36 @@
+{
+  "ts": "2026-09-11T11:01:49.243825",
+  "endpoint": "http://100.99.120.29:8888/v1",
+  "model": "qwen38-27b-stock-nvfp4",
+  "label": "",
+  "tag": "q27b-dflash2-longdoc200k",
+  "concurrency": 1,
+  "ctx_target": 200000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "-q27b-dflash2-longdoc200k-agent0",
+          "type": "longdoc",
+          "ctx_target": 200000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 220.985,
+            "ttft_s": 220.374,
+            "prompt": 238785,
+            "cached": 119360,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 6.069,
+            "ttft_s": 1.02,
+            "cached": 238784,
+            "err": null
+          }
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 227.13
+}

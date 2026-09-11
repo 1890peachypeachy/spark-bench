@@ -1,0 +1,74 @@
+{
+ "category": "partnerships-b2b",
+ "kind": "intelligence",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:58:05-0700",
+ "cases": [
+  {
+   "case": "b2b-t1-genuine",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 2.95,
+   "output": "\n\n{\n  \"is_partnership\": true,\n  \"reason\": \"The message proposes a cross-promotion collaboration between their pediatric sleep consultancy and your bedtime course audience, which is a partnership inquiry.\"\n}",
+   "prompt_tokens": 108,
+   "completion_tokens": 180,
+   "tok_s": 61.02,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t1-spam",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.05,
+   "output": "\n\n{\n  \"is_partnership\": false,\n  \"reason\": \"The message uses spammy language, guarantees unrealistic ROI, and focuses on backlinks, link exchange, and making money online rather than a legitimate business partnership.\"\n}",
+   "prompt_tokens": 112,
+   "completion_tokens": 160,
+   "tok_s": 52.46,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t2-fit",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.77,
+   "output": "\n\nB) A pediatric OT newsletter wants guest content swap, because its audience is already focused on child development and therapeutic support, making it the most relevant for anxiety/emotional-wellness products and courses.",
+   "prompt_tokens": 123,
+   "completion_tokens": 194,
+   "tok_s": 40.67,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "b2b-t2-outreach-prioritize",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 10.63,
+   "output": "\n\n[3, 1, 2, 4]",
+   "prompt_tokens": 115,
+   "completion_tokens": 368,
+   "tok_s": 34.62,
+   "score": {
+    "pass": true,
+    "detail": "array=['3', '1', '2', '4'] expected_front=['3', '1', '2'] ok=True"
+   }
+  },
+  {
+   "case": "b2b-t3-prioritize-revenue",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 38.34,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}

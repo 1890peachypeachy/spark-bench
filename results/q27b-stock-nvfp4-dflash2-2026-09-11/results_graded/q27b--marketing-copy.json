@@ -1,0 +1,80 @@
+{
+ "category": "marketing-copy",
+ "kind": "accuracy",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:57:12-0700",
+ "cases": [
+  {
+   "case": "mkt-t1-hook-fit",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 5.57,
+   "output": "\n\nB\nIt leans on specificity.",
+   "prompt_tokens": 123,
+   "completion_tokens": 219,
+   "tok_s": 39.32,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t1-angle-match",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.46,
+   "output": "\n\nB",
+   "prompt_tokens": 118,
+   "completion_tokens": 171,
+   "tok_s": 38.34,
+   "score": {
+    "pass": true,
+    "detail": "match='B'"
+   }
+  },
+  {
+   "case": "mkt-t2-cta-choice",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 24.77,
+   "output": "\n\nGet bedtime back\nIt names the exact outcome the blog post promises.",
+   "prompt_tokens": 118,
+   "completion_tokens": 889,
+   "tok_s": 35.89,
+   "score": {
+    "pass": false,
+    "detail": "missing=['start', 'free']"
+   }
+  },
+  {
+   "case": "mkt-t2-price-framing",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 6.6,
+   "output": "\n\nB is more persuasive because it frames the higher price as justified by added value (\u201cexpanded edition\u201d) rather than as a loss, making $79 feel like an upgrade; pick B.",
+   "prompt_tokens": 127,
+   "completion_tokens": 251,
+   "tok_s": 38.03,
+   "score": {
+    "pass": false,
+    "detail": "missing=['module']"
+   }
+  },
+  {
+   "case": "mkt-t3-audience-fit",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 11.33,
+   "output": "\n\nChoose B, because an OT practice\u2019s sensory-regulation newsletter reaches high-intent parents already seeking help for the exact regulation issues that often drive bedtime struggles, making them most likely to convert.",
+   "prompt_tokens": 139,
+   "completion_tokens": 393,
+   "tok_s": 34.69,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

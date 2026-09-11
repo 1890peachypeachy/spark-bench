@@ -1,0 +1,80 @@
+{
+ "category": "intelligence-logic",
+ "kind": "intelligence",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:56:39-0700",
+ "cases": [
+  {
+   "case": "int-t1-sequence",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.64,
+   "output": "\n\nNO, because A only shipped before B, not necessarily arrived before B or before C\u2019s Monday arrival.",
+   "prompt_tokens": 92,
+   "completion_tokens": 173,
+   "tok_s": 47.53,
+   "score": {
+    "pass": true,
+    "detail": "match='NO'"
+   }
+  },
+  {
+   "case": "int-t1-trap-plausible",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 5.67,
+   "output": "\n\nTrue: the new refund count is 3.1% of 140% of the original orders, or 4.34% of the original order volume, which is greater than the original 2.2%.",
+   "prompt_tokens": 95,
+   "completion_tokens": 247,
+   "tok_s": 43.56,
+   "score": {
+    "pass": true,
+    "detail": "match='True'"
+   }
+  },
+  {
+   "case": "int-t2-constraint-roster",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 7.2,
+   "output": "\n\nHermes works Thursday and Friday, so Hermes is the one agent who works two days. Spark works Wednesday, so Astrid works the day immediately before, Tuesday. The only remaining day is Monday, which must be Peachy.\n\nAnswer: Peachy",
+   "prompt_tokens": 134,
+   "completion_tokens": 335,
+   "tok_s": 46.53,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: Peachy'"
+   }
+  },
+  {
+   "case": "int-t3-ordering-puzzle",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 11.51,
+   "output": "\n\nThe workbook must launch immediately before the audio series, and the course bundle is third. Since the flashcard deck must be earlier than the course bundle, it must be first or second. The only possible consecutive slot for workbook/audio that leaves room for the flashcard deck is positions 4 and 5.\n\nAnswer: audio series",
+   "prompt_tokens": 127,
+   "completion_tokens": 487,
+   "tok_s": 42.31,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: audio series'"
+   }
+  },
+  {
+   "case": "int-t3-trap-invalid-premise",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 4.79,
+   "output": "\n\nVALID \u2014 it is modus tollens: from \u201cif answered the ticket then online\u201d and \u201cDidi was not online,\u201d infer \u201cDidi did not answer the ticket.\u201d",
+   "prompt_tokens": 106,
+   "completion_tokens": 237,
+   "tok_s": 49.48,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

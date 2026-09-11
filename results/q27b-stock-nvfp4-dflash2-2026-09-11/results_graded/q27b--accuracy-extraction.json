@@ -1,0 +1,60 @@
+{
+ "category": "accuracy-extraction",
+ "kind": "accuracy",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:54:37-0700",
+ "cases": [
+  {
+   "case": "ext-t1-commitments",
+   "tier": 1,
+   "ok": false,
+   "latency_s": 41.86,
+   "error": "empty content finish=length",
+   "tok_s": null
+  },
+  {
+   "case": "ext-t2-distractor-dates",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.95,
+   "output": "\n\nMarch 11",
+   "prompt_tokens": 144,
+   "completion_tokens": 238,
+   "tok_s": 80.68,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t2-order-math",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.85,
+   "output": "\n\n#2230",
+   "prompt_tokens": 150,
+   "completion_tokens": 170,
+   "tok_s": 59.65,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t3-negated-fact",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 7.6,
+   "output": "\n\nNO. The treatment group improved by 9 minutes on average compared with 7 minutes in the placebo group, a difference of only 2 minutes.",
+   "prompt_tokens": 129,
+   "completion_tokens": 360,
+   "tok_s": 47.37,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

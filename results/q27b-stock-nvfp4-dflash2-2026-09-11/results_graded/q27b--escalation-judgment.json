@@ -1,0 +1,66 @@
+{
+ "category": "escalation-judgment",
+ "kind": "intelligence",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:55:32-0700",
+ "cases": [
+  {
+   "case": "esc-t1-needs-human",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.56,
+   "output": "\n\n{\"needs_human\": true, \"why\": \"Customer is requesting a refund but cannot access their account or card, so identity verification and account recovery likely require human assistance.\"}",
+   "prompt_tokens": 109,
+   "completion_tokens": 113,
+   "tok_s": 31.74,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t1-auto",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.28,
+   "output": "\n\n{\"needs_human\": false, \"why\": \"This is a routine order status request with an order number, which can typically be handled by checking tracking or order status without human escalation.\"}",
+   "prompt_tokens": 103,
+   "completion_tokens": 179,
+   "tok_s": 41.82,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t2-refund-call",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 1.84,
+   "output": "\n\nB) Apologize, offer a replacement or full refund, and escalate to a supervisor to ensure it\u2019s handled.",
+   "prompt_tokens": 157,
+   "completion_tokens": 157,
+   "tok_s": 85.33,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "esc-t3-severity-rank",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 5.59,
+   "output": "\n\n[1, 2, 3, 4]",
+   "prompt_tokens": 138,
+   "completion_tokens": 235,
+   "tok_s": 42.04,
+   "score": {
+    "pass": false,
+    "detail": "array=['1', '2', '3', '4'] expected_front=['1', '2', '4'] ok=False"
+   }
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "category": "instruction-following",
+ "kind": "instruction",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:55:48-0700",
+ "cases": [
+  {
+   "case": "inst-t1-exact-count",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 8.0,
+   "output": "\n\n1. Improves vocabulary and comprehension.\n2. Builds imagination and empathy.\n3. Strengthens focus and curiosity.",
+   "prompt_tokens": 82,
+   "completion_tokens": 316,
+   "tok_s": 39.5,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 numbered3=True max5w=True"
+   }
+  },
+  {
+   "case": "inst-t2-multi-constraint",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 12.95,
+   "output": "\n\nBefore lights dim, we wash tiny hands, brush teeth, and choose a soft book. The room grows quiet, and a calm voice reads one short story. This steady rhythm helps my toddler settle without fuss.\n\nAfter the book, we say goodnight to toys and turn off the lamp. A calm song plays softly while I tuck in blankets. This gentle routine ends with a hug, then quiet rest. END OF NOTES",
+   "prompt_tokens": 139,
+   "completion_tokens": 660,
+   "tok_s": 50.97,
+   "score": {
+    "pass": true,
+    "detail": "paras=2 wc=[35, 33] calm2=True no_sleep=True end=True (para1 short is OK)"
+   }
+  },
+  {
+   "case": "inst-t2-json-schema",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 6.7,
+   "output": "\n\n{\n  \"risk\": \"medium\",\n  \"reason\": \"Competitor has larger audience but higher price\",\n  \"tags\": [\n    \"pricing\",\n    \"competition\"\n  ]\n}",
+   "prompt_tokens": 132,
+   "completion_tokens": 350,
+   "tok_s": 52.24,
+   "score": {
+    "pass": true,
+    "detail": "keys=True risk=True reason10=True tags2=True onlyjson=True"
+   }
+  },
+  {
+   "case": "inst-t3-negative-constraint",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 8.7,
+   "output": "\n\nThe item arrived six days after the promised date, and the box was crushed.\nI asked for my money back, but the representative refused and hung up on me.",
+   "prompt_tokens": 124,
+   "completion_tokens": 415,
+   "tok_s": 47.7,
+   "score": {
+    "pass": true,
+    "detail": "used_banned=[] sentences=2"
+   }
+  },
+  {
+   "case": "inst-t3-format-sandwich",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 15.07,
+   "output": "\n\nVERDICT: Increase\nRaising the course price from $59 to $79 reflects added value and sustainable growth.\n2026-08-24",
+   "prompt_tokens": 142,
+   "completion_tokens": 783,
+   "tok_s": 51.96,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 verdict=True sent=True date=True"
+   }
+  }
+ ]
+}

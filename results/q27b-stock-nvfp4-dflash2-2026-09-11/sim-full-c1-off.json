@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-11T10:59:24.073445",
+  "endpoint": "http://100.99.120.29:8888/v1",
+  "model": "qwen38-27b-stock-nvfp4",
+  "label": "",
+  "tag": "q27b-dflash2-c1-off",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "-q27b-dflash2-c1-off-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 24,
+              "cached_tokens": null,
+              "wall_s": 0.731,
+              "ttft_s": 0.139,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 204,
+              "completion_tokens": 24,
+              "cached_tokens": 64,
+              "wall_s": 0.615,
+              "ttft_s": 0.217,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 320,
+              "completion_tokens": 25,
+              "cached_tokens": 192,
+              "wall_s": 0.535,
+              "ttft_s": 0.22,
+              "err": null
+            }
+          ],
+          "total_s": 1.881,
+          "total_completion": 73
+        },
+        {
+          "label": "-q27b-dflash2-c1-off-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 110.665,
+            "ttft_s": 110.307,
+            "prompt": 119411,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 3.074,
+            "ttft_s": 0.673,
+            "cached": 119360,
+            "err": null
+          }
+        },
+        {
+          "label": "-q27b-dflash2-c1-off-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "-q27b-dflash2-c1-off-agent0-structured",
+              "type": "single",
+              "wall_s": 8.077,
+              "ttft_s": 0.236,
+              "completion": 245,
+              "err": null
+            },
+            {
+              "label": "-q27b-dflash2-c1-off-agent0-code",
+              "type": "single",
+              "wall_s": 5.443,
+              "ttft_s": 0.216,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "-q27b-dflash2-c1-off-agent0-prose",
+              "type": "single",
+              "wall_s": 15.841,
+              "ttft_s": 0.208,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 29.361
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 145.039
+}

@@ -1,0 +1,80 @@
+{
+ "category": "accuracy-arithmetic",
+ "kind": "accuracy",
+ "model": "q27b",
+ "model_id": "qwen38-27b-stock-nvfp4",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-11T10:54:18-0700",
+ "cases": [
+  {
+   "case": "acc-t1-wow-orders",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 1.63,
+   "output": "\n\n127",
+   "prompt_tokens": 107,
+   "completion_tokens": 91,
+   "tok_s": 55.83,
+   "score": {
+    "pass": true,
+    "detail": "match='127'"
+   }
+  },
+  {
+   "case": "acc-t1-refund-rate",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.79,
+   "output": "\n\nsecond\n\nFirst week: 2.8%  \nSecond week: 2.2%",
+   "prompt_tokens": 112,
+   "completion_tokens": 237,
+   "tok_s": 49.48,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "acc-t2-ad-budget",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 3.25,
+   "output": "\n\n$4,340",
+   "prompt_tokens": 118,
+   "completion_tokens": 192,
+   "tok_s": 59.08,
+   "score": {
+    "pass": true,
+    "detail": "match='$4,340'"
+   }
+  },
+  {
+   "case": "acc-t2-inventory-split",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.53,
+   "output": "\n\n56",
+   "prompt_tokens": 96,
+   "completion_tokens": 139,
+   "tok_s": 54.94,
+   "score": {
+    "pass": true,
+    "detail": "match='56'"
+   }
+  },
+  {
+   "case": "acc-t3-cascade-discount",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 6.39,
+   "output": "\n\n$42.43",
+   "prompt_tokens": 117,
+   "completion_tokens": 371,
+   "tok_s": 58.06,
+   "score": {
+    "pass": true,
+    "detail": "match='42.43'"
+   }
+  }
+ ]
+}

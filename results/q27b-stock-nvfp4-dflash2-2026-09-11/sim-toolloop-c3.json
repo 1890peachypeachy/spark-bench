@@ -1,0 +1,132 @@
+{
+  "ts": "2026-09-11T11:05:36.508109",
+  "endpoint": "http://100.99.120.29:8888/v1",
+  "model": "qwen38-27b-stock-nvfp4",
+  "label": "",
+  "tag": "q27b-dflash2-toolloop-c3",
+  "concurrency": 3,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "-q27b-dflash2-toolloop-c3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 24,
+              "cached_tokens": 64,
+              "wall_s": 1.654,
+              "ttft_s": 1.023,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 204,
+              "completion_tokens": 24,
+              "cached_tokens": 192,
+              "wall_s": 1.158,
+              "ttft_s": 0.512,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 320,
+              "completion_tokens": 25,
+              "cached_tokens": 192,
+              "wall_s": 0.803,
+              "ttft_s": 0.323,
+              "err": null
+            }
+          ],
+          "total_s": 3.615,
+          "total_completion": 73
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "-q27b-dflash2-toolloop-c3-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 24,
+              "cached_tokens": 64,
+              "wall_s": 1.979,
+              "ttft_s": 0.247,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 204,
+              "completion_tokens": 24,
+              "cached_tokens": 192,
+              "wall_s": 0.826,
+              "ttft_s": 0.196,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 320,
+              "completion_tokens": 25,
+              "cached_tokens": 192,
+              "wall_s": 0.804,
+              "ttft_s": 0.325,
+              "err": null
+            }
+          ],
+          "total_s": 3.609,
+          "total_completion": 73
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "-q27b-dflash2-toolloop-c3-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 24,
+              "cached_tokens": 64,
+              "wall_s": 1.485,
+              "ttft_s": 1.011,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 204,
+              "completion_tokens": 24,
+              "cached_tokens": 192,
+              "wall_s": 1.315,
+              "ttft_s": 0.582,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 320,
+              "completion_tokens": 25,
+              "cached_tokens": 192,
+              "wall_s": 0.804,
+              "ttft_s": 0.324,
+              "err": null
+            }
+          ],
+          "total_s": 3.604,
+          "total_completion": 73
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 3.622
+}
