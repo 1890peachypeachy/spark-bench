@@ -1,0 +1,80 @@
+{
+ "category": "instruction-following",
+ "kind": "instruction",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:56:58-0700",
+ "cases": [
+  {
+   "case": "inst-t1-exact-count",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 5.56,
+   "output": "1. Builds vocabulary and language skills\n2. Improves focus and concentration\n3. Sparks creativity and imagination",
+   "prompt_tokens": 42,
+   "completion_tokens": 236,
+   "tok_s": 42.45,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 numbered3=True max5w=True"
+   }
+  },
+  {
+   "case": "inst-t2-multi-constraint",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 26.66,
+   "output": "A consistent sequence of bath, pajamas, teeth brushing, and one short story signals to a toddler that the day is winding down. Keeping the lights dim and voices soft helps everyone stay calm, while familiar steps give little ones a comforting sense of predictability.\n\nTiming matters just as much as content, so aim to begin the routine at the same hour nightly. Offer limited choices, like picking between two books, to satisfy a toddler's growing independence. If fussiness arises, respond with a calm, steady voice and repeat the pattern. END OF NOTES",
+   "prompt_tokens": 96,
+   "completion_tokens": 1036,
+   "tok_s": 38.86,
+   "score": {
+    "pass": true,
+    "detail": "paras=2 wc=[44, 45] calm2=True no_sleep=True end=True (para1 short is OK)"
+   }
+  },
+  {
+   "case": "inst-t2-json-schema",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 8.29,
+   "output": "{\"risk\": \"high\", \"reason\": \"Competitor's 10x audience threatens market share despite higher price\", \"tags\": [\"competitive-threat\", \"pricing\"]}",
+   "prompt_tokens": 88,
+   "completion_tokens": 256,
+   "tok_s": 30.88,
+   "score": {
+    "pass": true,
+    "detail": "keys=True risk=True reason10=True tags2=True onlyjson=True"
+   }
+  },
+  {
+   "case": "inst-t3-negative-constraint",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 12.75,
+   "output": "The customer's delivery arrived six days behind schedule and the box was crushed. When they requested their money back, the representative refused and hung up on them, leaving them absolutely furious.",
+   "prompt_tokens": 83,
+   "completion_tokens": 443,
+   "tok_s": 34.75,
+   "score": {
+    "pass": true,
+    "detail": "used_banned=[] sentences=2"
+   }
+  },
+  {
+   "case": "inst-t3-format-sandwich",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 5.49,
+   "output": "VERDICT: Justified\nThe price increase reflects added value and remains affordable for serious learners.\n2026-08-24",
+   "prompt_tokens": 92,
+   "completion_tokens": 224,
+   "tok_s": 40.8,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 verdict=True sent=True date=True"
+   }
+  }
+ ]
+}

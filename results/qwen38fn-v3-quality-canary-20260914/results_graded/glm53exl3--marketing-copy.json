@@ -1,0 +1,80 @@
+{
+ "category": "marketing-copy",
+ "kind": "accuracy",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T10:00:43-0700",
+ "cases": [
+  {
+   "case": "mkt-t1-hook-fit",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 6.85,
+   "output": "B\n\nIt leans on specificity \u2014 a concrete number and personal story feel more credible and relatable than the vague claim \"proven.\"",
+   "prompt_tokens": 83,
+   "completion_tokens": 199,
+   "tok_s": 29.05,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t1-angle-match",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 11.58,
+   "output": "B",
+   "prompt_tokens": 79,
+   "completion_tokens": 271,
+   "tok_s": 23.4,
+   "score": {
+    "pass": true,
+    "detail": "match='B'"
+   }
+  },
+  {
+   "case": "mkt-t2-cta-choice",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 18.66,
+   "output": "End the Bedtime Battle\n\nIt mirrors the exact frustration the visitor arrived with from the blog post, promises a resolution rather than a product, and uses the \"battle\" language exhausted parents already use to describe the problem.",
+   "prompt_tokens": 76,
+   "completion_tokens": 410,
+   "tok_s": 21.97,
+   "score": {
+    "pass": false,
+    "detail": "missing=['start', 'free']"
+   }
+  },
+  {
+   "case": "mkt-t2-price-framing",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 47.35,
+   "output": "**B is more persuasive.**\n\n**Why:** B leads with added value (\"more modules, more guidance\") that justifies the higher price and reframes $79 as the cost of a new, better edition \u2014 with \"(was $59)\" working as a deal anchor \u2014 while A spotlights the increase itself and \"same great value\" tells buyers they're paying ~34% more for nothing new.\n\n**Pick: B.**\n\nOne caveat: only use B if the expansion is real \u2014 a \"new edition\" that isn't visibly different will burn trust faster than a plain price hike.",
+   "prompt_tokens": 81,
+   "completion_tokens": 1170,
+   "tok_s": 24.71,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t3-audience-fit",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 43.74,
+   "output": "**B \u2014 the OT practice's newsletter.**\n\nParents reading about sensory regulation are already seeking paid, professional help for the exact arousal/calming struggles that derail bedtime, and the clinical trust plus direct email channel converts a small high-intent audience far better than a broader list or a Facebook group where promotional posts get skipped.",
+   "prompt_tokens": 98,
+   "completion_tokens": 914,
+   "tok_s": 20.9,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

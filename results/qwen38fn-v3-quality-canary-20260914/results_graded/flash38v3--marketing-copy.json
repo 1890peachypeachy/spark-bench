@@ -1,0 +1,80 @@
+{
+ "category": "marketing-copy",
+ "kind": "accuracy",
+ "model": "flash38v3",
+ "model_id": "qwen3.8-flash-next-spark12",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T10:00:09-0700",
+ "cases": [
+  {
+   "case": "mkt-t1-hook-fit",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.55,
+   "output": "\n\nB\nIt leans on specificity.",
+   "prompt_tokens": 123,
+   "completion_tokens": 194,
+   "tok_s": 54.65,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t1-angle-match",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.47,
+   "output": "\n\nB",
+   "prompt_tokens": 118,
+   "completion_tokens": 150,
+   "tok_s": 43.23,
+   "score": {
+    "pass": true,
+    "detail": "match='B'"
+   }
+  },
+  {
+   "case": "mkt-t2-cta-choice",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 14.88,
+   "output": "\n\nFix Bedtime Tonight\nIt promises an immediate, specific outcome for a parent searching for a solution.",
+   "prompt_tokens": 118,
+   "completion_tokens": 459,
+   "tok_s": 30.85,
+   "score": {
+    "pass": false,
+    "detail": "missing=['start', 'free']"
+   }
+  },
+  {
+   "case": "mkt-t2-price-framing",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 5.1,
+   "output": "\n\nB \u2014 it justifies the $20 increase by highlighting new value, making the price feel earned rather than minimized.",
+   "prompt_tokens": 127,
+   "completion_tokens": 251,
+   "tok_s": 49.22,
+   "score": {
+    "pass": false,
+    "detail": "missing=['module']"
+   }
+  },
+  {
+   "case": "mkt-t3-audience-fit",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 7.1,
+   "output": "\n\nChoose B, because an OT newsletter on sensory regulation reaches parents already seeking expert, routine-based solutions for 2\u20136-year-olds, making them more qualified and likely to buy a $59 bedtime course than a broad list or a general tantrum group.",
+   "prompt_tokens": 139,
+   "completion_tokens": 324,
+   "tok_s": 45.63,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "category": "intelligence-logic",
+ "kind": "intelligence",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:59:11-0700",
+ "cases": [
+  {
+   "case": "int-t1-sequence",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 6.31,
+   "output": "NO \u2014 A shipping before B only means A was sent earlier, not that it arrived earlier (A could have slower shipping), so A's arrival relative to B's arrival (and thus Monday) is unknown.",
+   "prompt_tokens": 52,
+   "completion_tokens": 149,
+   "tok_s": 23.61,
+   "score": {
+    "pass": true,
+    "detail": "match='NO'"
+   }
+  },
+  {
+   "case": "int-t1-trap-plausible",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.76,
+   "output": "True \u2014 final refunds are 3.1% of 1.4\u00d7 orders = 4.34% of the original order count, which is greater than the original 2.2%.",
+   "prompt_tokens": 54,
+   "completion_tokens": 151,
+   "tok_s": 31.72,
+   "score": {
+    "pass": true,
+    "detail": "match='True'"
+   }
+  },
+  {
+   "case": "int-t2-constraint-roster",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 8.39,
+   "output": "Hermes works Thursday and Friday. Spark works Wednesday, so Astrid works Tuesday (the day immediately before Spark). That leaves Monday for Peachy.\n\nAnswer: Peachy",
+   "prompt_tokens": 92,
+   "completion_tokens": 217,
+   "tok_s": 25.86,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: Peachy'"
+   }
+  },
+  {
+   "case": "int-t3-ordering-puzzle",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 12.53,
+   "output": "The course bundle is third, and the flashcard deck must be earlier than third. The workbook must immediately precede the audio series, so they must occupy positions 4 and 5. Therefore, the fifth launch is the audio series.\n\nAnswer: audio series",
+   "prompt_tokens": 87,
+   "completion_tokens": 348,
+   "tok_s": 27.77,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: audio series'"
+   }
+  },
+  {
+   "case": "int-t3-trap-invalid-premise",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 25.42,
+   "output": "INVALID \u2014 Formally, \u201coffline\u201d only gives \u00acOnline(Didi), which contradicts \u201cAgent(Didi) \u2227 Answered(Didi) \u2192 Online(Didi)\u201d only if we also know Didi is an agent; otherwise Didi could be a non-agent who answered.",
+   "prompt_tokens": 65,
+   "completion_tokens": 664,
+   "tok_s": 26.12,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

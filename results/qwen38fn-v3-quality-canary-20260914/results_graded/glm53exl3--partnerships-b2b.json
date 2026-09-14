@@ -1,0 +1,80 @@
+{
+ "category": "partnerships-b2b",
+ "kind": "intelligence",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T10:03:40-0700",
+ "cases": [
+  {
+   "case": "b2b-t1-genuine",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 12.57,
+   "output": "```json\n{\"is_partnership\": true, \"reason\": \"The message identifies the sender (pediatric sleep consultancy), proposes a specific collaboration (cross-promoting a free webinar), and targets a clearly relevant audience (bedtime course customers). The offer is specific, relevant to the recipient's business, and follows a standard partnership format with no spam indicators.\"}\n```",
+   "prompt_tokens": 67,
+   "completion_tokens": 352,
+   "tok_s": 28.0,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t1-spam",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 16.4,
+   "output": "```json\n{\"is_partnership\": false, \"reason\": \"Classic spam indicators: unrealistic guaranteed returns (10x ROI), SEO link-scheme keywords (guest posts, link exchange, backlinks), get-rich-quick language ($$$ make money online), and urgency tactics with excessive punctuation. No specific business details, personalization, or legitimate proposal.\"}\n```",
+   "prompt_tokens": 69,
+   "completion_tokens": 450,
+   "tok_s": 27.44,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t2-fit",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 17.25,
+   "output": "**B** \u2014 A pediatric OT newsletter's audience is exactly your buyers (parents and caregivers actively seeking support for kids' emotional regulation), and the content swap borrows trusted clinical credibility that a robotics bundle or gaming-chair giveaway can't match.",
+   "prompt_tokens": 83,
+   "completion_tokens": 421,
+   "tok_s": 24.41,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "b2b-t2-outreach-prioritize",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 84.01,
+   "output": "```json\n[1, 3, 2, 4]\n```\n\n**Rationale:**\n\n1. **Pediatrician's office w/ waiting-room TV** \u2014 Captive audience of exactly the right buyers (parents of young kids), in a health context that lends credibility to wellness messaging.\n2. **School district OT department** \u2014 Deepest mission alignment: OTs work directly on emotional regulation, sensory needs, and anxiety, and are trusted advisors to families. Caveat: slower, more bureaucratic sales cycle.\n3. **Local toy store** \u2014 Right shoppers (parents + kids present) and purchase intent; natural shelf fit for calm-down/mindfulness products, but contextually generic.\n4. **Mom fashion influencer** \u2014 Some audience overlap (moms), but the content vertical is misaligned with children's mental wellness, so engagement and trust transfer would be weak.",
+   "prompt_tokens": 76,
+   "completion_tokens": 1734,
+   "tok_s": 20.64,
+   "score": {
+    "pass": false,
+    "detail": "array=['1', '3', '2', '4'] expected_front=['3', '1', '2'] ok=False"
+   }
+  },
+  {
+   "case": "b2b-t3-prioritize-revenue",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 49.16,
+   "output": "```json\n[\n  { \"shopify_collab\": 1 },\n  { \"influencer\": 2 },\n  { \"newsletter_swap\": 3 }\n]\n```\n\nReasoning: Shopify wins on both axes \u2014 highest rev-share (40%) *and* largest reach (200k). Influencer takes second: real revenue potential (20% share) with high-affinity kids' audience supporting conversion, despite smaller reach. Newsletter swap ranks last: zero revenue and the smallest footprint (2\u00d78k), offering only indirect audience-exchange value.\n\nRanking: [\"shopify_collab\", \"influencer\", \"newsletter_swap\"]",
+   "prompt_tokens": 125,
+   "completion_tokens": 1477,
+   "tok_s": 30.04,
+   "score": {
+    "pass": false,
+    "detail": "array=[\"{'shopify_collab': 1}\", \"{'influencer': 2}\", \"{'newsletter_swap': 3}\"] expected_front=['1', '3'] ok=False"
+   }
+  }
+ ]
+}

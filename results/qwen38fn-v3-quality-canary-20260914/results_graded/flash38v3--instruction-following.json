@@ -1,0 +1,80 @@
+{
+ "category": "instruction-following",
+ "kind": "instruction",
+ "model": "flash38v3",
+ "model_id": "qwen3.8-flash-next-spark12",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:55:39-0700",
+ "cases": [
+  {
+   "case": "inst-t1-exact-count",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 9.2,
+   "output": "\n\n1. Builds vocabulary\n2. Improves focus\n3. Sparks imagination",
+   "prompt_tokens": 82,
+   "completion_tokens": 289,
+   "tok_s": 31.41,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 numbered3=True max5w=True"
+   }
+  },
+  {
+   "case": "inst-t2-multi-constraint",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 40.01,
+   "output": "\n\nStart with a warm bath, then brush tiny teeth. Choose one short book, two soft songs, and a calm hug. Keep lights low, voices gentle, and movements slow. A predictable sequence helps toddlers feel safe, settled, and ready for rest.\n\nIf fussing rises, stay calm, offer a favorite blanket, and repeat the same cue. Dim lamps, steady breathing, and a whispered goodnight signal that the day is closing. Keep the room tidy, cool, and dark. END OF NOTES",
+   "prompt_tokens": 139,
+   "completion_tokens": 1231,
+   "tok_s": 30.77,
+   "score": {
+    "pass": true,
+    "detail": "paras=2 wc=[40, 35] calm2=True no_sleep=True end=True (para1 short is OK)"
+   }
+  },
+  {
+   "case": "inst-t2-json-schema",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 5.49,
+   "output": "\n\n{\n  \"risk\": \"medium\",\n  \"reason\": \"Larger competitor audience may capture market despite higher price.\",\n  \"tags\": [\n    \"competition\",\n    \"market_share\"\n  ]\n}",
+   "prompt_tokens": 132,
+   "completion_tokens": 265,
+   "tok_s": 48.27,
+   "score": {
+    "pass": true,
+    "detail": "keys=True risk=True reason10=True tags2=True onlyjson=True"
+   }
+  },
+  {
+   "case": "inst-t3-negative-constraint",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 13.68,
+   "output": "\n\nThe delivery arrived six days past the promised date, and the box was crushed. When the customer asked for money back, a representative refused and hung up, leaving them furious.",
+   "prompt_tokens": 124,
+   "completion_tokens": 362,
+   "tok_s": 26.46,
+   "score": {
+    "pass": true,
+    "detail": "used_banned=[] sentences=2"
+   }
+  },
+  {
+   "case": "inst-t3-format-sandwich",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 9.72,
+   "output": "\n\nVERDICT: Approved\nRaising the course price from $59 to $79 reflects improved content and support.\n2026-08-24",
+   "prompt_tokens": 142,
+   "completion_tokens": 565,
+   "tok_s": 58.13,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 verdict=True sent=True date=True"
+   }
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "category": "intelligence-logic",
+ "kind": "intelligence",
+ "model": "flash38v3",
+ "model_id": "qwen3.8-flash-next-spark12",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:57:56-0700",
+ "cases": [
+  {
+   "case": "int-t1-sequence",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 5.84,
+   "output": "\n\nNO, because A only ships before B, not necessarily arrives before B, so it could arrive after Monday.",
+   "prompt_tokens": 92,
+   "completion_tokens": 250,
+   "tok_s": 42.81,
+   "score": {
+    "pass": true,
+    "detail": "match='NO'"
+   }
+  },
+  {
+   "case": "int-t1-trap-plausible",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.25,
+   "output": "\n\nTrue: refunds rose from 2.2% of orders to 3.1% of 1.4\u00d7 the original order volume, i.e., 4.34% of the original volume, which is higher.",
+   "prompt_tokens": 95,
+   "completion_tokens": 186,
+   "tok_s": 57.23,
+   "score": {
+    "pass": true,
+    "detail": "match='True'"
+   }
+  },
+  {
+   "case": "int-t2-constraint-roster",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.95,
+   "output": "\n\nHermes already works Thursday and Friday, so he is the agent who works two days. Spark works Wednesday, and Astrid works the day before Spark, so Astrid works Tuesday. Peachy must work at least one day, leaving only Monday.\n\nAnswer: Peachy",
+   "prompt_tokens": 134,
+   "completion_tokens": 260,
+   "tok_s": 52.53,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: Peachy'"
+   }
+  },
+  {
+   "case": "int-t3-ordering-puzzle",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 7.79,
+   "output": "\n\nThe workbook must be immediately before the audio series. Since the course bundle is third, the only possible adjacent pair for workbook/audio series is fourth/fifth.\n\nAnswer: audio series",
+   "prompt_tokens": 127,
+   "completion_tokens": 354,
+   "tok_s": 45.44,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: audio series'"
+   }
+  },
+  {
+   "case": "int-t3-trap-invalid-premise",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 53.08,
+   "output": "\n\nINVALID \u2014 the premises only entail that an offline person was not an agent who answered, not that they did not answer at all, unless we also assume Didi is an agent or only agents can answer.",
+   "prompt_tokens": 106,
+   "completion_tokens": 2493,
+   "tok_s": 46.97,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

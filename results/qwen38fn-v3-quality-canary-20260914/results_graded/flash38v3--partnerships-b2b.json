@@ -1,0 +1,74 @@
+{
+ "category": "partnerships-b2b",
+ "kind": "intelligence",
+ "model": "flash38v3",
+ "model_id": "qwen3.8-flash-next-spark12",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T10:02:51-0700",
+ "cases": [
+  {
+   "case": "b2b-t1-genuine",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.83,
+   "output": "\n\n{\n  \"is_partnership\": true,\n  \"reason\": \"The message proposes a specific collaboration idea involving cross-promotion between related audiences, which indicates a genuine partnership inquiry.\"\n}",
+   "prompt_tokens": 108,
+   "completion_tokens": 151,
+   "tok_s": 39.43,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t1-spam",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 5.09,
+   "output": "\n\n{\n  \"is_partnership\": false,\n  \"reason\": \"The message is spammy and promotes guaranteed ROI, guest posts, link exchanges, and backlinks, which are typical SEO/link-building spam rather than a genuine partnership inquiry.\"\n}",
+   "prompt_tokens": 112,
+   "completion_tokens": 135,
+   "tok_s": 26.52,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t2-fit",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.43,
+   "output": "\n\nB \u2014 A pediatric OT newsletter directly reaches parents and professionals focused on children\u2019s emotional wellness, matching your audience.",
+   "prompt_tokens": 123,
+   "completion_tokens": 65,
+   "tok_s": 26.75,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "b2b-t2-outreach-prioritize",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.77,
+   "output": "\n\n[3,1,2,4]",
+   "prompt_tokens": 115,
+   "completion_tokens": 212,
+   "tok_s": 44.44,
+   "score": {
+    "pass": true,
+    "detail": "array=['3', '1', '2', '4'] expected_front=['3', '1', '2'] ok=True"
+   }
+  },
+  {
+   "case": "b2b-t3-prioritize-revenue",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 32.6,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}
