@@ -1,0 +1,45 @@
+{
+  "ts": "2026-09-05T20:14:27.683899",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "agents": 3,
+  "max_tokens": 2500,
+  "thinking": "low",
+  "label": "fp8-c3",
+  "runs": [
+    {
+      "wall_s": 139.714,
+      "ttft_s": 1.112,
+      "completion_tokens": 2500,
+      "decode_s": 138.602,
+      "tok_s": 18.03,
+      "err": null
+    },
+    {
+      "wall_s": 112.88,
+      "ttft_s": 3.331,
+      "completion_tokens": 2500,
+      "decode_s": 109.549,
+      "tok_s": 22.81,
+      "err": null
+    },
+    {
+      "wall_s": 83.289,
+      "ttft_s": 1.111,
+      "completion_tokens": 2500,
+      "decode_s": 82.177,
+      "tok_s": 30.41,
+      "err": null
+    }
+  ],
+  "wall_s": 139.72,
+  "total_completion_tokens": 7500,
+  "aggregate_tok_s": 53.7,
+  "per_agent_tok_s": [
+    18.03,
+    22.81,
+    30.41
+  ],
+  "per_agent_median_tok_s": 22.8,
+  "per_agent_min_tok_s": 18.0
+}

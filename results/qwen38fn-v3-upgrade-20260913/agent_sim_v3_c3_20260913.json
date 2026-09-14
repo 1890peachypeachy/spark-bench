@@ -1,0 +1,282 @@
+{
+  "ts": "2026-09-13T21:49:46.500060",
+  "endpoint": "http://100.71.248.116:8000/v1",
+  "model": "qwen3.8-flash-next-spark12",
+  "label": "qwen38fn-v3-hibrid48",
+  "tag": "C3",
+  "concurrency": 3,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 33,
+              "cached_tokens": null,
+              "wall_s": 0.96,
+              "ttft_s": 0.285,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 213,
+              "completion_tokens": 55,
+              "cached_tokens": null,
+              "wall_s": 2.291,
+              "ttft_s": 0.482,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 360,
+              "completion_tokens": 48,
+              "cached_tokens": null,
+              "wall_s": 1.275,
+              "ttft_s": 0.451,
+              "err": null
+            }
+          ],
+          "total_s": 4.526,
+          "total_completion": 136
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 5.601,
+            "ttft_s": 5.423,
+            "prompt": 119411,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 7.885,
+            "ttft_s": 4.547,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent0-structured",
+              "type": "single",
+              "wall_s": 6.598,
+              "ttft_s": 0.403,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent0-code",
+              "type": "single",
+              "wall_s": 6.145,
+              "ttft_s": 0.46,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent0-prose",
+              "type": "single",
+              "wall_s": 10.352,
+              "ttft_s": 0.39,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 23.095
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 33,
+              "cached_tokens": null,
+              "wall_s": 1.015,
+              "ttft_s": 0.438,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 213,
+              "completion_tokens": 35,
+              "cached_tokens": null,
+              "wall_s": 1.166,
+              "ttft_s": 0.617,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 340,
+              "completion_tokens": 38,
+              "cached_tokens": null,
+              "wall_s": 2.036,
+              "ttft_s": 1.064,
+              "err": null
+            }
+          ],
+          "total_s": 4.217,
+          "total_completion": 106
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent1",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 5.741,
+            "ttft_s": 2.985,
+            "prompt": 119411,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 7.768,
+            "ttft_s": 1.809,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent1-structured",
+              "type": "single",
+              "wall_s": 5.985,
+              "ttft_s": 0.38,
+              "completion": 228,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent1-code",
+              "type": "single",
+              "wall_s": 5.703,
+              "ttft_s": 0.375,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent1-prose",
+              "type": "single",
+              "wall_s": 11.31,
+              "ttft_s": 0.403,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 22.998
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 33,
+              "cached_tokens": null,
+              "wall_s": 1.063,
+              "ttft_s": 0.526,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 213,
+              "completion_tokens": 55,
+              "cached_tokens": null,
+              "wall_s": 2.537,
+              "ttft_s": 0.662,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 360,
+              "completion_tokens": 48,
+              "cached_tokens": null,
+              "wall_s": 2.929,
+              "ttft_s": 0.476,
+              "err": null
+            }
+          ],
+          "total_s": 6.529,
+          "total_completion": 136
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent2",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 3.657,
+            "ttft_s": 3.591,
+            "prompt": 119411,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 7.825,
+            "ttft_s": 4.487,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C3-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent2-structured",
+              "type": "single",
+              "wall_s": 6.476,
+              "ttft_s": 0.403,
+              "completion": 234,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent2-code",
+              "type": "single",
+              "wall_s": 6.39,
+              "ttft_s": 0.334,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C3-agent2-prose",
+              "type": "single",
+              "wall_s": 10.583,
+              "ttft_s": 0.569,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 23.449
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 41.512
+}

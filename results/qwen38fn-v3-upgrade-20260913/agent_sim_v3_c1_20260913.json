@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-13T21:48:34.357249",
+  "endpoint": "http://100.71.248.116:8000/v1",
+  "model": "qwen3.8-flash-next-spark12",
+  "label": "qwen38fn-v3-hibrid48",
+  "tag": "C1",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "qwen38fn-v3-hibrid48-C1-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 90,
+              "completion_tokens": 24,
+              "cached_tokens": null,
+              "wall_s": 1.727,
+              "ttft_s": 1.102,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 189,
+              "completion_tokens": 7,
+              "cached_tokens": null,
+              "wall_s": 0.957,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 282,
+              "completion_tokens": 7,
+              "cached_tokens": null,
+              "wall_s": 0.973,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 3.657,
+          "total_completion": 38
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C1-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 48.781,
+            "ttft_s": 48.748,
+            "prompt": 119411,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 3.405,
+            "ttft_s": 2.487,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "qwen38fn-v3-hibrid48-C1-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "qwen38fn-v3-hibrid48-C1-agent0-structured",
+              "type": "single",
+              "wall_s": 4.54,
+              "ttft_s": 0.749,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C1-agent0-code",
+              "type": "single",
+              "wall_s": 4.011,
+              "ttft_s": 0.22,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "qwen38fn-v3-hibrid48-C1-agent0-prose",
+              "type": "single",
+              "wall_s": 7.57,
+              "ttft_s": 0.231,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 16.121
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 72.013
+}

@@ -1,0 +1,125 @@
+{
+ "endpoint": "http://100.71.248.116:8000/v1",
+ "model": "qwen3.8-flash-next-spark12",
+ "max_tokens": 512,
+ "levels": {
+  "1": {
+   "wall_s": 8.11,
+   "aggregate_tok_s": 63.1,
+   "per_stream_tok_s": 63.1,
+   "streams": {
+    "0": {
+     "completion_tokens": 512,
+     "wall_s": 8.11,
+     "tok_s": 63.1,
+     "finish": "length"
+    }
+   }
+  },
+  "2": {
+   "wall_s": 9.94,
+   "aggregate_tok_s": 103.0,
+   "per_stream_tok_s": 51.5,
+   "streams": {
+    "0": {
+     "completion_tokens": 512,
+     "wall_s": 9.4,
+     "tok_s": 54.5,
+     "finish": "length"
+    },
+    "1": {
+     "completion_tokens": 512,
+     "wall_s": 9.94,
+     "tok_s": 51.5,
+     "finish": "length"
+    }
+   }
+  },
+  "4": {
+   "wall_s": 13.14,
+   "aggregate_tok_s": 155.8,
+   "per_stream_tok_s": 39.0,
+   "streams": {
+    "1": {
+     "completion_tokens": 512,
+     "wall_s": 12.43,
+     "tok_s": 41.2,
+     "finish": "length"
+    },
+    "3": {
+     "completion_tokens": 512,
+     "wall_s": 12.7,
+     "tok_s": 40.3,
+     "finish": "length"
+    },
+    "0": {
+     "completion_tokens": 512,
+     "wall_s": 12.93,
+     "tok_s": 39.6,
+     "finish": "length"
+    },
+    "2": {
+     "completion_tokens": 512,
+     "wall_s": 13.14,
+     "tok_s": 39.0,
+     "finish": "length"
+    }
+   }
+  },
+  "8": {
+   "wall_s": 18.08,
+   "aggregate_tok_s": 226.5,
+   "per_stream_tok_s": 28.3,
+   "streams": {
+    "2": {
+     "completion_tokens": 512,
+     "wall_s": 16.53,
+     "tok_s": 31.0,
+     "finish": "length"
+    },
+    "6": {
+     "completion_tokens": 512,
+     "wall_s": 16.8,
+     "tok_s": 30.5,
+     "finish": "length"
+    },
+    "7": {
+     "completion_tokens": 512,
+     "wall_s": 16.88,
+     "tok_s": 30.3,
+     "finish": "length"
+    },
+    "4": {
+     "completion_tokens": 512,
+     "wall_s": 17.62,
+     "tok_s": 29.1,
+     "finish": "length"
+    },
+    "5": {
+     "completion_tokens": 512,
+     "wall_s": 17.69,
+     "tok_s": 29.0,
+     "finish": "length"
+    },
+    "3": {
+     "completion_tokens": 512,
+     "wall_s": 17.84,
+     "tok_s": 28.7,
+     "finish": "length"
+    },
+    "1": {
+     "completion_tokens": 512,
+     "wall_s": 18.08,
+     "tok_s": 28.3,
+     "finish": "length"
+    },
+    "0": {
+     "completion_tokens": 512,
+     "wall_s": 18.08,
+     "tok_s": 28.3,
+     "finish": "length"
+    }
+   }
+  }
+ }
+}

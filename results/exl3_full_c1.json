@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-04T19:58:51.104439",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "exl3-C1",
+  "tag": "exl3-full-c1",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "exl3-C1-exl3-full-c1-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 251,
+              "cached_tokens": null,
+              "wall_s": 15.006,
+              "ttft_s": 9.761,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 399,
+              "completion_tokens": 12,
+              "cached_tokens": null,
+              "wall_s": 7.631,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 470,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 2.031,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 24.668,
+          "total_completion": 271
+        },
+        {
+          "label": "exl3-C1-exl3-full-c1-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 341.428,
+            "ttft_s": 341.226,
+            "prompt": 114510,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 95.772,
+            "ttft_s": 91.747,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "exl3-C1-exl3-full-c1-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "exl3-C1-exl3-full-c1-agent0-structured",
+              "type": "single",
+              "wall_s": 13.232,
+              "ttft_s": 1.108,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "exl3-C1-exl3-full-c1-agent0-code",
+              "type": "single",
+              "wall_s": 9.716,
+              "ttft_s": 1.978,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "exl3-C1-exl3-full-c1-agent0-prose",
+              "type": "single",
+              "wall_s": 21.792,
+              "ttft_s": 0.769,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 44.74
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 506.634
+}

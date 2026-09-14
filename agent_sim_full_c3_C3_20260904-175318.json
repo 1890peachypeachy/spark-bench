@@ -1,0 +1,282 @@
+{
+  "ts": "2026-09-04T17:51:31.562492",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "glm53-nvfp4-chunked",
+  "tag": "C3",
+  "concurrency": 3,
+  "ctx_target": 80000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 237,
+              "cached_tokens": null,
+              "wall_s": 11.956,
+              "ttft_s": 1.033,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 385,
+              "completion_tokens": 13,
+              "cached_tokens": null,
+              "wall_s": 2.085,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 456,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 1.048,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 15.089,
+          "total_completion": 258
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent0",
+          "type": "longdoc",
+          "ctx_target": 80000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 6.492,
+            "ttft_s": 4.743,
+            "prompt": 91901,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 12.184,
+            "ttft_s": 6.662,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent0-structured",
+              "type": "single",
+              "wall_s": 22.691,
+              "ttft_s": 1.95,
+              "completion": 237,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent0-code",
+              "type": "single",
+              "wall_s": 15.303,
+              "ttft_s": 1.106,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent0-prose",
+              "type": "single",
+              "wall_s": 31.137,
+              "ttft_s": 1.15,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 69.131
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 231,
+              "cached_tokens": null,
+              "wall_s": 12.255,
+              "ttft_s": 1.357,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 379,
+              "completion_tokens": 14,
+              "cached_tokens": null,
+              "wall_s": 2.533,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 450,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 2.163,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 16.951,
+          "total_completion": 253
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent1",
+          "type": "longdoc",
+          "ctx_target": 80000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 6.259,
+            "ttft_s": 4.735,
+            "prompt": 91901,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 20.949,
+            "ttft_s": 10.382,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent1-structured",
+              "type": "single",
+              "wall_s": 20.281,
+              "ttft_s": 0.802,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent1-code",
+              "type": "single",
+              "wall_s": 15.239,
+              "ttft_s": 1.222,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent1-prose",
+              "type": "single",
+              "wall_s": 27.282,
+              "ttft_s": 1.089,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 62.802
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 312,
+              "cached_tokens": null,
+              "wall_s": 30.475,
+              "ttft_s": 4.723,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 420,
+              "completion_tokens": 17,
+              "cached_tokens": null,
+              "wall_s": 2.029,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 491,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 1.123,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 33.627,
+          "total_completion": 337
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent2",
+          "type": "longdoc",
+          "ctx_target": 80000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 3.713,
+            "ttft_s": 3.534,
+            "prompt": 91901,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 9.146,
+            "ttft_s": 4.105,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C3-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent2-structured",
+              "type": "single",
+              "wall_s": 18.256,
+              "ttft_s": 0.808,
+              "completion": 251,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent2-code",
+              "type": "single",
+              "wall_s": 14.124,
+              "ttft_s": 1.431,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C3-agent2-prose",
+              "type": "single",
+              "wall_s": 28.089,
+              "ttft_s": 1.074,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 60.469
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 107.008
+}

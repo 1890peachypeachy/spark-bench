@@ -1,0 +1,25 @@
+# Fix for the stale Hermes default gateway (503 error)
+
+The default Hermes gateway is running code from commit 9b9a8a3827 but the checkout
+on disk is now 006b1beb00. It needs a restart to load the new code.
+
+## Run this from a SEPARATE terminal on the Mac mini
+(Not inside any Hermes agent/gateway — Spark cannot restart it from inside its own
+gateway session; the lifecycle guard blocks it.)
+
+Command:
+
+    launchctl kickstart -k gui/$(id -u)/ai.hermes.gateway
+
+That restarts the default Hermes gateway (label `ai.hermes.gateway`).
+
+Equivalent CLI (also from a separate shell):
+
+    hermes gateway restart
+
+## Verify after restart
+    pgrep -fl "gateway run"        # new PID should appear
+    hermes gateway status          # should show the default gateway healthy
+
+Then re-run whatever surfaced the 503 — it should load code 006b1beb00 and the
+model picker will work.

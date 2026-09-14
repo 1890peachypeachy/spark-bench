@@ -1,0 +1,282 @@
+{
+  "ts": "2026-09-04T20:07:23.516944",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "exl3-C3",
+  "tag": "exl3-full-c3",
+  "concurrency": 3,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "exl3-C3-exl3-full-c3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 238,
+              "cached_tokens": null,
+              "wall_s": 22.162,
+              "ttft_s": 13.654,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 386,
+              "completion_tokens": 216,
+              "cached_tokens": null,
+              "wall_s": 25.302,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 457,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 2.929,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 50.393,
+          "total_completion": 462
+        },
+        {
+          "label": "exl3-C3-exl3-full-c3-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 4.474,
+            "ttft_s": 4.319,
+            "prompt": 114510,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 12.864,
+            "ttft_s": 9.503,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "exl3-C3-exl3-full-c3-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "exl3-C3-exl3-full-c3-agent0-structured",
+              "type": "single",
+              "wall_s": 17.212,
+              "ttft_s": 6.246,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "exl3-C3-exl3-full-c3-agent0-code",
+              "type": "single",
+              "wall_s": 15.033,
+              "ttft_s": 9.491,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "exl3-C3-exl3-full-c3-agent0-prose",
+              "type": "single",
+              "wall_s": 34.051,
+              "ttft_s": 19.388,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 66.296
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "exl3-C3-exl3-full-c3-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 208,
+              "cached_tokens": null,
+              "wall_s": 6.754,
+              "ttft_s": 0.43,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 356,
+              "completion_tokens": 126,
+              "cached_tokens": null,
+              "wall_s": 33.946,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 427,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 7.468,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 48.168,
+          "total_completion": 342
+        },
+        {
+          "label": "exl3-C3-exl3-full-c3-agent1",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 3.696,
+            "ttft_s": 3.526,
+            "prompt": 114510,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 7.321,
+            "ttft_s": 4.532,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "exl3-C3-exl3-full-c3-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "exl3-C3-exl3-full-c3-agent1-structured",
+              "type": "single",
+              "wall_s": 14.059,
+              "ttft_s": 5.057,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "exl3-C3-exl3-full-c3-agent1-code",
+              "type": "single",
+              "wall_s": 20.343,
+              "ttft_s": 12.574,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "exl3-C3-exl3-full-c3-agent1-prose",
+              "type": "single",
+              "wall_s": 25.276,
+              "ttft_s": 7.027,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 59.678
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "exl3-C3-exl3-full-c3-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 228,
+              "cached_tokens": null,
+              "wall_s": 21.72,
+              "ttft_s": 13.745,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 376,
+              "completion_tokens": 163,
+              "cached_tokens": null,
+              "wall_s": 19.861,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 447,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 7.346,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 48.927,
+          "total_completion": 399
+        },
+        {
+          "label": "exl3-C3-exl3-full-c3-agent2",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 4.425,
+            "ttft_s": 4.267,
+            "prompt": 114510,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 10.246,
+            "ttft_s": 7.7,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "exl3-C3-exl3-full-c3-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "exl3-C3-exl3-full-c3-agent2-structured",
+              "type": "single",
+              "wall_s": 21.014,
+              "ttft_s": 10.159,
+              "completion": 256,
+              "err": null
+            },
+            {
+              "label": "exl3-C3-exl3-full-c3-agent2-code",
+              "type": "single",
+              "wall_s": 8.98,
+              "ttft_s": 1.211,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "exl3-C3-exl3-full-c3-agent2-prose",
+              "type": "single",
+              "wall_s": 24.432,
+              "ttft_s": 6.928,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 54.426
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 134.08
+}

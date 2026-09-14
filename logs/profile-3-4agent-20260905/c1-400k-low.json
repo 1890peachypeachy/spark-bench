@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-05T09:07:19.856024",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "glm53-nvfp4-400k",
+  "tag": "C1-low",
+  "concurrency": 1,
+  "ctx_target": 400000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-400k-C1-low-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 274,
+              "cached_tokens": null,
+              "wall_s": 6.484,
+              "ttft_s": 0.354,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 422,
+              "completion_tokens": 13,
+              "cached_tokens": null,
+              "wall_s": 1.15,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 493,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 0.689,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 8.323,
+          "total_completion": 295
+        },
+        {
+          "label": "glm53-nvfp4-400k-C1-low-agent0",
+          "type": "longdoc",
+          "ctx_target": 400000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 346.146,
+            "ttft_s": 345.755,
+            "prompt": 453805,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 8.029,
+            "ttft_s": 5.26,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-400k-C1-low-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-400k-C1-low-agent0-structured",
+              "type": "single",
+              "wall_s": 10.578,
+              "ttft_s": 0.44,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C1-low-agent0-code",
+              "type": "single",
+              "wall_s": 7.214,
+              "ttft_s": 0.567,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C1-low-agent0-prose",
+              "type": "single",
+              "wall_s": 15.792,
+              "ttft_s": 0.614,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 33.584
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 396.474
+}

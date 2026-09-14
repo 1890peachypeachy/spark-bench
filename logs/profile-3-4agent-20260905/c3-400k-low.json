@@ -1,0 +1,282 @@
+{
+  "ts": "2026-09-05T09:14:29.560511",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "glm53-nvfp4-400k",
+  "tag": "C3-low",
+  "concurrency": 3,
+  "ctx_target": 400000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 241,
+              "cached_tokens": null,
+              "wall_s": 10.435,
+              "ttft_s": 1.112,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 389,
+              "completion_tokens": 9,
+              "cached_tokens": null,
+              "wall_s": 1.612,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 460,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 1.673,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 13.72,
+          "total_completion": 258
+        },
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent0",
+          "type": "longdoc",
+          "ctx_target": 400000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 12.164,
+            "ttft_s": 9.631,
+            "prompt": 453805,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 15.811,
+            "ttft_s": 8.276,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent0-structured",
+              "type": "single",
+              "wall_s": 22.613,
+              "ttft_s": 0.814,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent0-code",
+              "type": "single",
+              "wall_s": 17.115,
+              "ttft_s": 1.102,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent0-prose",
+              "type": "single",
+              "wall_s": 50.591,
+              "ttft_s": 1.143,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 90.319
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 258,
+              "cached_tokens": null,
+              "wall_s": 12.605,
+              "ttft_s": 0.897,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 406,
+              "completion_tokens": 13,
+              "cached_tokens": null,
+              "wall_s": 1.932,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 477,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 4.882,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 19.419,
+          "total_completion": 279
+        },
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent1",
+          "type": "longdoc",
+          "ctx_target": 400000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 10.23,
+            "ttft_s": 7.691,
+            "prompt": 453805,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 13.764,
+            "ttft_s": 7.042,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent1-structured",
+              "type": "single",
+              "wall_s": 21.114,
+              "ttft_s": 0.735,
+              "completion": 248,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent1-code",
+              "type": "single",
+              "wall_s": 20.816,
+              "ttft_s": 6.268,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent1-prose",
+              "type": "single",
+              "wall_s": 52.852,
+              "ttft_s": 1.14,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 94.782
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 283,
+              "cached_tokens": null,
+              "wall_s": 11.774,
+              "ttft_s": 0.687,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 431,
+              "completion_tokens": 14,
+              "cached_tokens": null,
+              "wall_s": 2.389,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 502,
+              "completion_tokens": 388,
+              "cached_tokens": null,
+              "wall_s": 39.812,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 53.975,
+          "total_completion": 685
+        },
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent2",
+          "type": "longdoc",
+          "ctx_target": 400000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 10.398,
+            "ttft_s": null,
+            "prompt": 453805,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 11.564,
+            "ttft_s": 6.431,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-400k-C3-low-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent2-structured",
+              "type": "single",
+              "wall_s": 32.545,
+              "ttft_s": 0.812,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent2-code",
+              "type": "single",
+              "wall_s": 21.042,
+              "ttft_s": 4.499,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-400k-C3-low-agent2-prose",
+              "type": "single",
+              "wall_s": 26.9,
+              "ttft_s": 1.341,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 80.487
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 156.996
+}

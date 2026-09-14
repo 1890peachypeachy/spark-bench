@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-04T15:05:16.357194",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "glm53-nvfp4",
+  "tag": "C1",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-C1-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": null,
+              "completion_tokens": null,
+              "cached_tokens": null,
+              "wall_s": 70.86,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": null,
+              "completion_tokens": null,
+              "cached_tokens": null,
+              "wall_s": 0.006,
+              "ttft_s": null,
+              "err": "<HTTPError 500: 'Internal Server Error'>"
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": null,
+              "completion_tokens": null,
+              "cached_tokens": null,
+              "wall_s": 0.003,
+              "ttft_s": null,
+              "err": "<HTTPError 500: 'Internal Server Error'>"
+            }
+          ],
+          "total_s": 70.869,
+          "total_completion": 0
+        },
+        {
+          "label": "glm53-nvfp4-C1-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 0.025,
+            "ttft_s": null,
+            "prompt": null,
+            "cached": null,
+            "err": "<HTTPError 500: 'Internal Server Error'>"
+          },
+          "followup": {
+            "wall_s": 0.015,
+            "ttft_s": null,
+            "cached": null,
+            "err": "<HTTPError 500: 'Internal Server Error'>"
+          }
+        },
+        {
+          "label": "glm53-nvfp4-C1-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-C1-agent0-structured",
+              "type": "single",
+              "wall_s": 0.003,
+              "ttft_s": null,
+              "completion": null,
+              "err": "<HTTPError 500: 'Internal Server Error'>"
+            },
+            {
+              "label": "glm53-nvfp4-C1-agent0-code",
+              "type": "single",
+              "wall_s": 0.003,
+              "ttft_s": null,
+              "completion": null,
+              "err": "<HTTPError 500: 'Internal Server Error'>"
+            },
+            {
+              "label": "glm53-nvfp4-C1-agent0-prose",
+              "type": "single",
+              "wall_s": 0.002,
+              "ttft_s": null,
+              "completion": null,
+              "err": "<HTTPError 500: 'Internal Server Error'>"
+            }
+          ],
+          "wall_s": 0.008
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 70.96
+}

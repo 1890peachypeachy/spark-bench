@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-04T17:49:43.148895",
+  "endpoint": "http://100.106.81.35:8001/v1",
+  "model": "glm-5.3-flash",
+  "label": "glm53-nvfp4-chunked",
+  "tag": "C1",
+  "concurrency": 1,
+  "ctx_target": 80000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "glm53-nvfp4-chunked-C1-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 199,
+              "cached_tokens": null,
+              "wall_s": 4.618,
+              "ttft_s": 0.462,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 347,
+              "completion_tokens": 121,
+              "cached_tokens": null,
+              "wall_s": 4.184,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 418,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 0.708,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 9.51,
+          "total_completion": 328
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C1-agent0",
+          "type": "longdoc",
+          "ctx_target": 80000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 3.942,
+            "ttft_s": 3.838,
+            "prompt": 91901,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 6.128,
+            "ttft_s": 3.512,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "glm53-nvfp4-chunked-C1-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "glm53-nvfp4-chunked-C1-agent0-structured",
+              "type": "single",
+              "wall_s": 10.571,
+              "ttft_s": 0.445,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C1-agent0-code",
+              "type": "single",
+              "wall_s": 7.647,
+              "ttft_s": 0.571,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "glm53-nvfp4-chunked-C1-agent0-prose",
+              "type": "single",
+              "wall_s": 15.136,
+              "ttft_s": 0.514,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 33.354
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 52.982
+}
