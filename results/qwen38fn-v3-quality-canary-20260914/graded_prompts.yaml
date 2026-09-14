@@ -1,0 +1,320 @@
+# Graded capability tests — accuracy / intelligence / instruction-following
+# Every case has ground truth scored deterministically. Difficulty tiers 1-3.
+# Tier 1 = easy, Tier 2 = moderate, Tier 3 = stress (traps, multi-step, many constraints).
+
+categories:
+  accuracy-arithmetic:
+    kind: accuracy
+    max_tokens: 1600
+    cases:
+      - id: acc-t1-wow-orders
+        tier: 1
+        prompt: |
+          Last week an e-commerce store shipped some orders. This week it shipped
+          142 orders, which is 12% more than last week. How many orders did it
+          ship last week? Round to the nearest whole number. Answer with just
+          the number.
+        score: {mode: regex, value: '\b127\b'}
+      - id: acc-t1-refund-rate
+        tier: 1
+        prompt: |
+          A store had 142 orders this week and 4 were refunded. Another week had
+          90 orders and 2 refunds. Which week had the LOWER refund rate — answer
+          "first", "second", or "same"? Then give both rates as percentages
+          rounded to one decimal.
+        score: {mode: contains_all, value: ["second", "2.8", "2.2"]}
+      - id: acc-t2-ad-budget
+        tier: 2
+        prompt: |
+          An ad account spent $1,240 this month and earned $3,472 in attributed
+          revenue. Next month the budget increases by 25% and ROAS is expected to
+          stay identical. What revenue is expected next month? Answer with just
+          the dollar figure rounded to the nearest dollar.
+        score: {mode: regex, value: '(?:\$)?4,?340'}
+      - id: acc-t2-inventory-split
+        tier: 2
+        prompt: |
+          You have 240 units to split across 3 SKUs. SKU A gets twice SKU B.
+          SKU C gets 40 fewer than A. How many units go to B? Just the number.
+        score: {mode: regex, value: '\b56\b'}
+      - id: acc-t3-cascade-discount
+        tier: 3
+        prompt: |
+          A $59 course is discounted 20%, then the resulting price gets an extra
+          $8 off coupon, then checkout adds 8.25% sales tax on the final price.
+          What is the total charged at checkout? Give the answer to the nearest
+          cent. Show nothing else after the amount.
+        score: {mode: regex, value: '42\.4[23]'}
+
+  accuracy-extraction:
+    kind: accuracy
+    max_tokens: 1600
+    cases:
+      - id: ext-t1-commitments
+        tier: 1
+        prompt: |
+          From this note, extract ONLY the commitments that have BOTH an owner
+          and a deadline, as JSON: {"commitments": [{"owner": "...",
+          "deadline": "..."}]}. Note: "Victor will ask the accountant about Q3
+          sales tax by Wednesday. Anna hopes to review scripts soon. The team
+          should celebrate Friday. Marcus files the tax form by April 15."
+        score: {mode: json_contains, value: {"commitments": [{"owner": "Victor"}, {"owner": "Marcus"}]}}
+      - id: ext-t2-distractor-dates
+        tier: 2
+        prompt: |
+          Read carefully. Email: "Re: the March 4 webinar — Anna can't make that
+          date anymore, move it to March 11. Victor asked if the 18th works but
+          that's the week he's at the conference starting March 15, so keep it
+          the 11th. Original backup slot was Feb 26." On what date is the webinar
+          finally scheduled? Reply with the date only.
+        score: {mode: contains_all, value: ["March 11"]}
+      - id: ext-t2-order-math
+        tier: 2
+        prompt: |
+          Order log: "#2231 placed Aug 14, shipped Aug 16, delivered Aug 19.
+          #2232 placed Aug 14, shipped Aug 21, delivered Aug 26. #2230 placed
+          Aug 12, shipped Aug 15, delivered Aug 17." Which order was delivered
+          fastest from its SHIP date (not placement)? Reply with just the
+          order number.
+        score: {mode: contains_all, value: ["2230"]}
+      - id: ext-t3-negated-fact
+        tier: 3
+        prompt: |
+          Statement set: "The weighted blanket study included 52 children.
+          It did NOT find improvements in anxiety. Sleep onset improved by 9
+          minutes on average. The placebo group improved by 7 minutes."
+          Based ONLY on these statements, did sleep onset improve substantially
+          more in the treatment group than placebo? Answer YES or NO, then one
+          sentence citing the numbers.
+        score: {mode: contains_all, value: ["NO", "9", "7"]}
+
+  intelligence-logic:
+    kind: intelligence
+    max_tokens: 2600
+    cases:
+      - id: int-t1-sequence
+        tier: 1
+        prompt: |
+          Book A ships before book B. Book B arrives before book C. Book C
+          arrived Monday. Did book A necessarily arrive before Monday? Answer
+          YES or NO with one sentence of reasoning.
+        score: {mode: regex, value: '(?i)\bNO\b'}
+      - id: int-t1-trap-plausible
+        tier: 1
+        prompt: |
+          A store's refund rate rose from 2.2% to 3.1% while order volume grew
+          40%. The absolute number of refunds definitely increased. True or
+          false? One sentence justification.
+        score: {mode: regex, value: '(?i)\btrue\b'}
+      - id: int-t2-constraint-roster
+        tier: 2
+        prompt: |
+          Five weekdays are covered, one agent per day. Four agents: Hermes,
+          Peachy, Astrid, Spark. Each agent works at least one day, and exactly
+          one agent works two days. Hermes works BOTH Thursday and Friday.
+          Spark works Wednesday. Astrid works the day immediately before Spark.
+          Who works Monday? Show brief reasoning, then end with
+          "Answer: <name>".
+        score: {mode: regex, value: '(?i)answer:\s*peachy'}
+      - id: int-t3-ordering-puzzle
+        tier: 3
+        prompt: |
+          Five product launches are scheduled: the flashcard deck, workbook,
+          audio series, course bundle, and gift card. Constraints: the workbook
+          launches immediately before the audio series. The course bundle is
+          third. The gift card is NOT last. The flashcard deck is earlier than
+          the course bundle. What launches fifth? End with "Answer: <item>".
+        score: {mode: regex, value: '(?i)answer:.*(?:gift card|audio series)'}
+      - id: int-t3-trap-invalid-premise
+        tier: 3
+        prompt: |
+          "Every agent that answered the ticket was online. Didi was offline."
+          Someone claims: "Therefore Didi did not answer the ticket." Is that
+          conclusion logically valid given only these statements? Answer VALID
+          or INVALID with one sentence explaining the logical form.
+        score: {mode: contains_all, value: ["VALID"]}
+
+  instruction-following:
+    kind: instruction
+    max_tokens: 1600
+    cases:
+      - id: inst-t1-exact-count
+        tier: 1
+        prompt: |
+          List exactly 3 benefits of daily reading for children. Format: three
+          numbered lines, each line 5 words or fewer, nothing else.
+        score: {mode: custom, value: inst_numbered_3_lines_max5w}
+      - id: inst-t2-multi-constraint
+        tier: 2
+        prompt: |
+          Write about toddler bedtime routines subject to ALL of these rules:
+          (1) exactly 2 paragraphs separated by a blank line, (2) each paragraph
+          30-50 words, (3) the word "calm" appears exactly twice in the whole
+          response, (4) do not use the word "sleep" anywhere, (5) end the second
+          paragraph with the exact phrase "END OF NOTES".
+        score: {mode: custom, value: inst_two_paras_rules}
+      - id: inst-t2-json-schema
+        tier: 2
+        prompt: |
+          Return ONLY a JSON object, no other text, with keys: "risk" (one of
+          low/medium/high), "reason" (a string of at most 10 words), and
+          "tags" (an array of exactly 2 strings). Context: competitor launched
+          a similar course at $99 vs our $59, their audience is 10x ours.
+        score: {mode: custom, value: inst_json_schema}
+      - id: inst-t3-negative-constraint
+        tier: 3
+        prompt: |
+          Summarize this complaint in exactly 2 sentences WITHOUT using any of
+          these words: late, shipping, refund, angry, order, package.
+          Complaint: "My order arrived six days after the promised date and the
+          box was crushed. When I asked for my money back the rep said no and
+          hung up on me. Absolutely furious."
+        score: {mode: custom, value: inst_negation_summary}
+      - id: inst-t3-format-sandwich
+        tier: 3
+        prompt: |
+          Respond with EXACTLY this structure and nothing else:
+          Line 1: the word "VERDICT:" followed by one word.
+          Line 2: exactly one sentence of 10-15 words justifying it about
+          raising a course price from $59 to $79.
+          Line 3: the current date in format YYYY-MM-DD assuming today is
+          August 24, 2026.
+        score: {mode: custom, value: inst_format_sandwich}
+
+  marketing-copy:
+    kind: accuracy
+    max_tokens: 1800
+    cases:
+      - id: mkt-t1-hook-fit
+        tier: 1
+        prompt: |
+          Pick the stronger email subject line for a children's anxiety
+          workbook. Reply with just "A" or "B". A: "Proven exercises for
+          anxious kids." B: "Five exercises that helped my daughter's
+          worries." Then in one short sentence say which audience signal
+          (specificity or authority) it leans on.
+        score: {mode: contains_all, value: ["B", "specific"]}
+      - id: mkt-t1-angle-match
+        tier: 1
+        prompt: |
+          A pediatric OT practice newsletter reaches 8k parents. Which offer
+          fits BEST with their audience? Reply with just the letter. A) A
+          course on toddler sleep regression. B) A free download of 3 OT
+          sensory-friendly morning routines for school-age kids. C) A
+          discount code for weighted blankets.
+        score: {mode: regex, value: '(?i)\bb\b'}
+      - id: mkt-t2-cta-choice
+        tier: 2
+        prompt: |
+          We sell a $59 bedtime course. The landing page has room for ONE
+          call-to-action. The visitor came from a blog post titled "Why your
+          4-year-old won't stay in bed." Give the best CTA text (3-5 words)
+          as plain text only. Justify in one sentence.
+        score: {mode: contains_all, value: ["start", "free", "bedtime"]}
+      - id: mkt-t2-price-framing
+        tier: 2
+        prompt: |
+          Raising course price from $59 to $79. Which framing is more
+          persuasive and WHY in one sentence? A) "From $59 to $79 — small
+          increase, same great value." B) "New expanded edition: more
+          modules, more guidance — now $79 (was $59)." Then pick one.
+        score: {mode: contains_all, value: ["B", "value", "module"]}
+      - id: mkt-t3-audience-fit
+        tier: 3
+        prompt: |
+          A bedtime course priced $59 targets parents of 2-6 year olds. We
+          can feature it in ONE placement: A) A moms' Facebook group that
+          posts about toddler tantrums. B) An OT practice's newsletter about
+          sensory regulation. C) A general parenting email list of 40k. The
+          goal is highest conversion, not reach. Which placement and give ONE
+          sentence of reasoning.
+        score: {mode: contains_all, value: ["B", "OT", "sensory"]}
+
+  partnerships-b2b:
+    kind: intelligence
+    max_tokens: 1800
+    cases:
+      - id: b2b-t1-genuine
+        tier: 1
+        prompt: |
+          Is this a genuine partnership inquiry? Reply JSON:
+          {"is_partnership": true/false, "reason": "..."}. Message: "Hi, we
+          run a pediatric sleep consultancy, we'd love to cross-promote a
+          free webinar with your bedtime course audience."
+        score: {mode: json_contains, value: {"is_partnership": true}}
+      - id: b2b-t1-spam
+        tier: 1
+        prompt: |
+          Is this a genuine partnership inquiry? Reply JSON:
+          {"is_partnership": true/false, "reason": "..."}. Message: "We
+          guarantee 10x ROI on guest posts, link exchange, backlinks,
+          $$$ make money online, contact us now!!!"
+        score: {mode: json_contains, value: {"is_partnership": false}}
+      - id: b2b-t2-fit
+        tier: 2
+        prompt: |
+          Our brand sells children's anxiety/emotional-wellness products and
+          courses. Which inbound request has the BEST audience fit? Reply
+          with the letter + one sentence why. A) A robotics toy maker wants a
+          bundle deal. B) A pediatric OT newsletter wants guest content
+          swap. C) A gaming chair brand wants a giveaway collab.
+        score: {mode: contains_all, value: ["B", "OT"]}
+      - id: b2b-t2-outreach-prioritize
+        tier: 2
+        prompt: |
+          Rank these outreach leads by likely fit for a children's mental
+          wellness brand (JSON array of ids, best first): 1) pediatrician's
+          office with waiting-room TV, 2) local toy store, 3) school
+          district OT department, 4) influencer focused on mom fashion.
+        score: {mode: custom, value: inst_ordered_ranking, value_list: ["3", "1", "2"]}
+      - id: b2b-t3-prioritize-revenue
+        tier: 3
+        prompt: |
+          Three partnership offers come in same week. Give a JSON array of
+          the ids ranked best-first, weighting REVENUE OVER REACH, with one
+          of each as a key. 1) Shopify collab: 40% rev-share, our product to
+          their 200k list. 2) Influencer: 20% rev-share, 50k audience, high
+          affinity for kids. 3) Newsletter swap: no revenue, two 8k
+          newsletters exchange guest content. End with "Ranking: [...]".
+        score: {mode: custom, value: inst_ordered_ranking, value_list: ["1", "3"]}
+
+  escalation-judgment:
+    kind: intelligence
+    max_tokens: 1600
+    cases:
+      - id: esc-t1-needs-human
+        tier: 1
+        prompt: |
+          Helpdesk ticket. Should this escalate to a human? Reply JSON:
+          {"needs_human": true/false, "why": "..."}. Ticket: "I'd like a
+          refund but I can't remember the email on my account and I'm locked
+          out of my card."
+        score: {mode: json_contains, value: {"needs_human": true}}
+      - id: esc-t1-auto
+        tier: 1
+        prompt: |
+          Helpdesk ticket. Should this escalate to a human? Reply JSON:
+          {"needs_human": true/false, "why": "..."}. Ticket: "Can you tell
+          me where order #2231 is? It said it shipped Tuesday."
+        score: {mode: json_contains, value: {"needs_human": false}}
+      - id: esc-t2-refund-call
+        tier: 2
+        prompt: |
+          A customer's order arrived 6 days late, box crushed, product
+          damaged. They asked for a refund and the first rep said no and
+          hung up. What's the RIGHT first move? Reply with A/B/C + one
+          sentence. A) Full refund immediately, no questions. B) Apologize,
+          offer a replacement or full refund, escalate to a supervisor to
+          ensure it's handled. C) Explain the shipping delay wasn't our
+          fault and offer a 10% coupon.
+        score: {mode: contains_all, value: ["B", "apolog", "replacement"]}
+      - id: esc-t3-severity-rank
+        tier: 3
+        prompt: |
+          Rank these tickets by urgency (JSON array of ids, highest first):
+          1) customer says a child swallowed part of a toy, product bought
+          from us. 2) order #2277 hasn't shipped and customer leaves
+          tomorrow. 3) customer wants to change shipping address on an order
+          that hasn't shipped yet. 4) newsletter signup form is showing an
+          error for some users.
+        score: {mode: custom, value: inst_ordered_ranking, value_list: ["1", "2", "4"]}

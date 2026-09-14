@@ -1,0 +1,66 @@
+{
+ "category": "escalation-judgment",
+ "kind": "intelligence",
+ "model": "flash38v3",
+ "model_id": "qwen3.8-flash-next-spark12",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:52:39-0700",
+ "cases": [
+  {
+   "case": "esc-t1-needs-human",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.2,
+   "output": "\n\n{\n  \"needs_human\": true,\n  \"why\": \"Requires account recovery, identity verification, and refund handling due to missing account email and locked card.\"\n}",
+   "prompt_tokens": 109,
+   "completion_tokens": 115,
+   "tok_s": 35.94,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t1-auto",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 15.9,
+   "output": "\n\n{\n  \"needs_human\": false,\n  \"why\": \"This is a straightforward order status/tracking request that can likely be handled by an automated order lookup or tracking system.\"\n}",
+   "prompt_tokens": 103,
+   "completion_tokens": 451,
+   "tok_s": 28.36,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t2-refund-call",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.77,
+   "output": "\n\nB) Apologize, offer a replacement or full refund, and escalate to a supervisor to ensure it's handled.",
+   "prompt_tokens": 157,
+   "completion_tokens": 138,
+   "tok_s": 49.82,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "esc-t3-severity-rank",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 7.56,
+   "output": "\n\n[1, 2, 3, 4]",
+   "prompt_tokens": 138,
+   "completion_tokens": 206,
+   "tok_s": 27.25,
+   "score": {
+    "pass": false,
+    "detail": "array=['1', '2', '3', '4'] expected_front=['1', '2', '4'] ok=False"
+   }
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "category": "accuracy-arithmetic",
+ "kind": "accuracy",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:49:03-0700",
+ "cases": [
+  {
+   "case": "acc-t1-wow-orders",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 39.37,
+   "output": "127",
+   "prompt_tokens": 64,
+   "completion_tokens": 64,
+   "tok_s": 1.63,
+   "score": {
+    "pass": true,
+    "detail": "match='127'"
+   }
+  },
+  {
+   "case": "acc-t1-refund-rate",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 8.29,
+   "output": "**Second week** had the lower refund rate.\n\n- **First week:** 4 \u00f7 142 = 0.02817 \u2192 **2.8%**\n- **Second week:** 2 \u00f7 90 = 0.02222 \u2192 **2.2%**\n\nEven though the second week had fewer refunds in absolute terms (2 vs. 4), it also had fewer orders \u2014 but proportionally, 2 out of 90 is still a smaller share than 4 out of 142.",
+   "prompt_tokens": 69,
+   "completion_tokens": 209,
+   "tok_s": 25.21,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "acc-t2-ad-budget",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 5.72,
+   "output": "$4,340",
+   "prompt_tokens": 74,
+   "completion_tokens": 87,
+   "tok_s": 15.21,
+   "score": {
+    "pass": true,
+    "detail": "match='$4,340'"
+   }
+  },
+  {
+   "case": "acc-t2-inventory-split",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 14.14,
+   "output": "**56**\n\n(Check: A = 112, B = 56, C = 72 \u2192 112 + 56 + 72 = 240 \u2713)",
+   "prompt_tokens": 52,
+   "completion_tokens": 135,
+   "tok_s": 9.55,
+   "score": {
+    "pass": true,
+    "detail": "match='56'"
+   }
+  },
+  {
+   "case": "acc-t3-cascade-discount",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 26.25,
+   "output": "$42.43",
+   "prompt_tokens": 73,
+   "completion_tokens": 87,
+   "tok_s": 3.31,
+   "score": {
+    "pass": true,
+    "detail": "match='42.43'"
+   }
+  }
+ ]
+}

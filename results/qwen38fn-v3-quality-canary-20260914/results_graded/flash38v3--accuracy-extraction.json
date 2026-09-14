@@ -1,0 +1,66 @@
+{
+ "category": "accuracy-extraction",
+ "kind": "accuracy",
+ "model": "flash38v3",
+ "model_id": "qwen3.8-flash-next-spark12",
+ "reasoning_effort": "xhigh",
+ "recorded_at": "2026-09-14T09:50:36-0700",
+ "cases": [
+  {
+   "case": "ext-t1-commitments",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 9.09,
+   "output": "\n\n{\n  \"commitments\": [\n    {\n      \"owner\": \"Victor\",\n      \"deadline\": \"Wednesday\"\n    },\n    {\n      \"owner\": \"Marcus\",\n      \"deadline\": \"April 15\"\n    }\n  ]\n}",
+   "prompt_tokens": 133,
+   "completion_tokens": 354,
+   "tok_s": 38.94,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "ext-t2-distractor-dates",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 7.76,
+   "output": "\n\nMarch 11",
+   "prompt_tokens": 144,
+   "completion_tokens": 204,
+   "tok_s": 26.29,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t2-order-math",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 3.72,
+   "output": "\n\n#2230",
+   "prompt_tokens": 150,
+   "completion_tokens": 150,
+   "tok_s": 40.32,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t3-negated-fact",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 12.49,
+   "output": "\n\nNO \u2014 sleep onset improved by 9 minutes in the treatment group versus 7 minutes in the placebo group, a difference of only 2 minutes.",
+   "prompt_tokens": 129,
+   "completion_tokens": 333,
+   "tok_s": 26.66,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}
