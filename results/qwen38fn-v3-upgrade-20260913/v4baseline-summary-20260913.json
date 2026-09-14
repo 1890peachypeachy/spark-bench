@@ -1,0 +1,18 @@
+{
+ "c1": {
+  "tok_s_median": 24.5,
+  "tok_s_all": [
+   24.5
+  ],
+  "ttft_median": 0.59
+ },
+ "c3": {
+  "tok_s_median": 12.5,
+  "tok_s_all": [
+   12.5,
+   11.6,
+   12.7
+  ],
+  "ttft_median": 0.81
+ }
+}
