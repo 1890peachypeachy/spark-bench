@@ -1,0 +1,451 @@
+{
+ "ts": "2026-09-15",
+ "protocol": "tests/bench_decode.py --runs 5 --max-tokens 400 --skip-coherence, temp 0, thinking off",
+ "runs": [
+  {
+   "phase": "structured",
+   "health_code": 200,
+   "health_body": "",
+   "runs": [
+    {
+     "http": 200,
+     "ttft_s": 0.33415879699168727,
+     "wall_s": 6.444157082994934,
+     "decode_s": 6.109998286003247,
+     "tok_s": 65.30280064300953,
+     "delivered_tok_s": 62.071733331196086,
+     "completion_tokens": 400,
+     "prompt_tokens": 27,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 ",
+     "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 ",
+     "text_len": 684,
+     "usage": {
+      "prompt_tokens": 27,
+      "total_tokens": 427,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 52,
+      "draft_tokens": 364,
+      "accepted": 349,
+      "accept_ratio": 0.9588,
+      "accepted_per_step": 6.712,
+      "pos": [
+       1.0,
+       1.0,
+       1.0,
+       0.9615,
+       0.9615,
+       0.9038,
+       0.8846
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.3398227309808135,
+     "wall_s": 6.601248947961722,
+     "decode_s": 6.261426216980908,
+     "tok_s": 63.723501032067915,
+     "delivered_tok_s": 60.59459401595643,
+     "completion_tokens": 400,
+     "prompt_tokens": 27,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 ",
+     "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 ",
+     "text_len": 684,
+     "usage": {
+      "prompt_tokens": 27,
+      "total_tokens": 427,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 53,
+      "draft_tokens": 371,
+      "accepted": 348,
+      "accept_ratio": 0.938,
+      "accepted_per_step": 6.566,
+      "pos": [
+       1.0,
+       1.0,
+       1.0,
+       0.9434,
+       0.9434,
+       0.8491,
+       0.8302
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.33922148594865575,
+     "wall_s": 6.583605182997417,
+     "decode_s": 6.244383697048761,
+     "tok_s": 63.897418761851,
+     "delivered_tok_s": 60.75698479505206,
+     "completion_tokens": 400,
+     "prompt_tokens": 27,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 ",
+     "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 ",
+     "text_len": 684,
+     "usage": {
+      "prompt_tokens": 27,
+      "total_tokens": 427,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 53,
+      "draft_tokens": 371,
+      "accepted": 348,
+      "accept_ratio": 0.938,
+      "accepted_per_step": 6.566,
+      "pos": [
+       1.0,
+       1.0,
+       1.0,
+       0.9434,
+       0.9434,
+       0.8491,
+       0.8302
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.3448350050020963,
+     "wall_s": 6.614373062970117,
+     "decode_s": 6.26953805796802,
+     "tok_s": 63.641052388685445,
+     "delivered_tok_s": 60.47436335869209,
+     "completion_tokens": 400,
+     "prompt_tokens": 27,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 ",
+     "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 ",
+     "text_len": 684,
+     "usage": {
+      "prompt_tokens": 27,
+      "total_tokens": 427,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 53,
+      "draft_tokens": 371,
+      "accepted": 347,
+      "accept_ratio": 0.9353,
+      "accepted_per_step": 6.547,
+      "pos": [
+       1.0,
+       1.0,
+       1.0,
+       0.9623,
+       0.9245,
+       0.8302,
+       0.8302
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.34503095695981756,
+     "wall_s": 6.612329362949822,
+     "decode_s": 6.2672984059900045,
+     "tok_s": 63.66379485276361,
+     "delivered_tok_s": 60.49305442062194,
+     "completion_tokens": 400,
+     "prompt_tokens": 27,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 ",
+     "text": "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 ",
+     "text_len": 684,
+     "usage": {
+      "prompt_tokens": 27,
+      "total_tokens": 427,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 53,
+      "draft_tokens": 371,
+      "accepted": 348,
+      "accept_ratio": 0.938,
+      "accepted_per_step": 6.566,
+      "pos": [
+       1.0,
+       1.0,
+       1.0,
+       0.9434,
+       0.9434,
+       0.8491,
+       0.8302
+      ]
+     }
+    }
+   ],
+   "ts": 1789501969.3971202,
+   "prompt": "structured-count-1-200",
+   "thinking": false,
+   "temperature": 0,
+   "warmup": {
+    "tok_s": 64.51724160624664,
+    "ttft_s": 0.40305881103267893,
+    "completion_tokens": 32
+   },
+   "tok_s_median": 63.723501032067915,
+   "tok_s_min": 63.641052388685445,
+   "tok_s_max": 65.30280064300953,
+   "ttft_median_s": 0.3398227309808135,
+   "completion_tokens_median": 400.0,
+   "accept_ratio_median": 0.938,
+   "accepted_per_step_median": 6.566,
+   "any_nan": false,
+   "health_code_after": 200,
+   "short_after": {
+    "http": 200,
+    "ttft_s": 0.3477787399897352,
+    "wall_s": 0.5808079399866983,
+    "decode_s": 0.23302919999696314,
+    "tok_s": 30.03915389183512,
+    "delivered_tok_s": 13.773916383070135,
+    "completion_tokens": 8,
+    "prompt_tokens": 33,
+    "finish_reason": "length",
+    "nan": false,
+    "text_head": "# How a Hash Map Works: A",
+    "text": "# How a Hash Map Works: A",
+    "text_len": 25,
+    "usage": {
+     "prompt_tokens": 33,
+     "total_tokens": 41,
+     "completion_tokens": 8
+    }
+   }
+  },
+  {
+   "phase": "prose",
+   "health_code": 200,
+   "health_body": "",
+   "runs": [
+    {
+     "http": 200,
+     "ttft_s": 0.27894726902013645,
+     "wall_s": 14.842833116010297,
+     "decode_s": 14.56388584699016,
+     "tok_s": 27.396534427139798,
+     "delivered_tok_s": 26.94903303659313,
+     "completion_tokens": 400,
+     "prompt_tokens": 33,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them later without searching through all the data. Ins",
+     "text": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them later without searching through all the data. Instead of scanning a list (O(n)), we want to jump **directly** to where a value is stored.\n\nThe trick: use a function that converts a key into an **array index**. Arrays offer O(1) access by index, so if we can compute the index from the key, we get O(1) access overall.\n\n```\nkey \u2500\u2500\u25ba hash function \u2500\u2500\u25ba index \u2500\u2500\u25ba array slot \u2500\u2500\u25ba value\n```\n\n---\n\n## 2. The Components\n\nA hash map consists of:\n\n1. **An array of buckets** \u2014 the underlying storage. Each slot in this array is called a *bucket*.\n2. **A hash function** \u2014 converts a key into an integer.\n3. **An index-mapping step** \u2014 converts that integer into a valid array index.\n4. **A collision-resolution strategy** \u2014 what to do when two keys map to the same index.\n5. **A size/count tracker** \u2014 how many entries are stored.\n6. **A load factor threshold** \u2014 when to grow the array.\n\n---\n\n## 3. Step-by-Step: Insertion\n\nHere's what happens when you call `put(key, value)`:\n\n### Step 1: Hash the key\nThe hash function takes the key and produces an integer, ideally spread uniformly across all possible values.\n\n- For an integer key like `42`, the hash might just be `42` itself.\n- For a string like `\"cat\"`, the hash is computed from the characters. A",
+     "text_len": 1595,
+     "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 433,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 119,
+      "draft_tokens": 833,
+      "accepted": 282,
+      "accept_ratio": 0.3385,
+      "accepted_per_step": 2.37,
+      "pos": [
+       0.7479,
+       0.5378,
+       0.4202,
+       0.2857,
+       0.1681,
+       0.1092,
+       0.1008
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.3691355240298435,
+     "wall_s": 14.477419525035657,
+     "decode_s": 14.108284001005813,
+     "tok_s": 28.281256598715643,
+     "delivered_tok_s": 27.629233186776414,
+     "completion_tokens": 400,
+     "prompt_tokens": 33,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them quickly. Instead of searching through data linear",
+     "text": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them quickly. Instead of searching through data linearly (like an array scan) or following a tree structure, a hash map computes *directly* where a key's value should live in memory.\n\nThe key components are:\n\n- **An array of \"buckets\"** \u2014 the underlying storage, typically a fixed-size array.\n- **A hash function** \u2014 converts a key into an integer.\n- **An index-mapping step** \u2014 converts that integer into a valid array index.\n- **A collision-resolution strategy** \u2014 handles the case when two keys map to the same index.\n\n---\n\n## 2. Step-by-Step: Insertion\n\nHere's what happens when you call `put(key, value)`:\n\n### Step 1: Hash the key\nThe hash function takes the key and produces an integer, called the **hash code**.\n\n- For an integer key like `42`, the hash might just be `42` itself.\n- For a string like `\"cat\"`, the hash might be computed character by character. A common approach:\n\n```\nhash = 0\nfor each character c in string:\n    hash = (hash * 31 + code_of(c)) mod 2^32\n```\n\nFor `\"cat\"` (ASCII codes 99, 97, 116):\n```\nhash = 0\nhash = 0*31 + 99  = 99\nhash = 99*31 + 97 = 3166\nhash = 3166*31 + 116 = 98262\n```\n\nGood hash functions have these properties",
+     "text_len": 1505,
+     "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 433,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 115,
+      "draft_tokens": 805,
+      "accepted": 288,
+      "accept_ratio": 0.3578,
+      "accepted_per_step": 2.504,
+      "pos": [
+       0.8,
+       0.5739,
+       0.4174,
+       0.287,
+       0.1826,
+       0.1304,
+       0.113
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.23491223499877378,
+     "wall_s": 15.253039271978196,
+     "decode_s": 15.018127036979422,
+     "tok_s": 26.5678935207789,
+     "delivered_tok_s": 26.224281788538477,
+     "completion_tokens": 400,
+     "prompt_tokens": 33,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them quickly. Instead of searching through data linear",
+     "text": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them quickly. Instead of searching through data linearly (like an array scan) or traversing a tree, a hash map computes *where* a value should live directly from its key.\n\nThe two essential components:\n\n1. **A hash function** \u2014 converts a key into an integer.\n2. **An array of \"buckets\"** \u2014 the storage where entries actually live.\n\nThe mapping from key to bucket index is typically:\n\n```\nindex = hash(key) mod capacity\n```\n\n**Example:** Suppose we have a capacity of 8 buckets and we insert the key `\"apple\"`:\n\n```\nhash(\"apple\") = 7349123        (some large integer)\n7349123 mod 8 = 3              (bucket index)\n```\n\nSo `\"apple\"` and its value get stored in bucket 3. Later, to look up `\"apple\"`, we recompute the same hash, land on bucket 3 again, and retrieve the value \u2014 no searching required.\n\n---\n\n## 2. Step-by-Step: Insertion\n\nHere's what happens when you call `put(key, value)`:\n\n**Step 1 \u2014 Hash the key.**\nThe hash function processes the key's bytes/characters and produces an integer. A good hash function:\n- Is **deterministic**: the same key always produces the same hash.\n- **Distributes uniformly**: keys spread evenly across the bucket range, minimizing clustering.\n- Is **fast** to compute.\n\nFor example, a simple (and weak, but illustrative) polynomial hash for a string:\n\n```\nhash =",
+     "text_len": 1648,
+     "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 433,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 123,
+      "draft_tokens": 861,
+      "accepted": 283,
+      "accept_ratio": 0.3287,
+      "accepted_per_step": 2.301,
+      "pos": [
+       0.7724,
+       0.5935,
+       0.3821,
+       0.2195,
+       0.1626,
+       0.0894,
+       0.0813
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.24884950503474101,
+     "wall_s": 14.869352182024159,
+     "decode_s": 14.620502676989418,
+     "tok_s": 27.29044334624479,
+     "delivered_tok_s": 26.900970203904887,
+     "completion_tokens": 400,
+     "prompt_tokens": 33,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them efficiently. Instead of searching through data li",
+     "text": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them efficiently. Instead of searching through data linearly (like an array scan) or traversing a tree, a hash map computes *where* a value should live directly from its key.\n\nThe key components are:\n\n- **The key**: The identifier you use to look up data (e.g., a username).\n- **The value**: The data being stored (e.g., the user's profile).\n- **The bucket array**: An underlying array of fixed size where entries are stored.\n- **The hash function**: A function that converts a key into an array index.\n\n---\n\n## 2. The Hash Function\n\nThe hash function is the heart of the hash map. It takes a key of arbitrary size and produces an integer, which is then mapped to a valid index in the bucket array.\n\n### Step-by-step process:\n\n1. **Compute the hash code**: The key is passed through a hash function, producing a large integer. For example, in Java, `\"hello\".hashCode()` might produce `99162322`.\n\n2. **Map the hash to an index**: Since the hash code can be any integer but the bucket array has a fixed size `n`, we compress the hash into a valid index. The most common technique:\n\n   ```\n   index = hash(key) mod n\n   ```\n\n   Many implementations use `hash(key) & (n - 1)` instead, which is equivalent to modulo but faster \u2014 but only works when `n` is a power of 2. This is why hash map capacities are almost always powers of 2 (16, 32, ",
+     "text_len": 1683,
+     "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 433,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 119,
+      "draft_tokens": 833,
+      "accepted": 283,
+      "accept_ratio": 0.3397,
+      "accepted_per_step": 2.378,
+      "pos": [
+       0.7899,
+       0.5378,
+       0.3529,
+       0.2605,
+       0.1933,
+       0.1597,
+       0.084
+      ]
+     }
+    },
+    {
+     "http": 200,
+     "ttft_s": 0.3528956070076674,
+     "wall_s": 15.023341518011875,
+     "decode_s": 14.670445911004208,
+     "tok_s": 27.197537308713475,
+     "delivered_tok_s": 26.62523510634632,
+     "completion_tokens": 400,
+     "prompt_tokens": 33,
+     "finish_reason": "length",
+     "nan": false,
+     "text_head": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them efficiently. Instead of searching through data li",
+     "text": "# How a Hash Map Works: A Complete Guide\n\nA hash map (also called a hash table or dictionary) is a data structure that stores key-value pairs and provides near-constant-time lookup, insertion, and deletion. Let's build up an understanding from the ground up.\n\n---\n\n## 1. The Core Idea\n\nA hash map lets you associate values with keys and retrieve them efficiently. Instead of searching through data linearly (like an array scan) or traversing a tree, a hash map computes *where* a value should live directly from its key.\n\nThe key components are:\n\n- **An array of \"buckets\"** \u2014 the underlying storage, typically a fixed-size array.\n- **A hash function** \u2014 converts a key into an integer.\n- **An index-mapping step** \u2014 converts that integer into a valid array index.\n- **A collision-resolution strategy** \u2014 handles the case when two keys map to the same index.\n\n---\n\n## 2. Step-by-Step: Insertion\n\nHere's what happens when you call `put(key, value)`:\n\n**Step 1: Hash the key.**\nThe hash function takes the key and produces an integer, called the hash code. For a string like `\"apple\"`, this might involve summing character codes, multiplying by primes, or using a more sophisticated algorithm. A good hash function:\n\n- Is **deterministic** \u2014 the same key always produces the same hash.\n- **Distributes uniformly** \u2014 outputs spread evenly across the possible range, minimizing clustering.\n- Is **fast to compute** \u2014 otherwise the constant-time advantage is lost.\n\n**Step 2: Map the hash to an index.**\nThe hash code can be any large integer, but the bucket array has a finite size `n`. The most common mapping is:\n\n```\nindex = hash(key) mod n\n```\n\n(In practice, implementations often use `hash mod n` where `n` is a power of two,",
+     "text_len": 1726,
+     "usage": {
+      "prompt_tokens": 33,
+      "total_tokens": 433,
+      "completion_tokens": 400
+     },
+     "spec": {
+      "drafts": 120,
+      "draft_tokens": 840,
+      "accepted": 280,
+      "accept_ratio": 0.3333,
+      "accepted_per_step": 2.333,
+      "pos": [
+       0.7917,
+       0.5333,
+       0.375,
+       0.2667,
+       0.1667,
+       0.1083,
+       0.0917
+      ]
+     }
+    }
+   ],
+   "ts": 1789502003.8444078,
+   "prompt": "hashmap-prose",
+   "thinking": false,
+   "temperature": 0,
+   "tok_s_median": 27.29044334624479,
+   "tok_s_min": 26.5678935207789,
+   "tok_s_max": 28.281256598715643,
+   "ttft_median_s": 0.27894726902013645,
+   "completion_tokens_median": 400.0,
+   "accept_ratio_median": 0.3385,
+   "accepted_per_step_median": 2.37,
+   "any_nan": false,
+   "health_code_after": 200,
+   "short_after": {
+    "http": 200,
+    "ttft_s": 0.25183479295810685,
+    "wall_s": 0.5131005169823766,
+    "decode_s": 0.26126572402426973,
+    "tok_s": 26.792645786746025,
+    "delivered_tok_s": 15.591486921605997,
+    "completion_tokens": 8,
+    "prompt_tokens": 33,
+    "finish_reason": "length",
+    "nan": false,
+    "text_head": "# How a Hash Map Works: A",
+    "text": "# How a Hash Map Works: A",
+    "text_len": 25,
+    "usage": {
+     "prompt_tokens": 33,
+     "total_tokens": 41,
+     "completion_tokens": 8
+    }
+   }
+  }
+ ]
+}
