@@ -1,0 +1,282 @@
+{
+  "ts": "2026-09-21T19:17:49.637694",
+  "endpoint": "http://100.71.248.116:8888/v1",
+  "model": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+  "label": "q35b-cotenanted",
+  "tag": "",
+  "concurrency": 3,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 88,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 9.035,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 179,
+              "completion_tokens": 127,
+              "cached_tokens": null,
+              "wall_s": 9.174,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 272,
+              "completion_tokens": 9,
+              "cached_tokens": null,
+              "wall_s": 33.677,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 51.886,
+          "total_completion": 536
+        },
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 82.405,
+            "ttft_s": null,
+            "prompt": 119409,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 45.98,
+            "ttft_s": null,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "q35b-cotenanted-agent0-structured",
+              "type": "single",
+              "wall_s": 45.662,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent0-code",
+              "type": "single",
+              "wall_s": 48.12,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent0-prose",
+              "type": "single",
+              "wall_s": 8.566,
+              "ttft_s": null,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 102.348
+        }
+      ]
+    },
+    {
+      "agent": 1,
+      "steps": [
+        {
+          "label": "q35b-cotenanted-agent1",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 88,
+              "completion_tokens": 368,
+              "cached_tokens": null,
+              "wall_s": 7.519,
+              "ttft_s": 4.908,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 316,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 169.968,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 409,
+              "completion_tokens": 224,
+              "cached_tokens": null,
+              "wall_s": 5.935,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 183.422,
+          "total_completion": 992
+        },
+        {
+          "label": "q35b-cotenanted-agent1",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 42.488,
+            "ttft_s": null,
+            "prompt": 119409,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 45.306,
+            "ttft_s": null,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "q35b-cotenanted-agent1",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "q35b-cotenanted-agent1-structured",
+              "type": "single",
+              "wall_s": 5.522,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent1-code",
+              "type": "single",
+              "wall_s": 6.481,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent1-prose",
+              "type": "single",
+              "wall_s": 5.106,
+              "ttft_s": null,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 17.109
+        }
+      ]
+    },
+    {
+      "agent": 2,
+      "steps": [
+        {
+          "label": "q35b-cotenanted-agent2",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 88,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 8.885,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 179,
+              "completion_tokens": 90,
+              "cached_tokens": null,
+              "wall_s": 2.032,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 272,
+              "completion_tokens": 9,
+              "cached_tokens": null,
+              "wall_s": 0.382,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 11.299,
+          "total_completion": 499
+        },
+        {
+          "label": "q35b-cotenanted-agent2",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 82.072,
+            "ttft_s": null,
+            "prompt": 119409,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 86.001,
+            "ttft_s": null,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "q35b-cotenanted-agent2",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "q35b-cotenanted-agent2-structured",
+              "type": "single",
+              "wall_s": 45.541,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent2-code",
+              "type": "single",
+              "wall_s": 47.967,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent2-prose",
+              "type": "single",
+              "wall_s": 8.717,
+              "ttft_s": null,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 102.225
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 288.371
+}

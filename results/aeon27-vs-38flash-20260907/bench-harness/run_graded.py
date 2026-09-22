@@ -30,6 +30,12 @@ MODELS = {
                  "id": "aeon", "reasoning_effort": "xhigh"},
     "flash38":  {"url": "http://100.99.120.29:8000/v1/chat/completions",
                  "id": "qwen3.8-flash-next", "reasoning_effort": "xhigh"},
+    # 2026-09-22 co-tenant spark2 lane (MoE A3B) + current GLM TP3 head.
+    # Both accept reasoning_effort=high (smoke-verified by clean content + null-free shape).
+    "q35b":     {"url": "http://100.71.248.116:8888/v1/chat/completions",
+                 "id": "unsloth/Qwen3.6-35B-A3B-NVFP4", "reasoning_effort": "high"},
+    "glm53exl3": {"url": "http://100.99.120.29:8888/v1/chat/completions",
+                 "id": "GLM-5.3-Flash-EXL3", "reasoning_effort": "high"},
 }
 
 

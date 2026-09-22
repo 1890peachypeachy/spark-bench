@@ -1,0 +1,102 @@
+{
+  "ts": "2026-09-21T19:15:57.043170",
+  "endpoint": "http://100.71.248.116:8888/v1",
+  "model": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+  "label": "q35b-cotenanted",
+  "tag": "",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 88,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 5.264,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 179,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 5.861,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 272,
+              "completion_tokens": 158,
+              "cached_tokens": null,
+              "wall_s": 2.042,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 13.167,
+          "total_completion": 958
+        },
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "longdoc",
+          "ctx_target": 100000,
+          "needle_found": true,
+          "prefill": {
+            "wall_s": 43.187,
+            "ttft_s": null,
+            "prompt": 119409,
+            "cached": null,
+            "err": null
+          },
+          "followup": {
+            "wall_s": 43.887,
+            "ttft_s": null,
+            "cached": null,
+            "err": null
+          }
+        },
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "output_mix",
+          "items": [
+            {
+              "label": "q35b-cotenanted-agent0-structured",
+              "type": "single",
+              "wall_s": 3.126,
+              "ttft_s": null,
+              "completion": 260,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent0-code",
+              "type": "single",
+              "wall_s": 4.066,
+              "ttft_s": null,
+              "completion": 320,
+              "err": null
+            },
+            {
+              "label": "q35b-cotenanted-agent0-prose",
+              "type": "single",
+              "wall_s": 4.984,
+              "ttft_s": null,
+              "completion": 400,
+              "err": null
+            }
+          ],
+          "wall_s": 12.176
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 112.468
+}

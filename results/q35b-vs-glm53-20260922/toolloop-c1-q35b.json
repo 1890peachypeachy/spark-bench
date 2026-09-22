@@ -1,0 +1,52 @@
+{
+  "ts": "2026-09-21T19:22:38.142904",
+  "endpoint": "http://100.71.248.116:8888/v1",
+  "model": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+  "label": "q35b-cotenanted",
+  "tag": "",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "q35b-cotenanted-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 88,
+              "completion_tokens": 400,
+              "cached_tokens": null,
+              "wall_s": 4.864,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 179,
+              "completion_tokens": 9,
+              "cached_tokens": null,
+              "wall_s": 0.27,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 272,
+              "completion_tokens": 9,
+              "cached_tokens": null,
+              "wall_s": 0.284,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 5.418,
+          "total_completion": 418
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 5.423
+}

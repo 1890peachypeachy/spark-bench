@@ -1,0 +1,52 @@
+{
+  "ts": "2026-09-21T19:26:29.832287",
+  "endpoint": "http://100.99.120.29:8888/v1",
+  "model": "GLM-5.3-Flash-EXL3",
+  "label": "glm53exl3-tp3",
+  "tag": "",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "glm53exl3-tp3-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 86,
+              "completion_tokens": 307,
+              "cached_tokens": null,
+              "wall_s": 7.797,
+              "ttft_s": 0.483,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 455,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 1.044,
+              "ttft_s": null,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 526,
+              "completion_tokens": 8,
+              "cached_tokens": null,
+              "wall_s": 1.021,
+              "ttft_s": null,
+              "err": null
+            }
+          ],
+          "total_s": 9.862,
+          "total_completion": 323
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 9.866
+}
