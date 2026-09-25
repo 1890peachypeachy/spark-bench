@@ -26,6 +26,9 @@ EXAMPLE = os.path.join(KIT, ".env.tp4.example")
 OUT = os.path.join(KIT, ".env.tp4")
 
 # ── 1. fleet identity / topology / paths ─────────────────────────────────────
+# The consumer-facing endpoint. It must read the same before and after a rotation:
+# spark3 is the head in both profiles and PORT is pinned to 8000 below.
+ENDPOINT_NOTE = "http://100.99.120.29:8000/v1 (spark3 head, tailnet) — same URL and same served name on TP3 and TP4"
 # Head is spark3. Workers are spark1, spark2, spark4. Usernames differ per node on
 # our fleet, so WORKER_HOSTS carries user@host and the launcher must NOT prepend
 # WORKER_USER (see cmd_build in start.sh).
@@ -148,6 +151,23 @@ def main():
         if needle.rstrip("=") not in line:
             bad.append(f"production EXTRA_CONTAINER_ENV lacks {needle}")
     print(f"  {'OK  ' if not bad else 'FAIL'} production line contains the EP1/b12x_next knobs")
+
+    # ── fleet identity contract ────────────────────────────────────────────────
+    # A TP3<->TP4 rotation must not move the URL, the served name, or the auth
+    # story for any client. The URL is pinned by PORT (checked above) and the head
+    # is spark3 in both profiles; the served name and the absence of auth are
+    # launcher defaults that these files must not override.
+    IDENTITY = "deepseek-v4.1-flash"
+    served = active.get("SERVED_MODEL_NAME", IDENTITY) or IDENTITY
+    if served != IDENTITY:
+        bad.append(f"SERVED_MODEL_NAME={served} — must stay {IDENTITY}, or clients get repointed")
+    key = (active.get("API_KEY") or "").strip()
+    if key:
+        bad.append("API_KEY is set — a rotation would require auth that TP3 does not have")
+    print(f"  {'OK  ' if served == IDENTITY else 'FAIL'} served name stays {served} "
+          f"(default, not overridden)")
+    print(f"  {'OK  ' if not key else 'FAIL'} no API key (matches TP3: open on the tailnet)")
+    print(f"       URL unchanged across rotation: {ENDPOINT_NOTE}")
     if bad:
         print("\nBUILD FAILED:")
         for b in bad:
