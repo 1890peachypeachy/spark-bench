@@ -160,10 +160,18 @@ concurrent up/down operations can wedge the fleet. One active job at a time, per
 | `POST` | `/api/lanes/:lane/verify` | — | `202 {jobId}` |
 | `POST` | `/api/lanes/check` | `{up:[lane…], down:[lane…]}` | `200 {launchable, blocked:[…]}` — dry-run gate |
 | `GET` | `/api/lanes/jobs/:jobId` | — | `{state, lane, verb, progress:[...], result}` |
-| `POST` | `/api/lanes/jobs/:jobId/cancel` | — | `202` (SIGTERM the child) |
+| `POST` | `/api/lanes/jobs/:jobId/cancel` | — | `202` (SIGTERM the child, then undo — see below) |
 
 Design notes:
 - `verb` ∈ `["up","down","verify"]`. **No `rotate`, no `endLane`.**
+- **Cancel returns the fleet to a FREE state** (Victor, rev4). Cancelling SIGTERMs the
+  running step, then takes back down whatever the job brought up (`up` for a batch,
+  `lane` for a plain up), excluding what it was itself tearing down. The undo runs
+  inside the job, so it stays within the fleet-wide single-flight. Lanes already up
+  *before* the job are included deliberately: the rule is "cancel leaves those nodes
+  free", NOT "cancel restores the previous state" — the user can always bring a lane
+  back up. Undo steps are flagged `rollback:true` and rendered as "(undo)"; a failed
+  undo is reported, never swallowed.
 - `POST /api/lanes/batch` is the multi-select action: `up` lists lanes to bring up,
   `down` lists lanes to take down. The server (a) applies the §2.5 node-disjointness
   gate to `up ∪ (already-up minus down)`, (b) refuses with named conflicts if the
@@ -251,7 +259,11 @@ Per-lane controls:
 - **Verify** — on any single lane; read-only health check.
 - Live progress pane streams the `spark-lane` step lines (`[n/N] step …`) so a 15-min
   boot is visibly progressing, not a dead spinner.
-- **Cancel running job** — SIGTERM the current job.
+- **Cancel running job** — SIGTERM the current step, then undo: whatever the job
+  brought up is taken back down, so those nodes end up **free** rather than
+  half-swapped. See §4.2.
+- **Put up on a lane that is already up** — stays up and says nothing (Victor, rev4):
+  no warning, no error, the job just reports success. Do not add a guard for it.
 
 The gate is recomputed live as boxes are ticked, so you can *see* that
 `{creative-engine, dsv41-tp3}` is launchable and `{dsv41-tp4, creative-engine}` is not
@@ -297,8 +309,18 @@ These mirror the `spark-lane` hard rules and the GB10 operations skill.
 6b. **The §2.5 gate is enforced server-side, not just in the UI.** A batch whose
    `up ∪ (up minus down)` set collides is refused with named conflicts before any
    child is spawned. The UI greying-out is a convenience; the server is the gate.
+   Two rules learned the hard way: it must cover **every** bring-up path (`/batch`
+   *and* `/:lane/up` — `/up` shipped ungated at first), and it must decide from a
+   **fresh** read (`force`), never the ~20s inventory cache. `plan()` returns the
+   snapshot it decided from and the route hands it to `start()`, so the gate and the
+   job share one read — one fleet sweep, not two, and no window in between.
 7. **Bounds.** Per-job wall-clock ceiling (reuse `ENGINE_MAX_WAIT`, 3h) + a hard
-   server-side kill; a stuck job is cancellable and auto-expires.
+   server-side kill. A per-step deadline (`SPARK_LANE_TIMEOUT_MS`) must settle the
+   step **itself** rather than wait for the child's `close` event: `close` waits for
+   the stdio *pipes* to shut, and a detached grandchild can hold them open
+   indefinitely — which leaves `_run`'s `finally` unreachable and the fleet-wide slot
+   held forever (a lockout `cancel()` cannot clear, because the direct child is
+   already gone). It resolves with exit 124 and disowns the child.
 8. **Audit.** Every job records `{who, lane, verb, startedAt, endedAt, result}` to a
    log file (`logs/lane-control.jsonl`) — who took down / brought up what, and when.
 9. **No artifact deletion.** `down` never deletes weights/images (spark-lane already
@@ -334,6 +356,24 @@ These mirror the `spark-lane` hard rules and the GB10 operations skill.
 - Value: the headline feature — put up / pull down any lane, or a compatible set, from
   the UI.
 
+**Phase 2 hardening** ✅ **SHIPPED 2026-09-26** — sparkdash `0b8ee5e`, `7ed6013`, `c7b9fbd`
+- An independent review found the switches shipped with **no tests at all**: `npm test`
+  globbed only `collectors/` and `sparks/`, so the suite never touched `server/lanes/`
+  and "159/159 passing" said nothing about the changed lines. Now
+  `server/lanes/__tests__/` (16 tests) + a stub harness, covering the single-flight
+  race, slot release on every validation error, the gate matrix, the step deadline, id
+  dedupe, internal-field leaks, audit isolation and cancel-undo. Every new test was
+  verified to **fail** against the pre-fix revision it guards.
+- Fixed: single-flight race (two same-tick starts both spawned a harness process);
+  `/:lane/up` bypassing the gate entirely; gating off the stale ~20s cache; `BIND_HOST`
+  defaulting to `0.0.0.0` (compose files too); duplicate lane ids running twice; the
+  step deadline not actually bounding a step; stub runs writing fabricated rows into
+  the live audit ledger (`LANE_AUDIT_PATH` added); the double fleet sweep per gated
+  action (~14.5s → ~6.7s measured).
+- Also fixed a pre-existing flake the extra test file exposed: rate assertions derived
+  from a wall-clock window asserted exact equality (~1 failure in 6 under parallel
+  load). SGLang's gauge-sourced rates were deliberately left exact.
+
 **Phase 3 — cancel + audit** ✅ absorbed into Phase 2.
 
 **Phase 4 — polish**
@@ -343,8 +383,11 @@ These mirror the `spark-lane` hard rules and the GB10 operations skill.
     server restart (WS snapshot races first render); a reload clears it.
   - only the most recent finished job keeps its full log in memory (older ones live
     in `/api/lanes/jobs` history without the log).
-  - a flaky `19.99 vs 20` assertion in the existing suite (timing-sensitive,
-    pre-existing; passes on re-run) — worth pinning down.
+  - ~~a flaky `19.99 vs 20` assertion in the existing suite~~ **FIXED** in `7ed6013`:
+    it asserted exact equality on a value derived from a wall-clock window, so it
+    needed the ~2s window within ~2.5ms of nominal. Now a tolerance band via
+    `__tests__/helpers/assertRate.js`, proven not to be toothless by injecting a
+    doubled divisor into the probe.
 
 ---
 
@@ -369,6 +412,13 @@ The switches are "done" only when, from the UI on a live fleet:
 9. Killing the browser mid-job does not kill the job (server-owned); reopening shows
    the job still running/finished.
 10. Every destructive action is in `logs/lane-control.jsonl` with a timestamp.
+11. **Cancel returns to free:** cancelling a swap after the teardown has run takes the
+    new lane back down too — the nodes end up **free**, nothing serving, and the job
+    summary says so (`(undo)` steps + an undo line).
+12. **Up on an already-up lane is quiet:** pressing *Put up* on a lane that is already
+    up leaves it up, reports success, and shows no warning or error.
+13. **No wedge:** a step that hangs cannot hold the fleet slot past
+    `SPARK_LANE_TIMEOUT_MS`, and the panel recovers on its own — no server restart.
 
 ---
 
@@ -385,3 +435,9 @@ The switches are "done" only when, from the UI on a live fleet:
    production lane** (`:8000`, what the agents depend on).
 5. **Multi-select** — **yes, with the §2.5 node-disjointness gates.** Downs run before
    ups (physically required); the *choice* of what goes down/up is always the user's.
+6. **Cancel semantics** — **cancel returns the fleet to a FREE state.** "Canceling
+   should take it back down. So it goes back to free." A cancelled job undoes whatever
+   it brought up; nothing is restored to its pre-job state. This is why the confirm
+   dialog no longer warns that cancelling strands you — it can't.
+7. **Up on an already-up lane** — **stays up, quietly.** "Up on something that is
+   already up should just stay up and be quiet." No warning, no error, no guard.
