@@ -111,6 +111,19 @@ def main():
     # 2. activate the production EXTRA_CONTAINER_ENV
     lines, live = activate_last_extra_container_env(lines)
 
+    # 2b. fleet RoCE rail override. Upstream's production line pins
+    #     B12X_ROCE_HCA=rocep1s0f0,roceP2p1s0f0, but on our fleet the ONLY active
+    #     RDMA device is rocep1s0f1 (rocep1s0f0/roceP2p1s0f0 are DOWN on all four
+    #     nodes). The RoCEnante proxy binds B12X_ROCE_HCA and dies with
+    #     "RDMA device ... port 1 is not active" if handed a down device. This is
+    #     fleet hardware identity (same category as IB_HCA above), so we rewrite it
+    #     in the live EXTRA_CONTAINER_ENV line rather than leave upstream's value.
+    lines[live] = re.sub(
+        r"B12X_ROCE_HCA=[^ ]+",
+        "B12X_ROCE_HCA=rocep1s0f1",
+        lines[live],
+    )
+
     out = "\n".join(lines).rstrip() + "\n"
     with open(OUT, "w") as fh:
         fh.write(out)
