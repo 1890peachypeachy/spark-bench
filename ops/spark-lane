@@ -145,20 +145,22 @@ timeout_run() {
 # Matches the container names/images our lanes actually use.
 node_occupant() {
   local node="$1" out img lane
-  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53' || true)"
+  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   if echo "$out" | grep -qE 'ming-layer-web|spark-image-lab'; then
     echo "creative-engine"
     return
   fi
-  # Detect which lane by image name (TP3 vs TP4 vs GLM)
-  img="$(sshx "$node" "docker ps --format '{{.Image}}' 2>/dev/null | grep -E 'dsv41-[34]x|sglang|glm53' | head -1" 2>/dev/null || true)"
-  case "$img" in
-    *dsv41-3x*|*sglang*3*) lane="dsv41-tp3" ;;
-    *dsv41-4x*)            lane="dsv41-tp4" ;;
-    *glm53*|*exl3*)        lane="glm53-tp3" ;;
-    *)                      lane="llm-lane-unknown" ;;
-  esac
+  # Detect which lane by container NAME (the grep above already matched a lane
+  # container). We key off the container name, NOT the image path: GLM's image is
+  # ghcr.io/miaai-lab/glm-5.3-flash... which does NOT contain "glm53", so matching
+  # the image string alone would misclassify GLM nodes as llm-lane-unknown (which
+  # broke rotate — the conflicting lane wasn't recognized and wasn't parked).
+  # FIXED 2026-09-25.
+  if    echo "$out" | grep -qiE 'dsv41-3x|sglang.*3'; then lane="dsv41-tp3"
+  elif  echo "$out" | grep -qiE 'dsv41-4x';               then lane="dsv41-tp4"
+  elif  echo "$out" | grep -qiE 'glm53-exl3|glm-5';       then lane="glm53-tp3"
+  else  lane="llm-lane-unknown"; fi
   echo "$lane"
 }
 
