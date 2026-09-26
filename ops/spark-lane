@@ -97,18 +97,49 @@ result() { # lane action endpoint model extra
 sshx() { ssh $SSH_OPTS "$@"; }
 docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/null"; }
 
+# Portable timeout: GNU `timeout` is NOT on macOS (no timeout/gtimeout by default),
+# so `down`/`rotate` always failed at the stop step with "timeout: command not found".
+# This helper runs a command with a hard wall-clock cap and returns 124 on timeout
+# (matching GNU timeout's convention) so the existing `if ! timeout ...` logic works.
+# FIXED 2026-09-25: rotation was broken on the Mac because of this.
+timeout_run() {
+  local secs="$1"; shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$secs" "$@"
+    return $?
+  fi
+  if command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$secs" "$@"
+    return $?
+  fi
+  # portable fallback: background + sleep + kill, returns 124 on timeout
+  "$@" &
+  local pid=$!
+  ( sleep "$secs"; kill -9 "$pid" 2>/dev/null ) &
+  local killer=$!
+  local rc=0
+  wait "$pid" 2>/dev/null; rc=$?
+  kill "$killer" 2>/dev/null
+  if ! kill -0 "$pid" 2>/dev/null; then
+    # process finished before the killer fired
+    return $rc
+  fi
+  # still alive after the killer's sleep -> it was killed by the killer
+  return 124
+}
+
 # Occupants of a node, one per line, empty = free.
 # Matches the container names/images our lanes actually use.
 node_occupant() {
   local node="$1" out img lane
-  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang|glm53' || true)"
+  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   if echo "$out" | grep -qE 'ming-layer-web|spark-image-lab'; then
     echo "creative-engine"
     return
   fi
   # Detect which lane by image name (TP3 vs TP4 vs GLM)
-  img="$(sshx "$node" "docker ps --format '{{.Image}}' 2>/dev/null | grep -E 'dsv41|sglang|glm53' | head -1" 2>/dev/null || true)"
+  img="$(sshx "$node" "docker ps --format '{{.Image}}' 2>/dev/null | grep -E 'dsv41-[34]x|sglang|glm53' | head -1" 2>/dev/null || true)"
   case "$img" in
     *dsv41-3x*|*sglang*3*) lane="dsv41-tp3" ;;
     *dsv41-4x*)            lane="dsv41-tp4" ;;
@@ -160,7 +191,7 @@ census() {
   echo "  per-node containers (authoritative for occupancy):"
   local n o
   for n in spark1 spark2 spark3 spark4; do
-    o="$(docker_names "$n" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang|glm53' || true)"
+    o="$(docker_names "$n" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53' || true)"
     if [[ -z "$o" ]]; then printf '    %-8s %s(free)%s\n' "$n" "$D" "$N"
     else printf '    %-8s %s\n' "$n" "$(echo "$o" | paste -sd' ' -)"; fi
   done
@@ -476,7 +507,7 @@ dsv41_down() {
   # side can't un-stick a wedged remote host, but it stops this script from
   # sitting there blind -- a timeout is now a loud FAIL with a clear next
   # step instead of a silent multi-hour hang.
-  if ! timeout "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$DSV41_HEAD_HOST" "cd $kit && $cli stop" >/dev/null 2>&1; then
+  if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$DSV41_HEAD_HOST" "cd $kit && $cli stop" >/dev/null 2>&1; then
     note_fail "stop" "$cli stop returned non-zero OR timed out after ${DSV41_STOP_TIMEOUT:-180}s -- if it timed out, the head node may be wedged; verify with 'ssh $DSV41_HEAD_HOST uptime' before retrying, do not just re-run"
     NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $kit && $cli stop'   # run in the foreground to see whether it hangs or fails cleanly"
     result "$lane" "down" "-" "-"
@@ -487,7 +518,7 @@ dsv41_down() {
   step "verify torn down" "no lane containers left on $(lane_nodes "$lane")"
   local n left="" c
   for n in $(lane_nodes "$lane"); do
-    c="$(docker_names "$n" | grep -E 'dsv41|sglang' || true)"
+    c="$(docker_names "$n" | grep -E 'dsv41-[34]x|sglang' || true)"
     [[ -n "$c" ]] && left="$left $n:$c"
   done
   if [[ -n "$left" ]]; then
@@ -602,7 +633,7 @@ glm53_down() {
   STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
   step "stop" "$GLM53_CLI stop (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
-  if ! timeout "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_HEAD_HOST" "cd $GLM53_KIT && $GLM53_CLI stop" >/dev/null 2>&1; then
+  if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_HEAD_HOST" "cd $GLM53_KIT && $GLM53_CLI stop" >/dev/null 2>&1; then
     note_fail "stop" "$GLM53_CLI stop returned non-zero OR timed out after ${DSV41_STOP_TIMEOUT:-180}s -- if it timed out, the head node may be wedged; verify with 'ssh $GLM53_HEAD_HOST uptime' before retrying"
     NEXT_CMD="ssh $GLM53_HEAD_HOST 'cd $GLM53_KIT && $GLM53_CLI stop'   # run in the foreground to see whether it hangs or fails cleanly"
     result "$lane" "down" "-" "-"

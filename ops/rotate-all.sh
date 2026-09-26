@@ -18,6 +18,9 @@
 # NOTE: this is a LONG run. Each LLM boot is ~15-25 min. The full matrix
 # (creative-engine, dsv41-tp3, dsv41-tp4, glm53-tp3) can take 1.5-2 hours.
 # Run it detached:  setsid nohup bash rotate-all.sh > /tmp/rotate-all.log 2>&1 &
+#
+# COMPAT: must run under bash 3.2 (macOS default). NO associative arrays
+# (declare -A is unsupported in 3.2) — results are tracked in a flat string.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
@@ -41,30 +44,33 @@ if [[ -n "$ONLY_LANE" ]]; then
 fi
 
 START=$(date +%s)
+# results tracked as "lane:RESULT" tokens in a flat string (bash 3.2 safe)
+RESULTS=""
 PASSED=""
 FAILED=""
-declare -A RESULTS
 
 log() { echo "[$(date +%H:%M:%S) +$(( $(date +%s) - START ))s] $*"; }
+
+record() { RESULTS="$RESULTS $1:$2"; }
 
 run_lane() {
   local lane="$1"
   log "===== ROTATE -> $lane ====="
   if ! "$SPARK_LANE" rotate "$lane"; then
     log "!!! rotate $lane FAILED"
-    RESULTS["$lane"]="FAIL(rotate)"
+    record "$lane" "FAIL(rotate)"
     FAILED="$FAILED $lane"
     return 1
   fi
   log "----- verify $lane -----"
   if "$SPARK_LANE" verify "$lane"; then
     log "===== $lane PASS ====="
-    RESULTS["$lane"]="PASS"
+    record "$lane" "PASS"
     PASSED="$PASSED $lane"
     return 0
   else
     log "!!! verify $lane FAILED"
-    RESULTS["$lane"]="FAIL(verify)"
+    record "$lane" "FAIL(verify)"
     FAILED="$FAILED $lane"
     return 1
   fi
@@ -77,6 +83,7 @@ log "end lane: $END_LANE"
 for lane in $ALL_LANES; do
   if [[ " $SKIP_LANES " == *" $lane "* ]]; then
     log "skipping $lane (--skip)"
+    record "$lane" "SKIPPED"
     continue
   fi
   run_lane "$lane"
@@ -99,7 +106,14 @@ fi
 echo
 echo "================ ROTATION TEST SUMMARY ================"
 for lane in $ALL_LANES; do
-  printf '  %-16s %s\n' "$lane" "${RESULTS[$lane]:-SKIPPED}"
+  res="SKIPPED"
+  for tok in $RESULTS; do
+    if [[ "${tok%%:*}" == "$lane" ]]; then
+      res="${tok#*:}"
+      break
+    fi
+  done
+  printf '  %-16s %s\n' "$lane" "$res"
 done
 echo "========================================================"
 echo "PASSED:$PASSED"
