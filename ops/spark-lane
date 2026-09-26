@@ -514,17 +514,22 @@ stage_tp4() {
     ok "profile built and self-verified"
   fi
 
-  step "weights" "model present on all four nodes"
-  local n miss=""
-  for n in spark1 spark2 spark3 spark4; do
-    sshx "$n" "test -d /var/tmp/models/DeepSeek-V4.1-Flash" || miss="$miss $n"
-  done
-  if [[ -n "$miss" ]]; then
-    note_fail "weights" "model dir missing on:$miss"
-    NEXT_CMD="spark-lane status   # stage weights first (fabric transfer, not LAN)"
+  # Bug fixed 2026-09-25: this used to require a full local copy of the 516G
+  # checkpoint on ALL FOUR nodes, which both isn't how the recipe actually
+  # works and made TP4 physically impossible on spark4 (916G disk, only
+  # 164G free). The profile we just built has NFS_SHARE=1 (see
+  # .env.tp4 / start.sh's own doctor+serve logic) -- same design as TP3:
+  # only the HEAD keeps the local checkpoint at $MODEL_DIR, and workers
+  # mount it read-only over NFSv4 on the CX7 fabric via the dsv41-nfs
+  # exporter. So the real precondition is just "does the head have a
+  # complete local copy", not "does every node".
+  step "weights" "head node has the local checkpoint (workers read it over NFS, NFS_SHARE=1)"
+  if ! sshx "$DSV41_HEAD_HOST" "test -d /var/tmp/models/DeepSeek-V4.1-Flash"; then
+    note_fail "weights" "model dir missing on head ($DSV41_HEAD_HOST) -- this one actually needs a local copy"
+    NEXT_CMD="spark-lane status   # stage weights on $DSV41_HEAD_HOST first (fabric transfer, not LAN)"
     result "dsv41-tp4" "stage" "-" "-"; return 1
   fi
-  ok "weights staged on all four nodes"
+  ok "head has the checkpoint; workers will mount it over NFS during 'up' (no local copy needed)"
 
   result "dsv41-tp4" "stage" "-" "-"
   NEXT_CMD="spark-lane up dsv41-tp4   # doctor -> build -> share/pack -> serve (detached). A cold build needs github.com + pypi.org and takes a long while; watch it with: spark-lane logs dsv41-tp4"
