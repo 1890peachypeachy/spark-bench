@@ -89,17 +89,21 @@ for lane in $ALL_LANES; do
   run_lane "$lane"
 done
 
-# Leave the fleet on the requested end lane (if not already there and not skipped).
+# Leave the fleet on the requested end lane (unless --only mode or end lane skipped).
+# FIXED 2026-09-25: this used to guard on `$ALL_LANES != $END_LANE`, which meant an
+# end lane that WAS in the rotation set (e.g. --end dsv41-tp4 with dsv41-tp4 in the
+# matrix) was never rotated back to — the loop just ended on the LAST lane in set
+# order (glm53-tp3), so the fleet was left on the wrong lane. The end lane must
+# ALWAYS be rotated to after the loop, regardless of whether it was in the matrix.
 if [[ -n "$ONLY_LANE" ]]; then
   log "=== --only mode: leaving fleet on $ONLY_LANE ==="
-elif [[ " $SKIP_LANES " != *" $END_LANE "* ]]; then
+elif [[ " $SKIP_LANES " == *" $END_LANE "* ]]; then
+  log "=== end lane $END_LANE skipped, leaving fleet as-is ==="
+else
   log "=== leaving fleet on $END_LANE ==="
-  if [[ " $ALL_LANES " != *" $END_LANE "* ]]; then
-    # end lane wasn't in the rotation set — bring it up directly
-    if ! "$SPARK_LANE" rotate "$END_LANE"; then
-      log "!!! could not bring up end lane $END_LANE"
-      FAILED="$FAILED $END_LANE"
-    fi
+  if ! "$SPARK_LANE" rotate "$END_LANE"; then
+    log "!!! could not bring up end lane $END_LANE"
+    FAILED="$FAILED $END_LANE"
   fi
 fi
 
