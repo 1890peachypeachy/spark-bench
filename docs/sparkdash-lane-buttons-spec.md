@@ -318,20 +318,33 @@ These mirror the `spark-lane` hard rules and the GB10 operations skill.
 - NOTE: Phase 1 ships *display* only — no Verify button yet (it needs the Phase 2 job
   machinery). That is deliberate: Phase 1 has no POST surface at all.
 
-**Phase 2 — the switches (single + multi-select, gated)**
-- `LaneManager` + job endpoints + `POST /up`, `POST /down`, `POST /batch`, `POST /check`.
+**Phase 2 — the switches (single + multi-select, gated)** ✅ **SHIPPED 2026-09-26**
+- `LaneManager` (`server/lanes/LaneManager.js`) — job runner mirroring the DecodeBench
+  lifecycle, but FLEET-WIDE single-flight (a lane spans 3–4 nodes; concurrency wedges).
+- Endpoints: `POST /api/lanes/check` (dry-run gate), `/batch` (gated multi-select),
+  `/:lane/{up,down,verify}`, `GET /jobs`, `/jobs/:id`, `POST /jobs/:id/cancel`.
+  `down` and `/batch`-with-teardown require `confirm:true` server-side.
 - §2.5 node-disjointness gate: server-enforced + live UI preview (grey out impossible
-  selections, name the conflict).
-- Blocker display + inline "Pull down \<holder\>" action (never auto-parked).
-- Live progress streaming from the job log.
+  selections, name the conflict). Blockers are REPORTED, never auto-resolved.
+- Confirm dialogs incl. **type-the-lane-name for a production `:8000` lane**.
+- Live progress streaming (step + log tail) with Cancel. (Absorbed old Phase 3.)
+- `logs/lane-control.jsonl` JSONL audit trail (gitignored).
+- sparkdash fork `addc623`. Verified: gate cases against the live fleet, full
+  swap flow end-to-end against a stub harness, PROD guard, cancel, 409 single-flight.
 - Value: the headline feature — put up / pull down any lane, or a compatible set, from
   the UI.
 
-**Phase 3 — cancel + audit**
-- `Cancel running job`, confirm dialogs, `logs/lane-control.jsonl`, job history view.
+**Phase 3 — cancel + audit** ✅ absorbed into Phase 2.
 
 **Phase 4 — polish**
 - Per-Spark "member of lane X" strip; job history tab; token management in Settings.
+- Known cosmetic/robustness follow-ups found while building Phase 2:
+  - the Overview page can show "No Sparks registered" on first paint right after a
+    server restart (WS snapshot races first render); a reload clears it.
+  - only the most recent finished job keeps its full log in memory (older ones live
+    in `/api/lanes/jobs` history without the log).
+  - a flaky `19.99 vs 20` assertion in the existing suite (timing-sensitive,
+    pre-existing; passes on re-run) — worth pinning down.
 
 ---
 
