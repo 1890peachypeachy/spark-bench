@@ -279,15 +279,22 @@ lab_design_up() {
 }
 
 lab_wait_design() {
-  local t=0
-  step "wait healthy" "design lab /api/health (budget ${LAB_WAIT}s)"
+  local t=0 st=""
+  step "wait healthy" "design lab container running (budget ${LAB_WAIT}s)"
+  # TRAP: the design lab's /api/health deliberately returns 400 with
+  # {"detail":"Use the Lab through localhost or an SSH tunnel"} when hit from
+  # outside the tailnet bind — it is DESIGNED to refuse external access. So a 200
+  # healthcheck can never pass. Judge health by the container's running state
+  # instead (the exposure step below still confirms it answers on the tailnet).
   while [[ $t -lt $LAB_WAIT ]]; do
-    if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$LAB_DESIGN_URL/api/health" 2>/dev/null)" == "200" ]]; then
-      ok "healthy after ${t}s"; return 0
+    st="$(sshx spark2 'docker inspect --format "{{.State.Status}}" ming-layer-web 2>/dev/null' || true)"
+    if [[ "$st" == "running" ]]; then
+      ok "container running after ${t}s"
+      return 0
     fi
     sleep 10; t=$((t + 10))
   done
-  note_fail "design-lab-health" "no 200 from $LAB_DESIGN_URL/api/health within ${LAB_WAIT}s"
+  note_fail "design-lab-health" "ming-layer-web not running within ${LAB_WAIT}s (last: ${st:-absent})"
   NEXT_CMD="ssh spark2 'docker logs --tail 40 ming-layer-web'"
   return 1
 }
