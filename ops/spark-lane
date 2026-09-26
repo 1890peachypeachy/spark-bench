@@ -95,6 +95,19 @@ result() { # lane action endpoint model extra
 }
 
 sshx() { ssh $SSH_OPTS "$@"; }
+
+# Detach a remote long-running job AND return immediately. sshx/$SSH_OPTS already
+# has -n (stdin), but that is NOT enough for a backgrounded job: the remote
+# `bash -c` wrapper ssh spawns keeps the channel's stdout open until its whole
+# child chain exits. Since the serve step runs in the foreground of the runner,
+# that means ssh waits forever -> `up` hangs and the rotation never advances.
+# FIXED 2026-09-25: use `ssh -f`, which backgrounds the ssh CLIENT itself right
+# after auth, so the local side returns regardless of the remote channel. The
+# remote job still detaches via its own setsid/nohup + fd redirects (callers do).
+launch_detached() {
+  local host="$1"; shift
+  ssh -f -o ConnectTimeout=10 -o BatchMode=yes "$host" "$@" >/dev/null 2>&1
+}
 docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/null"; }
 
 # Portable timeout: GNU `timeout` is NOT on macOS (no timeout/gtimeout by default),
@@ -448,7 +461,7 @@ dsv41_up() {
     return 1
   fi
   local log="$kit/lane-up-$(date +%Y%m%d-%H%M%S).log"
-  sshx "$DSV41_HEAD_HOST" "cd $kit && setsid nohup bash spark-lane-run.sh $lane $kit >> $log 2>&1 < /dev/null & echo launched"
+  launch_detached "$DSV41_HEAD_HOST" "cd $kit && setsid nohup bash spark-lane-run.sh $lane $kit >> $log 2>&1 < /dev/null"
   ok "launched detached (survives this session); log: $log"
   info "cold 4-Spark build fetches pinned sources on all four nodes — this can take a long while"
 
@@ -583,7 +596,7 @@ glm53_up() {
 
   step "start" "$GLM53_CLI start (detached, survives this session)"
   local log="$GLM53_KIT/lane-up-$(date +%Y%m%d-%H%M%S).log"
-  sshx "$GLM53_HEAD_HOST" "cd $GLM53_KIT && setsid nohup bash $GLM53_CLI start >> $log 2>&1 < /dev/null & echo launched"
+  launch_detached "$GLM53_HEAD_HOST" "cd $GLM53_KIT && setsid nohup bash $GLM53_CLI start >> $log 2>&1 < /dev/null"
   ok "launched detached; log: $log"
   info "GLM EXL3 TP3 boot is ~15-25 min (weights + drafter + FlashInfer autotune)"
 
