@@ -308,11 +308,15 @@ These mirror the `spark-lane` hard rules and the GB10 operations skill.
 
 ## 7. Build plan (phased, each phase independently useful)
 
-**Phase 1 — read-only lane panel** (low risk, ship first)
-- `spark-lane lanes --json` + `status --json`.
-- `GET /api/lanes`, `GET /api/lanes/status` (incl. blockers).
-- `LaneControlPanel` showing live lanes + serving/down state + verify button only.
-- Value: a real fleet lane view in the dashboard; zero destructive surface yet.
+**Phase 1 — read-only lane panel** ✅ **SHIPPED 2026-09-26**
+- `spark-lane lanes --json` + `status --json` (spark-bench `f764561`).
+- `GET /api/lanes`, `GET /api/lanes/status` (read-only, 20s TTL cache).
+- `LaneControlPanel` on the Overview page (sparkdash fork `07df77b`); shows live
+  lanes + serving/down/partial state + `blocked by <lane>`.
+- Verified live on :5555 and the tailnet URL against the real fleet.
+- Value: a real fleet lane view in the dashboard; zero destructive surface.
+- NOTE: Phase 1 ships *display* only — no Verify button yet (it needs the Phase 2 job
+  machinery). That is deliberate: Phase 1 has no POST surface at all.
 
 **Phase 2 — the switches (single + multi-select, gated)**
 - `LaneManager` + job endpoints + `POST /up`, `POST /down`, `POST /batch`, `POST /check`.
