@@ -48,7 +48,10 @@ LAB_DESIGN_TIP="100.71.248.116"
 LAB_IMAGE_DIR="/home/spark2/spark-image-lab"
 LAB_DESIGN_DIR="/home/spark2/antling-design-lab"
 REPO_URL="https://github.com/1890peachypeachy/DeepSeek-v4.1-Flash-DGX-Sparks.git"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve through the ~/.local/bin/spark-lane symlink -- a bare dirname on
+# BASH_SOURCE resolves to the symlink's own directory (~/.local/bin), not the
+# real ops/ dir, which breaks lane-profiles/ lookups (found 2026-09-25).
+HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
 ENGINE_WAIT="${ENGINE_WAIT:-900}"            # engine boot budget once the image exists
 ENGINE_MAX_WAIT="${ENGINE_MAX_WAIT:-10800}"  # ceiling for a COLD bring-up (image build on 4 nodes)
