@@ -160,7 +160,7 @@ census() {
   echo "  per-node containers (authoritative for occupancy):"
   local n o
   for n in spark1 spark2 spark3 spark4; do
-    o="$(docker_names "$n" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang' || true)"
+    o="$(docker_names "$n" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang|glm53' || true)"
     if [[ -z "$o" ]]; then printf '    %-8s %s(free)%s\n' "$n" "$D" "$N"
     else printf '    %-8s %s\n' "$n" "$(echo "$o" | paste -sd' ' -)"; fi
   done
@@ -282,9 +282,9 @@ creative_engine_up() {
   STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
   step "occupancy" "spark2 must be free (creative engine is the only lane that uses it)"
   local occ; occ="$(node_occupant spark2)"
-  if [[ "$occ" == "llm-lane" ]]; then
-    note_fail "occupancy" "an LLM lane is running on spark2"
-    NEXT_CMD="spark-lane status   # find the lane, then park it first"
+  if [[ -n "$occ" && "$occ" != "creative-engine" ]]; then
+    note_fail "occupancy" "spark2 is running $occ — park it first"
+    NEXT_CMD="spark-lane rotate creative-engine   # parks the conflicting lane, then brings this one up"
     result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")"
     return 1
   fi
@@ -783,10 +783,13 @@ case "$ACT" in
     if [[ $rc -eq 0 ]]; then printf 'NEXT: spark-lane up %s\n' "$LANE"; else printf 'NEXT: read the failure above\n'; fi
     exit $rc ;;
   logs)
-    kit="$(dsv41_kit "${LANE:-}")"
-    [[ -n "$kit" ]] || { echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4>" >&2; exit 2; }
-    echo "${B}newest bring-up log on $DSV41_HEAD_HOST${N} (tail ${TAIL:-40})"
-    sshx "$DSV41_HEAD_HOST" "f=\$(ls -1t $kit/lane-up-*.log 2>/dev/null | head -1); if [[ -n \"\$f\" ]]; then echo \"--- \$f\"; tail -${TAIL:-40} \"\$f\"; else echo 'no lane-up log yet'; fi" ;;
+    case "${LANE:-}" in
+      glm53-tp3) kit="$GLM53_KIT"; host="$GLM53_HEAD_HOST" ;;
+      dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
+      *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3>" >&2; exit 2 ;;
+    esac
+    echo "${B}newest bring-up log on $host${N} (tail ${TAIL:-40})"
+    sshx "$host" "f=\$(ls -1t $kit/lane-up-*.log 2>/dev/null | head -1); if [[ -n \"\$f\" ]]; then echo \"--- \$f\"; tail -${TAIL:-40} \"\$f\"; else echo 'no lane-up log yet'; fi" ;;
   stage)
     [[ "$LANE" == "dsv41-tp4" ]] || { echo "only 'stage dsv41-tp4' is supported" >&2; exit 2; }
     stage_tp4 ;;
