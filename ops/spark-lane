@@ -22,6 +22,7 @@
 #   creative-engine   spark2        image lab :7862 + design lab :8765  (no LLM lane)
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8000/v1
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8000/v1 (Mia's fast line)
+#   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (Mia's recipe)
 #
 # POLICY (do not change these constants casually)
 #   * The OpenAI endpoint + served model name stay IDENTICAL across TP3/TP4 swaps:
@@ -41,6 +42,13 @@ DSV41_HEAD_HOST="spark3"
 DSV41_HEAD_IP="100.99.120.29"
 TP3_KIT="/home/spark3/dsv41-3x"
 TP4_KIT="/home/spark3/dsv41-4x"
+# GLM-5.3-Flash EXL3 TP3 lane (Mia's recipe, single self-contained start-tp3.sh)
+GLM53_ENDPOINT="${GLM53_ENDPOINT:-http://100.99.120.29:8888/v1}"
+GLM53_MODEL="GLM-5.3-Flash-EXL3"
+GLM53_HEAD_HOST="spark3"
+GLM53_KIT="/home/spark3/GLM53-TP3"
+GLM53_CLI="./start-tp3.sh"
+GLM53_IMAGE="ghcr.io/miaai-lab/glm-5.3-flash-2x-dgx-sparks:exl3-instanttensor"
 LAB_DESIGN_HOST="spark2"
 LAB_DESIGN_URL="http://100.71.248.116:8765"
 LAB_IMAGE_URL="http://100.71.248.116:7862"
@@ -93,17 +101,18 @@ docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/nu
 # Matches the container names/images our lanes actually use.
 node_occupant() {
   local node="$1" out img lane
-  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang' || true)"
+  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang|glm53' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   if echo "$out" | grep -qE 'ming-layer-web|spark-image-lab'; then
     echo "creative-engine"
     return
   fi
-  # Detect which DeepSeek lane by image name (TP3 vs TP4)
-  img="$(sshx "$node" "docker ps --format '{{.Image}}' 2>/dev/null | grep -E 'dsv41|sglang' | head -1" 2>/dev/null || true)"
+  # Detect which lane by image name (TP3 vs TP4 vs GLM)
+  img="$(sshx "$node" "docker ps --format '{{.Image}}' 2>/dev/null | grep -E 'dsv41|sglang|glm53' | head -1" 2>/dev/null || true)"
   case "$img" in
     *dsv41-3x*|*sglang*3*) lane="dsv41-tp3" ;;
     *dsv41-4x*)            lane="dsv41-tp4" ;;
+    *glm53*|*exl3*)        lane="glm53-tp3" ;;
     *)                      lane="llm-lane-unknown" ;;
   esac
   echo "$lane"
@@ -180,12 +189,30 @@ lane_nodes() {
     creative-engine) echo "spark2" ;;
     dsv41-tp3)       echo "spark1 spark3 spark4" ;;
     dsv41-tp4)       echo "spark1 spark2 spark3 spark4" ;;
+    glm53-tp3)       echo "spark1 spark3 spark4" ;;
     *) return 1 ;;
   esac
 }
 
-lane_endpoint() { case "$1" in creative-engine) echo "$LAB_DESIGN_URL + $LAB_IMAGE_URL" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in creative-engine) echo "ming-image-0.1-design(+ -layer)" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in creative-engine) echo "$LAB_DESIGN_URL + $LAB_IMAGE_URL" ;; glm53-tp3) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in creative-engine) echo "ming-image-0.1-design(+ -layer)" ;; glm53-tp3) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+
+# Occupancy conflict check: returns a non-empty string naming any node that is
+# occupied by a lane OTHER than the one being brought up. A node occupied by the
+# SAME lane is not a conflict (the "already up?" check handles that case).
+# FIXED 2026-09-25: previously only flagged "llm-lane" (unknown) and
+# creative-engine-on-spark2, so a named lane like dsv41-tp4 occupying the nodes
+# was silently ignored and `up` launched on top of it (wedge risk).
+occupancy_conflict() {
+  local lane="$1" n occ conflict=""
+  for n in $(lane_nodes "$lane"); do
+    occ="$(node_occupant "$n")"
+    if [[ -n "$occ" && "$occ" != "$lane" ]]; then
+      conflict="$conflict $n($occ)"
+    fi
+  done
+  echo "$conflict"
+}
 
 # ── creative engine ──────────────────────────────────────────────────────────
 lab_image_up() {
@@ -323,14 +350,8 @@ dsv41_up() {
   STEPS=7; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
   step "occupancy" "$(lane_nodes "$lane")"
-  local n occ conflict=""
-  for n in $(lane_nodes "$lane"); do
-    occ="$(node_occupant "$n")"
-    if [[ -n "$occ" ]]; then
-      if [[ "$n" == "spark2" && "$occ" == "creative-engine" ]]; then conflict="$conflict spark2(creative-engine)"
-      elif [[ "$occ" == "llm-lane" ]]; then conflict="$conflict $n(llm-lane)"; fi
-    fi
-  done
+  local conflict
+  conflict="$(occupancy_conflict "$lane")"
   if [[ -n "$conflict" ]]; then
     note_fail "occupancy" "nodes already taken:$conflict"
     NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
@@ -482,6 +503,132 @@ dsv41_down() {
   return 0
 }
 
+# ── GLM-5.3-Flash EXL3 TP3 lane ─────────────────────────────────────────────
+# Mia's recipe: start-tp3.sh is a SINGLE self-contained command (build/sync/serve
+# in one), unlike the DSV kit's phased doctor->build->share->serve. So the up flow
+# is: occupancy -> kit present -> already-up? -> run start detached -> wait -> canary.
+glm53_up() {
+  local lane="glm53-tp3"
+  STEPS=6; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "occupancy" "$(lane_nodes "$lane")"
+  local conflict
+  conflict="$(occupancy_conflict "$lane")"
+  if [[ -n "$conflict" ]]; then
+    note_fail "occupancy" "nodes already taken:$conflict"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "all required nodes free"
+
+  step "kit" "$GLM53_KIT/$GLM53_CLI exists"
+  if ! sshx "$GLM53_HEAD_HOST" "test -f $GLM53_KIT/$GLM53_CLI"; then
+    note_fail "kit" "$GLM53_KIT/$GLM53_CLI missing on $GLM53_HEAD_HOST"
+    NEXT_CMD="spark-lane status"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "kit present"
+
+  step "already up?" "is $GLM53_ENDPOINT already serving completions?"
+  if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)" == "200" ]]; then
+    if canary "$GLM53_ENDPOINT" "$GLM53_MODEL" >/dev/null 2>&1; then
+      ok "already serving — no change made (and no restart)"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(already up, unchanged)"
+      NEXT_CMD="nothing"
+      return 0
+    fi
+    warn "endpoint answers but the chat canary failed — doing a full bring-up"
+  fi
+  ok "not serving yet"
+
+  step "start" "$GLM53_CLI start (detached, survives this session)"
+  local log="$GLM53_KIT/lane-up-$(date +%Y%m%d-%H%M%S).log"
+  sshx "$GLM53_HEAD_HOST" "cd $GLM53_KIT && setsid nohup bash $GLM53_CLI start >> $log 2>&1 < /dev/null & echo launched"
+  ok "launched detached; log: $log"
+  info "GLM EXL3 TP3 boot is ~15-25 min (weights + drafter + FlashInfer autotune)"
+
+  local ok_wait=0 t=0 code="" alive="" last=""
+  step "wait healthy" "endpoint up, or start exited (ceiling ${ENGINE_MAX_WAIT}s)"
+  while [[ $t -lt $ENGINE_MAX_WAIT ]]; do
+    code="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)"
+    [[ "$code" == "200" ]] && { ok "endpoint up after ${t}s"; ok_wait=1; break; }
+    alive="$(sshx "$GLM53_HEAD_HOST" "pgrep -f '$GLM53_CLI start' >/dev/null 2>&1 && echo 1 || echo 0" 2>/dev/null || echo 0)"
+    if [[ "$alive" != "1" ]]; then
+      last="$(sshx "$GLM53_HEAD_HOST" "grep -E '^!!!|FAILED|Error|error:' $log 2>/dev/null | tail -3" || true)"
+      note_fail "start" "the start command exited before the endpoint came up"
+      info "log: ${last:-<no error line found — read the log>}"
+      NEXT_CMD="ssh $GLM53_HEAD_HOST 'tail -60 $log'"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+      return 1
+    fi
+    if [[ $t -gt 0 && $((t % 120)) -eq 0 ]]; then
+      last="$(sshx "$GLM53_HEAD_HOST" "tail -1 $log 2>/dev/null | cut -c1-110" || true)"
+      info "+${t}s still working: ${last:-<no log line yet>}"
+    fi
+    sleep 15; t=$((t + 15))
+  done
+  if [[ $ok_wait -eq 0 ]]; then
+    note_fail "wait-healthy" "no 200 from $GLM53_ENDPOINT/models within ${ENGINE_MAX_WAIT}s (last: $code)"
+    NEXT_CMD="spark-lane logs $lane   # then re-run: spark-lane up $lane"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+
+  step "identity" "served model name must be $GLM53_MODEL"
+  local ids
+  ids="$(curl -s -m 10 "$GLM53_ENDPOINT/models" | python3 -c 'import json,sys
+try: print(" ".join(m.get("id","") for m in json.load(sys.stdin).get("data",[])))
+except Exception: print("")' 2>/dev/null)"
+  if [[ "$ids" != *"$GLM53_MODEL"* ]]; then
+    note_fail "identity" "endpoint serves [$ids], expected $GLM53_MODEL"
+    NEXT_CMD="ssh $GLM53_HEAD_HOST 'grep -n SERVED_MODEL_NAME $GLM53_KIT/.env.tp3'"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "serving $ids"
+
+  step "canary" "real chat completion (port-open is not proof)"
+  canary "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
+
+  result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified)"
+  NEXT_CMD="nothing — lane is serving. To put the creative engine back: spark-lane rotate creative-engine"
+  return 0
+}
+
+glm53_down() {
+  local lane="glm53-tp3"
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "stop" "$GLM53_CLI stop (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
+  if ! timeout "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_HEAD_HOST" "cd $GLM53_KIT && $GLM53_CLI stop" >/dev/null 2>&1; then
+    note_fail "stop" "$GLM53_CLI stop returned non-zero OR timed out after ${DSV41_STOP_TIMEOUT:-180}s -- if it timed out, the head node may be wedged; verify with 'ssh $GLM53_HEAD_HOST uptime' before retrying"
+    NEXT_CMD="ssh $GLM53_HEAD_HOST 'cd $GLM53_KIT && $GLM53_CLI stop'   # run in the foreground to see whether it hangs or fails cleanly"
+    result "$lane" "down" "-" "-"
+    return 1
+  fi
+  ok "stop issued"
+
+  step "verify torn down" "no lane containers left on $(lane_nodes "$lane")"
+  local n left="" c
+  for n in $(lane_nodes "$lane"); do
+    c="$(docker_names "$n" | grep -E 'glm53|exl3' || true)"
+    [[ -n "$c" ]] && left="$left $n:$c"
+  done
+  if [[ -n "$left" ]]; then
+    note_fail "torn-down" "containers still present:$left"
+    NEXT_CMD="spark-lane status   # inspect, then re-run down"
+    result "$lane" "down" "-" "-"
+    return 1
+  fi
+  ok "all required nodes released"
+
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — nodes released. Weights and images were NOT deleted."
+  return 0
+}
+
 # ── stage (TP4 kit deploy, idempotent) ───────────────────────────────────────
 stage_tp4() {
   STEPS=4; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
@@ -554,14 +701,16 @@ verify_lane() {
     result "$lane" "verify" "$(lane_endpoint "$lane")" "$(lane_model_id "$lane")"
     return $FAILED
   fi
-  step "endpoint" "$DSV41_ENDPOINT/models"
-  local code; code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$DSV41_ENDPOINT/models")"
+  local ep model
+  ep="$(lane_endpoint "$lane")"; model="$(lane_model_id "$lane")"
+  step "endpoint" "$ep/models"
+  local code; code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$ep/models")"
   if [[ "$code" != "200" ]]; then
     warn "http $code — falling through to a timed canary anyway (list-models is not proof)"
   else ok "200"; fi
   step "canary" "real chat completion"
-  canary "$DSV41_ENDPOINT" "$DSV41_MODEL"
-  result "$lane" "verify" "$DSV41_ENDPOINT" "$DSV41_MODEL"
+  canary "$ep" "$model"
+  result "$lane" "verify" "$ep" "$model"
   return $FAILED
 }
 
@@ -582,8 +731,10 @@ lanes:
   creative-engine   spark2        image lab :7862 + design lab :8765
   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3 -> $DSV41_ENDPOINT
   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4 -> $DSV41_ENDPOINT  (fast line)
+  glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
 
-The endpoint and model name are stable across TP3/TP4: $DSV41_ENDPOINT / $DSV41_MODEL
+The DeepSeek endpoint and model name are stable across TP3/TP4: $DSV41_ENDPOINT / $DSV41_MODEL
+The GLM lane serves a distinct identity: $GLM53_ENDPOINT / $GLM53_MODEL
 USAGE
 }
 
@@ -593,17 +744,17 @@ LANE="${2:-}"
 case "$ACT" in
   status|census) census ;;
   lanes)
-    for l in creative-engine dsv41-tp3 dsv41-tp4; do
+    for l in creative-engine dsv41-tp3 dsv41-tp4 glm53-tp3; do
       printf '%-16s nodes: %-26s endpoint: %s\n' "$l" "$(lane_nodes "$l")" "$(lane_endpoint "$l")"
     done ;;
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in creative-engine) creative_engine_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in creative-engine) creative_engine_up ;; glm53-tp3) glm53_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in creative-engine) creative_engine_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in creative-engine) creative_engine_down ;; glm53-tp3) glm53_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -617,7 +768,7 @@ case "$ACT" in
       o="$(node_occupant "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in creative-engine dsv41-tp3 dsv41-tp4; do
+    for other in creative-engine dsv41-tp3 dsv41-tp4 glm53-tp3; do
       [[ "$other" == "$LANE" ]] && continue
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done
