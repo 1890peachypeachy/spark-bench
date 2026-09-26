@@ -243,6 +243,76 @@ lane_nodes() {
 lane_endpoint() { case "$1" in creative-engine) echo "$LAB_DESIGN_URL + $LAB_IMAGE_URL" ;; glm53-tp3) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
 lane_model_id() { case "$1" in creative-engine) echo "ming-image-0.1-design(+ -layer)" ;; glm53-tp3) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
+# ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
+ALL_LANE_IDS="creative-engine dsv41-tp3 dsv41-tp4 glm53-tp3"
+
+# Minimal JSON string escape (values here are ids/hosts/models — no control chars).
+json_str() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"; }
+
+# up | down | partial, derived from live per-node occupants (never from labels).
+#   up      = every node in the lane is held by this lane
+#   down    = the lane holds none of its nodes (whoever else holds them is separate;
+#             down-but-blocked is `down` + a non-empty `holders` map)
+#   partial = the lane holds some but not all of its nodes (a broken half-up)
+lane_up_state() {
+  local lane="$1" n occ total=0 mine=0
+  for n in $(lane_nodes "$lane"); do
+    total=$((total + 1))
+    occ="$(node_occupant "$n")"
+    [[ "$occ" == "$lane" ]] && mine=$((mine + 1))
+  done
+  if   [[ $mine -eq $total ]]; then echo up
+  elif [[ $mine -gt 0 ]];      then echo partial
+  else echo down
+  fi
+}
+
+# JSON object for one lane: {id,nodes[],endpoint,model,status,holders{node:lane}}
+lane_json_obj() {
+  local l="$1" nodes="[" n f=1 holders="{" hf=1 occ
+  for n in $(lane_nodes "$l"); do
+    [[ $f -eq 1 ]] || nodes="$nodes,"
+    f=0; nodes="$nodes$(json_str "$n")"
+  done
+  nodes="$nodes]"
+  for n in $(lane_nodes "$l"); do
+    occ="$(node_occupant "$n")"
+    [[ -z "$occ" || "$occ" == "$l" ]] && continue
+    [[ $hf -eq 1 ]] || holders="$holders,"
+    hf=0; holders="$holders$(json_str "$n"):$(json_str "$occ")"
+  done
+  holders="$holders}"
+  printf '{"id":%s,"nodes":%s,"endpoint":%s,"model":%s,"status":%s,"holders":%s}' \
+    "$(json_str "$l")" "$nodes" "$(json_str "$(lane_endpoint "$l")")" \
+    "$(json_str "$(lane_model_id "$l")")" "$(json_str "$(lane_up_state "$l")")" "$holders"
+}
+
+lanes_json() {
+  local l f=1
+  printf '['
+  for l in $ALL_LANE_IDS; do
+    [[ $f -eq 1 ]] || printf ','
+    f=0; lane_json_obj "$l"
+  done
+  printf ']\n'
+}
+
+status_json() {
+  local n f=1 l occ
+  printf '{"nodes":{'
+  for n in spark1 spark2 spark3 spark4; do
+    [[ $f -eq 1 ]] || printf ','
+    f=0; printf '%s:%s' "$(json_str "$n")" "$(json_str "$(node_occupant "$n")")"
+  done
+  printf '},"lanes":['
+  f=1
+  for l in $ALL_LANE_IDS; do
+    [[ $f -eq 1 ]] || printf ','
+    f=0; lane_json_obj "$l"
+  done
+  printf ']}\n'
+}
+
 # Occupancy conflict check: returns a non-empty string naming any node that is
 # occupied by a lane OTHER than the one being brought up. A node occupied by the
 # SAME lane is not a conflict (the "already up?" check handles that case).
@@ -799,11 +869,16 @@ ACT="${1:-status}"
 LANE="${2:-}"
 
 case "$ACT" in
-  status|census) census ;;
+  status|census)
+    if [[ "$LANE" == "--json" ]]; then status_json; else census; fi ;;
   lanes)
-    for l in creative-engine dsv41-tp3 dsv41-tp4 glm53-tp3; do
-      printf '%-16s nodes: %-26s endpoint: %s\n' "$l" "$(lane_nodes "$l")" "$(lane_endpoint "$l")"
-    done ;;
+    if [[ "$LANE" == "--json" ]]; then
+      lanes_json
+    else
+      for l in $ALL_LANE_IDS; do
+        printf '%-16s nodes: %-26s endpoint: %s\n' "$l" "$(lane_nodes "$l")" "$(lane_endpoint "$l")"
+      done
+    fi ;;
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
