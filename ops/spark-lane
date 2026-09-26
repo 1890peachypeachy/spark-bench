@@ -89,15 +89,21 @@ docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/nu
 # Occupants of a node, one per line, empty = free.
 # Matches the container names/images our lanes actually use.
 node_occupant() {
-  local node="$1" out
+  local node="$1" out img lane
   out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41|sglang' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   if echo "$out" | grep -qE 'ming-layer-web|spark-image-lab'; then
-    # spark2 also hosts the LLM sidecar-less creative engine
     echo "creative-engine"
-  else
-    echo "llm-lane"
+    return
   fi
+  # Detect which DeepSeek lane by image name (TP3 vs TP4)
+  img="$(sshx "$node" "docker ps --format '{{.Image}}' 2>/dev/null | grep -E 'dsv41|sglang' | head -1" 2>/dev/null || true)"
+  case "$img" in
+    *dsv41-3x*|*sglang*3*) lane="dsv41-tp3" ;;
+    *dsv41-4x*)            lane="dsv41-tp4" ;;
+    *)                      lane="llm-lane-unknown" ;;
+  esac
+  echo "$lane"
 }
 
 # ── canary: a REAL chat completion, because /v1/models can stay green while chat hangs
