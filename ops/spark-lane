@@ -730,9 +730,13 @@ verify_lane() {
   local lane="$1"
   STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
   if [[ "$lane" == "creative-engine" ]]; then
-    step "design lab" "$LAB_DESIGN_URL/api/health"
-    local dh; dh="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_DESIGN_URL/api/health")"
-    [[ "$dh" == "200" ]] && ok "200" || { note_fail "design-lab" "http $dh"; NEXT_CMD="spark-lane up creative-engine"; }
+    # TRAP: the design lab's /api/health deliberately returns 400 with
+    # {"detail":"Use the Lab through localhost or an SSH tunnel"} when hit from
+    # outside the tailnet bind — it is DESIGNED to refuse external access. So a 200
+    # check can never pass. Judge the design lab by its container running state.
+    step "design lab" "ming-layer-web container running (api/health refuses external access by design)"
+    local ds; ds="$(sshx spark2 'docker inspect --format "{{.State.Status}}" ming-layer-web 2>/dev/null' || true)"
+    [[ "$ds" == "running" ]] && ok "container running" || { note_fail "design-lab" "container ${ds:-absent}"; NEXT_CMD="spark-lane up creative-engine"; }
     step "image lab" "$LAB_IMAGE_URL/ + container health"
     local ih; ih="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_IMAGE_URL/")"
     [[ "$ih" == "200" ]] && ok "200" || { note_fail "image-lab" "http $ih"; NEXT_CMD="spark-lane up creative-engine"; }
