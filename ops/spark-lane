@@ -441,10 +441,16 @@ dsv41_down() {
   kit="$(dsv41_kit "$lane")"; cli="$(dsv41_cli "$lane")"
   STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
-  step "stop" "$cli stop"
-  if ! sshx "$DSV41_HEAD_HOST" "cd $kit && $cli stop" >/dev/null 2>&1; then
-    note_fail "stop" "$cli stop returned non-zero"
-    NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $kit && $cli stop'"
+  step "stop" "$cli stop (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
+  # Incident 2026-09-25: an unbounded ssh call here let a wedged upstream
+  # stop.sh hang the head node indefinitely (NVRM OOM storm, no clean
+  # shutdown, required a physical power-cycle). `timeout` on the ssh client
+  # side can't un-stick a wedged remote host, but it stops this script from
+  # sitting there blind -- a timeout is now a loud FAIL with a clear next
+  # step instead of a silent multi-hour hang.
+  if ! timeout "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$DSV41_HEAD_HOST" "cd $kit && $cli stop" >/dev/null 2>&1; then
+    note_fail "stop" "$cli stop returned non-zero OR timed out after ${DSV41_STOP_TIMEOUT:-180}s -- if it timed out, the head node may be wedged; verify with 'ssh $DSV41_HEAD_HOST uptime' before retrying, do not just re-run"
+    NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $kit && $cli stop'   # run in the foreground to see whether it hangs or fails cleanly"
     result "$lane" "down" "-" "-"
     return 1
   fi
