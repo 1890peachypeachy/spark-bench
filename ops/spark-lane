@@ -353,14 +353,18 @@ dsv41_up() {
   fi
   ok "kit present"
 
-  step "doctor" "$cli doctor"
+  step "doctor" "$cli doctor (post-provision gate — the chain runner re-checks it after build+share)"
+  # NOTE (fixed 2026-09-25): this is NOT a hard gate here. On a cold bring-up the
+  # worker NFS volumes don't exist until `share` runs inside the chain, so a
+  # doctor-first gate always self-refused. The chain runner (lane-up-runner.sh)
+  # runs doctor AFTER build+share, where the weight check can actually pass. We
+  # still surface a pre-flight doctor here for visibility, but a failure is not
+  # fatal — the chain's post-provision doctor is the real gate.
   if ! sshx "$DSV41_HEAD_HOST" "cd $kit && $cli doctor" >/dev/null 2>&1; then
-    note_fail "doctor" "the kit's own preflight failed"
-    NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $kit && $cli doctor'   # read the failure"
-    result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"
-    return 1
+    warn "pre-flight doctor reported issues (expected on a cold bring-up before share) — proceeding; the chain re-runs doctor after build+share"
+  else
+    ok "doctor clean"
   fi
-  ok "doctor clean"
 
   # Never disturb a lane that is genuinely serving. Port-open is not proof, so this
   # shortcut requires a real completion.
@@ -376,7 +380,7 @@ dsv41_up() {
   fi
   ok "not serving yet"
 
-  step "chain" "doctor -> build -> share/pack (first time) -> serve, detached"
+  step "chain" "build -> share/pack (first time) -> doctor -> serve, detached"
   scp -q -o ConnectTimeout=10 "$HERE/lane-profiles/lane-up-runner.sh" "$DSV41_HEAD_HOST:$kit/spark-lane-run.sh" 2>/dev/null
   if ! sshx "$DSV41_HEAD_HOST" "test -f $kit/spark-lane-run.sh"; then
     note_fail "chain" "could not place the chain runner on $DSV41_HEAD_HOST"

@@ -11,6 +11,15 @@
 # phases, the first-time-only share/pack gate and the exit codes stay readable and
 # can be re-run by hand exactly as written.
 #
+# ORDER MATTERS (fixed 2026-09-25): doctor must run AFTER build + share, not before.
+# On a cold bring-up the worker NFS volumes (dsv41-weights-4x) do not exist until
+# `share` creates them, and doctor's worker-weight check requires them — so a
+# doctor-first chain always self-refused on first-ever serve. build provisions the
+# image, share provisions the volumes, THEN doctor is a real gate that can pass.
+# (Mia's docs/tp4.md lists doctor first as a diagnostic; serve itself runs doctor
+# non-strict and auto-builds/auto-shares. We keep doctor as a hard gate, just after
+# provisioning where it is meaningful.)
+#
 # Usage: lane-up-runner.sh <lane> <kit_dir> [--force-pack]
 set -uo pipefail
 
@@ -40,15 +49,13 @@ run() {
   echo "=== ok: $CLI $* ==="
 }
 
-# 1. preflight — the kit's own gate, always worth re-running
-run doctor
-
-# 2. image — docker build per node; cached layers make a repeat cheap, and the
+# 1. image — docker build per node; cached layers make a repeat cheap, and the
 #    TP4 image fetches its pinned third-party sources during this phase
 run build
 
-# 3. weights share + Engram pack — genuinely first-time-only (the docs say so),
-#    gated on a marker so a re-up does not rebuild the Engram shards
+# 2. weights share + Engram pack — genuinely first-time-only (the docs say so),
+#    gated on a marker so a re-up does not rebuild the Engram shards. This is what
+#    creates the worker NFS volumes doctor's weight check needs.
 if [[ "$FORCE_PACK" == "--force-pack" || ! -f "$MARK" ]]; then
   run share
   run pack
@@ -57,6 +64,11 @@ if [[ "$FORCE_PACK" == "--force-pack" || ! -f "$MARK" ]]; then
 else
   echo "=== share+pack already done ($MARK) — skipping ==="
 fi
+
+# 3. doctor — the kit's own gate, AFTER provisioning so the worker-weight check
+#    can actually pass. A doctor failure here is a real problem, not a cold-start
+#    artifact.
+run doctor
 
 # 4. serve — the launcher keeps the engine running in containers; this process may
 #    tail logs and stay alive, which is fine under setsid
