@@ -154,12 +154,22 @@ later, against an already-warm engine with 88%+ prefix cache hit rate and
 tens of thousands of adaptive-k observations) could not have caught this even
 if run immediately after launch, unless run within seconds of `health 200`.
 
-**Mitigation until upstream ships `bench/prefill_bench.py` (or fixes the import):**
-after any `start.sh serve`, before pointing real traffic at the endpoint, manually
-warm the engine with 1-2 long-context requests (~15-16k tokens) at whatever
-temperature/sampling settings production traffic will actually use - qeval's
-temperature=0 greedy runs are not a substitute; a repetition loop is a classic
-non-zero-temperature sampling failure mode qeval's own docstring says it can't
-catch ("greedy output is only reproducible run to run when the batch
-composition is fixed... `--concurrency N` exists for speed but forfeits that").
-Do not consider a fresh launch traffic-ready just because `/health` returned 200.
+**FIXED (not just mitigated), 2026-09-27:** added `bench/prefill_bench.py` to our
+fork (`origin/main` @ `f228cc7` in `~/recipe-db/GLM-5.3-Flash-4x-DGX-Spark-TP4`) -
+`post`/`build` already existed with matching signatures in
+`bench/prefill_checked.py`; the shim re-exports those and adds the one missing
+piece, `ttft()`. Verified against this live deployment:
+
+```
+[08:09:41] boot-warm: waiting for http://127.0.0.1:8888/health (up to 1800 s)
+[08:09:41] boot-warm: healthy after 0 s
+[08:09:42] boot-warm: short chat 0.349 s, 10 tokens
+[08:09:44] boot-warm: long cold prefill 1/1: {"elapsed_s": 2.156, "http_status": 200, "prompt_tokens": 3966, "tok_s": 1839.3}
+[08:09:44] boot-warm done in 3 s
+```
+
+`BOOT_WARM=1` (the default) will now actually run on every future `start.sh
+serve` for this recipe - no more manual step needed. `manual_boot_warm.sh` in
+this directory stays as a fallback/sanity-check tool, not the primary
+mitigation anymore. Worth upstreaming this file to `knapcio/GLM-5.3-Flash-4x-
+DGX-Spark-TP4` at some point (currently only on our fork, `origin`).
