@@ -91,3 +91,35 @@ nodes before re-running `start.sh serve`. Worth porting the same
 `curl http://100.99.120.29:8888/v1/chat/completions` → correct answer, TP4 across
 all 4 Spark nodes, `system_fingerprint` confirms `vllm-...-tp4-...`. Cold start
 ~9 minutes from `start.sh serve` to `health 200`.
+
+## Don't skip the recipe's own quality gate
+
+We initially declared this "verified" from a couple of manual curl spot-checks
+(one arithmetic question, one short story). A user later hit a garbled/repeating
+output from a real agent session. Investigation found `SpecDecoding metrics: ...
+Accepted: 0 tokens, Drafted: 915 tokens, Avg Draft acceptance rate: 0.0%` in the
+server log right around that time — but the recipe's own `scripts/drafter_fp8.py`
+docstring is explicit that a lossy/degraded drafter should only ever slow decoding
+down, never corrupt output (rejection sampling always falls back to the verified
+target). So a bad acceptance rate alone doesn't indict the drafter conversion.
+
+The actually correct validation step, already in the recipe and skipped by us
+the first time: `docs/validation.md`'s quality gate, `bench/qeval.py` (55
+auto-scored tasks incl. explicit prose-degeneration checks), requiring **>=72/75
+at both c1 and c4 concurrency**. Run it against the live endpoint before calling
+any serving change validated - "a component speed result does not qualify a
+serving change" is the recipe's own words for exactly this mistake.
+
+Note: `qeval.py` hardcodes `"model": "GLM-5.3-Flash-FP8"` in its request body,
+which 404s against any other `--served-model-name`. No `--model` CLI flag exists.
+Fix is a local, throwaway `sed` swap on the copy you run from - do not commit
+that change back upstream (it's request-shape only, not a recipe fix), and
+restore the original file after.
+
+Result on this deployment: **c1 73/75 (97.3%), c4 71/75 (94.7%)**, all prose/
+degeneration checks clean at both concurrencies (5/5 both runs). Both clear the
+gate. The two failures each run were ordinary wrong-answer misses (math/counting),
+not repetition or corruption - consistent with the garbled output having been a
+rare, transient edge case rather than a systemic defect. Re-run this gate after
+any future config change to this lane (GPU_UTIL, spec-decode params, weight
+re-conversion) before calling it done.
