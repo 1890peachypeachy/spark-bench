@@ -371,6 +371,15 @@ occupancy_conflict() {
 # ── creative engine ──────────────────────────────────────────────────────────
 lab_image_up() {
   step "image lab" "starting (compose: doctor gate, then detached)"
+  # TRAP (2026-09-27): if the spark-image-lab:local image is missing, the doctor
+  # gate silently becomes a FULL IMAGE BUILD (compose builds on the fly). That
+  # blows the step budget and the one-click dies as a mystery exit 1. Fail fast
+  # with the fix instead. Never auto-build here: builds are slow CUDA compiles.
+  if ! sshx spark2 "docker image inspect spark-image-lab:local >/dev/null 2>&1"; then
+    note_fail "image-lab-up" "spark-image-lab:local image MISSING on spark2 (pruned or never built); refusing to silently rebuild inside the gate"
+    NEXT_CMD="ssh spark2 'cd /home/spark2/spark-image-lab && docker compose build'   # then: spark-lane up creative-engine"
+    return 1
+  fi
   sshx spark2 "cd $LAB_IMAGE_DIR && ./spark start" >/dev/null 2>&1
   if [[ $? -ne 0 ]]; then
     note_fail "image-lab-up" "spark start returned non-zero (doctor gate or compose error)"
@@ -390,6 +399,13 @@ lab_design_up() {
   if sshx spark2 "docker inspect ming-layer-web" >/dev/null 2>&1; then
     info "leftover ming-layer-web present — removing before re-run"
     sshx spark2 "docker rm -f ming-layer-web" >/dev/null 2>&1
+  fi
+  # Same trap as the image lab: a missing image must fail fast, not turn into a
+  # surprise Docker Hub pull attempt inside the step.
+  if ! sshx spark2 "docker image inspect ming-image-layer:gx10 >/dev/null 2>&1"; then
+    note_fail "design-lab-up" "ming-image-layer:gx10 image MISSING on spark2 (pruned or never built)"
+    NEXT_CMD="ssh spark2 'cd /home/spark2/antling-design-lab && docker build -t ming-image-layer:gx10 -f Dockerfile.gx10 .'   # then: spark-lane up creative-engine"
+    return 1
   fi
   sshx spark2 "cd $LAB_DESIGN_DIR && MING_DETACH=1 MING_BIND_IP=$LAB_DESIGN_TIP scripts/run_web_gx10.sh" >/dev/null 2>&1
   if [[ $? -ne 0 ]]; then
