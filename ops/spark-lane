@@ -110,6 +110,44 @@ launch_detached() {
 }
 docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/null"; }
 
+# FIXED 2026-09-26: `up` used to leave stale EXITED containers from a prior
+# crash in place, so the recipe's own `docker run`/compose step failed with
+# "name already in use", the chain died silently, and the human had to
+# manually `docker rm` before a retry ever worked (dsv41-tp4 hit this twice
+# in a row, 2026-09-26). occupancy_conflict() only looks at RUNNING
+# containers, so it does not catch this — a node can be "free" per that
+# check and still have dead containers blocking a clean relaunch.
+#
+# Scoped by name on purpose: these nodes accumulate months of unrelated
+# one-off experiment containers (qwen36-nvfp4, dspark_vllm, r0b0tlab, etc.)
+# that a human may still want to inspect post-mortem. A blanket "remove
+# every exited container on the node" would destroy that debugging evidence
+# for zero benefit — only THIS lane's own known container names can ever
+# collide with what it's about to launch, so only those are candidates.
+# docker rm without -f also refuses anything still running, so this can
+# never touch a live process either way.
+lane_container_names() {
+  case "$1" in
+    dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
+    glm53-tp3)           echo "glm53-exl3-head glm53-exl3-worker" ;;
+    creative-engine)     echo "ming-layer-web spark-image-lab" ;;
+    *) return 1 ;;
+  esac
+}
+
+cleanup_dead_containers() {
+  local lane="$1" n dead names pattern
+  names="$(lane_container_names "$lane")" || return 0
+  pattern="^($(echo "$names" | tr ' ' '|'))\$"
+  for n in $(lane_nodes "$lane"); do
+    dead="$(sshx "$n" "docker ps -a --filter status=exited --filter status=dead --filter status=created --format '{{.Names}}'" 2>/dev/null | grep -E "$pattern" || true)"
+    if [[ -n "$dead" ]]; then
+      info "  $n: removing dead container(s): $(echo "$dead" | tr '\n' ' ')"
+      sshx "$n" "echo '$dead' | xargs -r docker rm" >/dev/null 2>&1
+    fi
+  done
+}
+
 # Portable timeout: GNU `timeout` is NOT on macOS (no timeout/gtimeout by default),
 # so `down`/`rotate` always failed at the stop step with "timeout: command not found".
 # This helper runs a command with a hard wall-clock cap and returns 124 on timeout
@@ -470,7 +508,7 @@ dsv41_cli() { case "$1" in dsv41-tp3) echo "./start.sh" ;; dsv41-tp4) echo "./st
 dsv41_up() {
   local lane="$1" kit cli
   kit="$(dsv41_kit "$lane")"; cli="$(dsv41_cli "$lane")"
-  STEPS=7; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  STEPS=8; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
   step "occupancy" "$(lane_nodes "$lane")"
   local conflict
@@ -482,6 +520,10 @@ dsv41_up() {
     return 1
   fi
   ok "all required nodes free"
+
+  step "cleanup" "removing any dead containers left from a prior crash"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
 
   step "kit" "$kit exists"
   if ! sshx "$DSV41_HEAD_HOST" "test -f $kit/$cli"; then
@@ -632,7 +674,7 @@ dsv41_down() {
 # is: occupancy -> kit present -> already-up? -> run start detached -> wait -> canary.
 glm53_up() {
   local lane="glm53-tp3"
-  STEPS=6; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  STEPS=7; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
   step "occupancy" "$(lane_nodes "$lane")"
   local conflict
@@ -644,6 +686,10 @@ glm53_up() {
     return 1
   fi
   ok "all required nodes free"
+
+  step "cleanup" "removing any dead containers left from a prior crash"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
 
   step "kit" "$GLM53_KIT/$GLM53_CLI exists"
   if ! sshx "$GLM53_HEAD_HOST" "test -f $GLM53_KIT/$GLM53_CLI"; then
