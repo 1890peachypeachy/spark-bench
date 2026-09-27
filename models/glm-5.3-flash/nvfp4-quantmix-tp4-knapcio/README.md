@@ -123,3 +123,43 @@ not repetition or corruption - consistent with the garbled output having been a
 rare, transient edge case rather than a systemic defect. Re-run this gate after
 any future config change to this lane (GPU_UTIL, spec-decode params, weight
 re-conversion) before calling it done.
+
+## Real root cause of the garbled first-interaction bug (confirmed, upstream recipe bug)
+
+The qeval pass above does NOT mean there was no bug - it means the bug isn't a
+weight-correctness problem. The actual cause: **`BOOT_WARM=1` (on by default)
+is broken in this recipe.** `scripts/boot_warm.py` does
+`sys.path.insert(..., "../bench"); import prefill_bench as pb` but
+`bench/prefill_bench.py` does not exist anywhere in this repo (checked both our
+local clone and the synced copy on Spark3) - confirmed by manually invoking it:
+
+```
+ModuleNotFoundError: No module named 'prefill_bench'
+```
+
+So the recipe's own protection against "first live request hits a cold engine"
+(2x 16384-token cold prefills right after `/health` goes 200, per `start.sh`'s
+own comment: "so the first user's long prompt does not pay the first-long-
+prefill cost") **silently never runs, for anyone deploying this recipe** - it
+crashes on import with no visible error at launch time (no log file, no pid
+file, nothing in `start.sh serve`'s own output; only visible by invoking
+`boot_warm.py` directly).
+
+Confirmed timeline on this deployment: first real client request landed 27s
+after `health 200`. That's genuinely the first live request against a stone-
+cold engine - empty prefix cache, freshly-captured CUDA graphs, zero
+calibration data in the custom adaptive-k scheduler. That is a textbook
+condition for a degenerate decode loop that never hits EOS. qeval (run much
+later, against an already-warm engine with 88%+ prefix cache hit rate and
+tens of thousands of adaptive-k observations) could not have caught this even
+if run immediately after launch, unless run within seconds of `health 200`.
+
+**Mitigation until upstream ships `bench/prefill_bench.py` (or fixes the import):**
+after any `start.sh serve`, before pointing real traffic at the endpoint, manually
+warm the engine with 1-2 long-context requests (~15-16k tokens) at whatever
+temperature/sampling settings production traffic will actually use - qeval's
+temperature=0 greedy runs are not a substitute; a repetition loop is a classic
+non-zero-temperature sampling failure mode qeval's own docstring says it can't
+catch ("greedy output is only reproducible run to run when the batch
+composition is fixed... `--concurrency N` exists for speed but forfeits that").
+Do not consider a fresh launch traffic-ready just because `/health` returned 200.
