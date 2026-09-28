@@ -854,6 +854,25 @@ glm53_tp4_nfs_ok() {   # $1 = node ; success = weights visible
   sshx "$1" "test -d $GLM53_TP4_WEIGHTS && test \"\$(ls -1 $GLM53_TP4_WEIGHTS 2>/dev/null | wc -l)\" -gt 0"
 }
 
+# Name the processes competing for UMA on a node that is short or thin on memory.
+# Lane ranks are excluded; everything else listed is a co-tenant. A co-tenant with
+# restart=unless-stopped survives a reboot, so it must be stopped (or moved), not
+# rebooted around. Read-only: this never stops anything itself.
+mem_blame() {
+  local n names
+  for n in "$@"; do
+    names="$(sshx "$n" "docker ps --format '{{.Names}}|{{.Label \"x\"}}' 2>/dev/null | cut -d'|' -f1 \
+      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tp3|dsv41|qwen3|creative-engine' \
+      | head -8 | paste -sd, -" 2>/dev/null)"
+    if [[ -n "$names" ]]; then
+      info "  $n co-tenants holding memory: $names"
+      info "  $n stop/move those (a restart=unless-stopped co-tenant returns on boot)"
+    else
+      info "  $n no co-tenants — this one really is the kernel MemAvailable anomaly; a reboot should clear it"
+    fi
+  done
+}
+
 glm53_tp4_up() {
   local lane="glm53-tp4"
   STEPS=11; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
@@ -948,7 +967,12 @@ glm53_tp4_up() {
   # no reason. Warn about the grey zone, then let the engine be the authority — it
   # fails in ~2 min with an exact number, and the rank-crash hint below finds it.
   step "memory" "drop page cache, then check each node can physically satisfy GPU_UTIL"
-  local util req warnfloor avail short="" grey=""
+  # 2026-09-27: "MemAvailable anomaly" was the wrong diagnosis. spark2 kept losing
+  # ~7 GiB between runs and a reboot "fixed" it only until the co-tenant restarted:
+  # Penpot (5 containers, restart=unless-stopped) came back on boot and re-took the
+  # headroom. Rebooting a node whose competitor is unless-stopped just wastes 5 min.
+  # So: name the co-tenants and let the operator decide, instead of ordering a reboot.
+  local util req warnfloor avail short="" grey="" short_nodes="" grey_nodes=""
   util="$(sshx "$GLM53_HEAD_HOST" "grep -E '^GPU_UTIL=' $GLM53_TP4_KIT/.env | tail -1 | cut -d= -f2" 2>/dev/null)"
   util="${util:-0.75}"
   req="$(python3 -c "print(round(121.69*$util, 1))" 2>/dev/null || echo 91.3)"
@@ -958,21 +982,20 @@ glm53_tp4_up() {
     sleep 1
     avail="$(sshx "$n" "awk '/^MemAvailable/ {printf \"%.1f\", \$2/1048576}' /proc/meminfo" 2>/dev/null || echo 0)"
     if python3 -c "import sys; sys.exit(0 if float('${avail:-0}') < float('$req') else 1)" 2>/dev/null; then
-      short="$short $n(${avail}G<${req}G)"
+      short="$short $n(${avail}G<${req}G)"; short_nodes="$short_nodes $n"
     elif python3 -c "import sys; sys.exit(0 if float('${avail:-0}') < float('$warnfloor') else 1)" 2>/dev/null; then
-      grey="$grey $n(${avail}G)"
+      grey="$grey $n(${avail}G)"; grey_nodes="$grey_nodes $n"
     fi
   done
   if [[ -n "$short" ]]; then
     note_fail "memory" "node(s) cannot physically satisfy GPU_UTIL=$util:$short"
-    info "usually the kernel MemAvailable anomaly — REBOOT that node (do NOT just lower GPU_UTIL)"
-    NEXT_CMD="ssh <node> 'sudo reboot'   # then: spark-lane up $lane"
+    mem_blame $short_nodes
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
   if [[ -n "$grey" ]]; then
     warn "thin margin on:$grey (want >=${warnfloor}G, hard floor ${req}G) — proceeding anyway"
-    info "if a rank dies on memory, reboot that node to clear the MemAvailable anomaly"
+    mem_blame $grey_nodes
   fi
   ok "all nodes clear the ${req}G hard floor (GPU_UTIL=$util)"
 
