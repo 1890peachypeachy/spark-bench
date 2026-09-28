@@ -1,0 +1,20 @@
+/var/tmp/glm53-flash-4x-spark/overlay/completion_serving_default_max_new_tokens.py -> /usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/completion/serving.py
+/var/tmp/glm53-flash-4x-spark/overlay/glm47_moe.py -> /usr/local/lib/python3.12/dist-packages/vllm/parser/glm47_moe.py
+/var/tmp/models/incoai/GLM-5.3-Flash-DFlash2-fp8blk -> /draft
+/var/tmp/glm53-flash-4x-spark/cache -> /cache
+/var/tmp/glm53-flash-4x-spark/overlay/mla_indexer.py -> /usr/local/lib/python3.12/dist-packages/vllm/v1/attention/backends/mla/indexer.py
+/var/tmp/glm53-flash-4x-spark/overlay/glm5next_attention.py -> /usr/local/lib/python3.12/dist-packages/vllm/models/glm5next/nvidia/attention.py
+/var/tmp/glm53-flash-4x-spark/overlay/completion_protocol_default_max_new_tokens.py -> /usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/completion/protocol.py
+/var/tmp/nccl-2.30.7 -> /opt/nccl
+/var/tmp/glm53-flash-4x-spark/overlay/glm5next_kda.py -> /usr/local/lib/python3.12/dist-packages/vllm/models/glm5next/nvidia/kda.py
+/var/tmp/models/glm-quant-mix/lossless8 -> /model
+/var/tmp/glm53-flash-4x-spark -> /overlay
+/var/tmp/glm53-flash-4x-spark/overlay/kv_cache_coordinator.py -> /usr/local/lib/python3.12/dist-packages/vllm/v1/core/kv_cache_coordinator.py
+/var/tmp/glm53-flash-4x-spark/overlay/glm5next_model.py -> /usr/local/lib/python3.12/dist-packages/vllm/models/glm5next/nvidia/model.py
+/var/tmp/glm53-flash-4x-spark/overlay/glm5next_kpool_compress.py -> /usr/local/lib/python3.12/dist-packages/vllm/models/glm5next/nvidia/ops/kpool_compress.py
+/var/tmp/glm53-flash-4x-spark/overlay/api_utils_default_max_new_tokens.py -> /usr/local/lib/python3.12/dist-packages/vllm/entrypoints/serve/utils/api_utils.py
+/var/tmp/glm53-flash-4x-spark/overlay/abstract_parser.py -> /usr/local/lib/python3.12/dist-packages/vllm/parser/abstract_parser.py
+/var/tmp/glm53-flash-4x-spark/overlay/mamba_hybrid.py -> /usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu/model_states/mamba_hybrid.py
+/var/tmp/glm53-flash-4x-spark/overlay/E=288,N=512,device_name=NVIDIA_GB10,dtype=fp8_w8a8,block_shape=[128,128].json -> /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/fused_moe/configs/E=288,N=512,device_name=NVIDIA_GB10,dtype=fp8_w8a8,block_shape=[128,128].json
+/var/tmp/glm53-flash-4x-spark/overlay/sparse_attn_indexer_kpool.py -> /usr/local/lib/python3.12/dist-packages/vllm/model_executor/layers/sparse_attn_indexer_kpool.py
+
