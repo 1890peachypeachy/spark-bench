@@ -856,7 +856,7 @@ glm53_tp4_nfs_ok() {   # $1 = node ; success = weights visible
 
 glm53_tp4_up() {
   local lane="glm53-tp4"
-  STEPS=10; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  STEPS=11; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
   local n
 
   step "occupancy" "$(lane_nodes "$lane")"

@@ -260,3 +260,36 @@ lane function is more dangerous than no lane function.
 
 Regression test that matters: with the lane serving, `POST /api/lanes/glm53-tp4/up`
 must return `PASS (already up, unchanged)` in <15s and leave health at 200.
+
+### 2026-09-27 (night) - a non-streaming request can outlive its client
+
+A librarian agent loop sent ~153k-token prompts and one generation ran away: 25+
+minutes, ~50k tokens, `Running: 1` with `prompt_tokens_total` and
+`request_success_total` both frozen — nothing arriving, nothing finishing, one
+request pinning all four Sparks. For scale, all 94 normal requests that day
+finished under 10k tokens.
+
+Things that did NOT stop it:
+- Stopping the Hermes session. That ends the agent loop, but Hermes's shared
+  OpenAI client keeps the TCP connection open, so the server never sees a hangup.
+- `ss -K` on the head node. GB10's kernel answers `RTNETLINK answers: Invalid
+  argument` — no `INET_DIAG_DESTROY` support.
+- RST-ing the connection (targeted iptables REJECT --reject-with tcp-reset, added
+  and removed in one shot). The socket did die, but generation continued: for a
+  NON-STREAMING request vLLM never writes to the socket, so it never notices the
+  peer is gone. The request is orphaned and runs to its token cap.
+- There is no abort route. This build's only cancel endpoint is
+  `/v1/responses/{id}/cancel` (Responses API); chat-completions has none.
+
+The only reliable kill is `spark-lane down <lane>`. Budget the bring-up.
+
+Prevention is client-side: cap `max_tokens` and keep per-turn context from growing
+to ~150k, or one stuck agent turn owns the cluster until it hits its ceiling.
+
+Also confirmed here: the memory preflight reads MemAvailable, but vLLM gates on
+CUDA-visible free memory, which sits BELOW it. spark2 cleared the 91.3G floor and
+still died with `Free memory on device cuda:0 (90.38/121.69 GiB) ... less than
+desired (0.75, 91.27 GiB)`. A node power-cycle restored it to 106.0G and the lane
+came up in 225s. MemAvailable is a proxy, not the authority — the grey-zone
+warning exists for exactly this, and power-cycling the node (not lowering
+GPU_UTIL) is the fix.
