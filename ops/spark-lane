@@ -196,7 +196,13 @@ timeout_run() {
 # Matches the container names/images our lanes actually use.
 node_occupant() {
   local node="$1" out img lane
-  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3' || true)"
+  # NOTE: this pre-filter gates everything below it. A lane whose container name
+  # is missing HERE reports as `down` even while it is serving, and — far worse —
+  # occupancy_conflict() then sees its nodes as FREE, so `up`/`rotate` will happily
+  # launch a second lane on top of a live one. Add every new lane's container name
+  # to this grep AND to the detection chain below. (glm53-lvkp/glm53-roce = the TP4
+  # lane; omitted from this list on 2026-09-27 and it reported down while serving.)
+  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-lvkp|glm53-roce' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   if echo "$out" | grep -qE 'ming-layer-web|spark-image-lab'; then
     echo "creative-engine"
@@ -864,12 +870,6 @@ glm53_tp4_up() {
   fi
   ok "all 4 nodes free"
 
-  step "cleanup" "removing dead $GLM53_TP4_CTN containers (recipe's own relaunch bug)"
-  for n in $(lane_nodes "$lane"); do
-    sshx "$n" "ids=\$(docker ps -a --filter name=$GLM53_TP4_CTN -q); [ -n \"\$ids\" ] && docker rm -f \$ids >/dev/null 2>&1; true"
-  done
-  ok "dead ranks cleared (if any)"
-
   step "kit" "$GLM53_TP4_KIT/$GLM53_TP4_CLI on $GLM53_HEAD_HOST"
   if ! sshx "$GLM53_HEAD_HOST" "test -f $GLM53_TP4_KIT/$GLM53_TP4_CLI"; then
     note_fail "kit" "$GLM53_TP4_KIT/$GLM53_TP4_CLI missing on $GLM53_HEAD_HOST"
@@ -904,6 +904,17 @@ glm53_tp4_up() {
   fi
   ok "not serving yet"
 
+  # Deliberately NOT `docker rm -f`, and deliberately AFTER the already-up check.
+  # On 2026-09-27 this step used -f and ran before that check: it force-removed the
+  # RUNNING ranks of a healthy lane, and the bring-up then cheerfully reported
+  # "not serving yet" about the lane it had just killed. Plain `docker rm` refuses
+  # anything still running, so the worst case here is a no-op.
+  step "cleanup" "removing EXITED $GLM53_TP4_CTN containers (recipe's own relaunch bug)"
+  for n in $(lane_nodes "$lane"); do
+    sshx "$n" "ids=\$(docker ps -a --filter name=$GLM53_TP4_CTN --filter status=exited --filter status=created -q); [ -n \"\$ids\" ] && docker rm \$ids >/dev/null 2>&1; true"
+  done
+  ok "dead ranks cleared (if any); running ranks untouchable by design"
+
   step "nfs" "workers can read $GLM53_TP4_WEIGHTS from $GLM53_HEAD_HOST"
   local nfs_bad=""
   for n in $(lane_nodes "$lane"); do
@@ -924,28 +935,46 @@ glm53_tp4_up() {
   fi
   ok "weights readable on every worker"
 
-  step "memory" "drop page cache, then check each node clears the GPU_UTIL target"
-  local util req avail short=""
+  # Page cache competes with the CUDA free-memory check because GB10 is UMA, so
+  # always drop it first — that part is cheap and has recovered ~16 GiB in practice.
+  #
+  # The GATE, though, only rejects what is PHYSICALLY impossible: a node whose
+  # MemAvailable is under GPU_UTIL*total can never satisfy the request. Everything
+  # above that is a judgement call we are not entitled to make: observed data is
+  # 99.5G failed, 105.9G worked, so the real threshold lives somewhere in between
+  # and depends on the driver's carveout at that moment. An earlier version of this
+  # step added a guessed +10 GiB of headroom and promptly refused to launch over a
+  # 0.1 GiB shortfall (101.2 vs 101.3), telling the operator to reboot a node for
+  # no reason. Warn about the grey zone, then let the engine be the authority — it
+  # fails in ~2 min with an exact number, and the rank-crash hint below finds it.
+  step "memory" "drop page cache, then check each node can physically satisfy GPU_UTIL"
+  local util req warnfloor avail short="" grey=""
   util="$(sshx "$GLM53_HEAD_HOST" "grep -E '^GPU_UTIL=' $GLM53_TP4_KIT/.env | tail -1 | cut -d= -f2" 2>/dev/null)"
   util="${util:-0.75}"
-  # GB10 total is ~121.69 GiB; CUDA-visible free runs ~10 GiB under MemAvailable.
-  req="$(python3 -c "print(round(121.69*$util + 10, 1))" 2>/dev/null || echo 101)"
+  req="$(python3 -c "print(round(121.69*$util, 1))" 2>/dev/null || echo 91.3)"
+  warnfloor="$(python3 -c "print(round(121.69*$util + 10, 1))" 2>/dev/null || echo 101.3)"
   for n in $(lane_nodes "$lane"); do
     sshx "$n" "sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1; true"
     sleep 1
     avail="$(sshx "$n" "awk '/^MemAvailable/ {printf \"%.1f\", \$2/1048576}' /proc/meminfo" 2>/dev/null || echo 0)"
     if python3 -c "import sys; sys.exit(0 if float('${avail:-0}') < float('$req') else 1)" 2>/dev/null; then
       short="$short $n(${avail}G<${req}G)"
+    elif python3 -c "import sys; sys.exit(0 if float('${avail:-0}') < float('$warnfloor') else 1)" 2>/dev/null; then
+      grey="$grey $n(${avail}G)"
     fi
   done
   if [[ -n "$short" ]]; then
-    note_fail "memory" "node(s) below the GPU_UTIL=$util requirement:$short"
-    info "this is usually the kernel MemAvailable anomaly — REBOOT that node (do NOT just lower GPU_UTIL)"
+    note_fail "memory" "node(s) cannot physically satisfy GPU_UTIL=$util:$short"
+    info "usually the kernel MemAvailable anomaly — REBOOT that node (do NOT just lower GPU_UTIL)"
     NEXT_CMD="ssh <node> 'sudo reboot'   # then: spark-lane up $lane"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
-  ok "all nodes clear the ${req}G floor (GPU_UTIL=$util)"
+  if [[ -n "$grey" ]]; then
+    warn "thin margin on:$grey (want >=${warnfloor}G, hard floor ${req}G) — proceeding anyway"
+    info "if a rank dies on memory, reboot that node to clear the MemAvailable anomaly"
+  fi
+  ok "all nodes clear the ${req}G hard floor (GPU_UTIL=$util)"
 
   step "start" "$GLM53_TP4_CLI serve, detached, from $GLM53_HEAD_HOST"
   local log="$GLM53_TP4_KIT/lane-up-$(date +%Y%m%d-%H%M%S).log"
@@ -953,13 +982,30 @@ glm53_tp4_up() {
   ok "launched 4 ranks detached; log: $log"
   info "TP4 cold start is ~5-9 min (weights over NFS + drafter + CUDA graph capture)"
 
-  local ok_wait=0 t=0 code="" ranks=""
+  local ok_wait=0 t=0 code="" ranks="" probe_rc=0 dead_streak=0
   step "wait healthy" "endpoint up, or all ranks die (ceiling ${ENGINE_MAX_WAIT}s)"
   while [[ $t -lt $ENGINE_MAX_WAIT ]]; do
     code="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)"
     [[ "$code" == "200" ]] && { ok "endpoint up after ${t}s"; ok_wait=1; break; }
-    ranks="$(sshx "$GLM53_HEAD_HOST" "docker ps --filter name=$GLM53_TP4_CTN -q | wc -l" 2>/dev/null || echo 0)"
-    if [[ "${ranks:-0}" == "0" ]]; then
+    # Rank-liveness probe. An ssh FAILURE is not evidence of a dead rank: during
+    # CUDA graph capture the head node is saturated and ssh routinely times out.
+    # The original version collapsed both cases to "0" and aborted on a single
+    # sample — on 2026-09-27 that killed a perfectly healthy bring-up that was
+    # mid-warmup. Only a definitive "ssh worked AND reported zero containers",
+    # observed 3 times in a row, counts as a crash.
+    ranks="$(sshx "$GLM53_HEAD_HOST" "docker ps --filter name=$GLM53_TP4_CTN -q | wc -l" 2>/dev/null)"
+    probe_rc=$?
+    ranks="$(printf '%s' "$ranks" | tr -d '[:space:]')"
+    if [[ $probe_rc -ne 0 || -z "$ranks" ]]; then
+      dead_streak=0
+      info "+${t}s rank probe unreachable (node busy) — not treating as a crash"
+    elif [[ "$ranks" == "0" ]]; then
+      dead_streak=$((dead_streak + 1))
+      warn "+${t}s head node reports 0 ranks (${dead_streak}/3 confirmations)"
+    else
+      dead_streak=0
+    fi
+    if [[ $dead_streak -ge 3 ]]; then
       note_fail "start" "the head rank exited before the endpoint came up"
       info "a rank crash is usually memory on ONE node — check each rank, not just the head"
       NEXT_CMD="for n in \$(echo spark1 spark2 spark3 spark4); do ssh \$n 'docker logs \$(docker ps -a --filter name=$GLM53_TP4_CTN -q | head -1) 2>&1 | grep -iE \"ValueError.*memory|Unsupported|RuntimeError\" | tail -3'; done"

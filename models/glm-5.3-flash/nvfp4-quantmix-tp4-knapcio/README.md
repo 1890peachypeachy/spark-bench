@@ -225,3 +225,38 @@ Diagnostic note: when a rank dies, the head's log only shows
 `Connection closed by peer [10.73.0.x]`. Chase the chain to the node that failed
 FIRST (here: head blamed spark1, spark1 blamed spark2, spark2 had the real
 memory error). The lane's failure `NEXT:` hint now prints the all-node log sweep.
+
+### 2026-09-27 (later) - four bugs found by actually pressing the dashboard button
+
+Registering the lane was easy; making it SAFE took four fixes. All four were in my
+own lane code, and two of them could take down live inference. Lesson: an untested
+lane function is more dangerous than no lane function.
+
+1. **`node_occupant()` has a two-stage filter.** A pre-filter grep decides which
+   container names are even considered, THEN the lane-detection chain runs. Adding
+   `glm53-lvkp` only to the detection chain was useless — the pre-filter dropped it
+   first, so the live lane reported `down`. Worse: `occupancy_conflict()` shares
+   that function, so the fleet looked FREE while TP4 was serving, and `up`/`rotate`
+   on any other lane would have launched straight on top of it. Add new container
+   names to BOTH places.
+2. **`docker rm -f` in a cleanup step will kill a healthy lane.** The cleanup ran
+   before the already-up check and used `-f`, so pressing "up" on a serving lane
+   force-removed all four running ranks and then reported "not serving yet" about
+   the lane it had just destroyed. The rest of this harness uses bare `docker rm`
+   on purpose: it refuses anything still running. Never add `-f`, and never put a
+   destructive step ahead of the already-up short-circuit.
+3. **A guessed memory headroom constant causes false refusals.** Gating on
+   `GPU_UTIL*total + 10 GiB` refused a launch over a 0.1 GiB shortfall (101.2 vs
+   101.3) and told the operator to reboot a node for nothing. Observed truth is
+   only that 99.5G failed and 105.9G worked — the threshold is in between and
+   moves. Gate on the physically impossible (`GPU_UTIL*total`), warn about the grey
+   zone, and let the engine be the authority; it fails in ~2 min with exact numbers.
+4. **An ssh failure is not a dead rank.** The liveness probe collapsed "ssh timed
+   out" and "zero containers" into the same `0` and aborted on a single sample.
+   During CUDA graph capture the head node is saturated and ssh times out routinely
+   — so this aborted a healthy bring-up that was mid-warmup, reporting a crash that
+   never happened. The lane actually came up fine on its own afterwards. Separate
+   the probe's exit status from its output, and require 3 consecutive confirmations.
+
+Regression test that matters: with the lane serving, `POST /api/lanes/glm53-tp4/up`
+must return `PASS (already up, unchanged)` in <15s and leave health at 200.
