@@ -283,13 +283,71 @@ Things that did NOT stop it:
 
 The only reliable kill is `spark-lane down <lane>`. Budget the bring-up.
 
-Prevention is client-side: cap `max_tokens` and keep per-turn context from growing
-to ~150k, or one stuck agent turn owns the cluster until it hits its ceiling.
+Prevention is SERVER-side. ~~Client-side `max_tokens`~~ does not work for Hermes:
+`model.max_tokens` is set in 7 profiles and is silently ignored — `gateway/run.py`
+never passes it to `AIAgent`, and upstream issue #4404 was closed by deleting the
+suggestion from the docs rather than implementing it. Use the recipe's
+`DEFAULT_MAX_NEW_TOKENS` (see the 2026-09-27 deviation section at the end).
 
 Also confirmed here: the memory preflight reads MemAvailable, but vLLM gates on
 CUDA-visible free memory, which sits BELOW it. spark2 cleared the 91.3G floor and
 still died with `Free memory on device cuda:0 (90.38/121.69 GiB) ... less than
 desired (0.75, 91.27 GiB)`. A node power-cycle restored it to 106.0G and the lane
 came up in 225s. MemAvailable is a proxy, not the authority — the grey-zone
-warning exists for exactly this, and power-cycling the node (not lowering
-GPU_UTIL) is the fix.
+warning exists for exactly this. ~~Power-cycling the node (not lowering GPU_UTIL)
+is the fix.~~ **Corrected later the same night: see below. Power-cycling only helps
+when nothing else is competing for the node.**
+
+## 2026-09-27 (late) — GPU_UTIL 0.72 deviation, because spark2 has a co-tenant
+
+**Effective config on spark3, NOT in git (`.gitignore:1` ignores `.env`).**
+Re-clones and node rebuilds revert to the recipe default, so restore these by hand:
+
+```ini
+GPU_UTIL=0.72                    # deviation from the recipe's verified 0.75
+DEFAULT_MAX_NEW_TOKENS=65536     # omitted-request output fallback (opt-in safety net)
+IMAGE=glm53-roce:v11-b58f34ea
+```
+
+Backups of the 0.75 state: `.env.bak-20260927-util075` on the local clone and spark3.
+
+### Why: it was never a "MemAvailable anomaly"
+
+**Penpot runs on spark2** — 5 containers, all `restart=unless-stopped`. They come
+back on every boot and re-take the headroom. That is why spark2 drifted 106.0 ->
+99.1 GiB after a power-cycle, and why power-cycling it twice fixed nothing. The
+earlier advice above is wrong whenever a co-tenant is `unless-stopped`.
+
+| | GiB |
+|---|---|
+| spark2 MemAvailable | 99.0 |
+| spark2 CUDA free (~10 GiB UMA gap below MemAvailable) | 88.8 |
+| TP4 needs at GPU_UTIL 0.75 | 91.27 — fails |
+| TP4 needs at GPU_UTIL 0.72 | 87.6 — fits, ~1.2 GiB margin |
+| Penpot's own footprint | ~1.85 — so stopping it alone would NOT have cleared 0.75 |
+
+### What 0.72 costs: effectively nothing
+
+```
+GPU KV cache size: 2,945,172 tokens
+Maximum concurrency for 262,144 tokens per request: 11.23x
+```
+
+Context stays 262,144 and 11 concurrent full-context requests remain available,
+against agent traffic that peaks near 1. Healthy in 120s, 4/4 ranks. The recipe's
+"do not lower GPU_UTIL" guidance is about starving KV; at 11.23x we are nowhere
+near that. Prefer 0.75 on a node with no co-tenant; use 0.72 while Penpot shares
+spark2.
+
+### Kit sync discipline (the root cause of this whole night)
+
+The recipe already shipped `DEFAULT_MAX_NEW_TOKENS` plus three overlay patches, and
+it never fired: spark3's `start.sh` was from 09-26 15:33, **older than the feature
+commit `a49c3a5` (09-27 08:22)**, because only `.env` had been synced. The switch
+was set with no wiring behind it.
+
+**Sync the KIT (`start.sh` + `overlay/`), never just `.env`.** Verify by checksum,
+not by grep count. Overlay files are mounted over vLLM's own modules, so confirm the
+target paths exist in the image tag first and that the diffs are small (10/7/6 lines
+here) — they are the image's own files plus the patch.
+
