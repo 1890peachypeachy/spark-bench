@@ -173,3 +173,55 @@ serve` for this recipe - no more manual step needed. `manual_boot_warm.sh` in
 this directory stays as a fallback/sanity-check tool, not the primary
 mitigation anymore. Worth upstreaming this file to `knapcio/GLM-5.3-Flash-4x-
 DGX-Spark-TP4` at some point (currently only on our fork, `origin`).
+
+---
+
+## 2026-09-27 (evening) - lane-ified, and the three things that actually break it
+
+Second clean bring-up, this time registered as a real sparkDash lane:
+`spark-lane up|down|verify|rotate glm53-tp4` (see `ops/spark-lane`). Endpoint and
+served name are deliberately IDENTICAL to the TP3 lane -
+`http://100.99.120.29:8888/v1`, `GLM-5.3-Flash-EXL3` - so nothing downstream
+repoints when we swap backends. The two GLM lanes both own :8888 and are
+therefore mutually exclusive; `spark-lane rotate glm53-tp4` is the safe swap.
+
+Verified this run: 4/4 ranks (`glm53-lvkp-s-l2-r0..r3`), fingerprint carries
+`tp4`, qeval **c1 73/75 (97.3%)** and **c4 74/75 (98.7%)**, prose 5/5 on both
+concurrencies (no degeneration). c4 beat the morning's 71/75. Only misses were
+ordinary math items.
+
+### Three failure modes, each of which cost a full bring-up tonight
+
+1. **The `.env` had been left pointing at the WRONG image.** A previous session
+   debugging TP4 set `IMAGE=ghcr.io/miaai-lab/...:exl3` (Mia's TP3 EXL3 image)
+   and `GPU_UTIL=0.65`, on BOTH the local clone and the spark3 mirror. That
+   combination is what produced the infamous
+   `tvm.error.InternalError: Unsupported sparse-MLA prefill configuration ... topk=2176`
+   during CUDA graph capture. That error is **not a TP4 kernel bug** - it is what
+   you get when you run this recipe on the EXL3 image. Correct values:
+   `IMAGE=glm53-roce:v11-b58f34ea`, `GPU_UTIL=0.75`. Always diff `.env` against
+   `env.tp4-fixes-reference` before concluding anything about kernels.
+
+2. **NFS mounts do not survive a reboot reliably.** Workers read the weights from
+   spark3 over NFS (`/var/tmp/models`, exporter = the `dsv41-nfs` container). The
+   fstab entry is `_netdev,nofail`, so if a worker boots while spark3's exporter
+   is not yet up, the mount is silently skipped and the node has NO weights - every
+   rank then dies with a confusing peer-disconnect chain. All three workers had
+   rebooted ~15:0x and all three had no mount. `systemctl restart
+   var-tmp-models.mount` per worker fixes it; the lane now checks and self-heals.
+
+3. **Page cache and the MemAvailable anomaly starve the GPU free-memory check.**
+   GB10 is UMA, so the CUDA free-memory check competes with page cache. Right
+   after `docker load` of the 31GB image, spark2 reported only 84.09 GiB free vs
+   the 91.27 GiB that `GPU_UTIL=0.75` requires, and aborted before loading a
+   single weight. `sync + drop_caches` recovered ~16 GiB. A second attempt still
+   failed at 89.49 GiB - spark2 was sitting ~18 GiB below its siblings with zero
+   containers and no process holding it: the documented kernel MemAvailable
+   anomaly. A **reboot of spark2** took it to 105.9 GiB and the lane came up.
+   Do NOT "fix" this by lowering `GPU_UTIL` - that is a band-aid on a phantom
+   constraint and it silently costs KV cache.
+
+Diagnostic note: when a rank dies, the head's log only shows
+`Connection closed by peer [10.73.0.x]`. Chase the chain to the node that failed
+FIRST (here: head blamed spark1, spark1 blamed spark2, spark2 had the real
+memory error). The lane's failure `NEXT:` hint now prints the all-node log sweep.
