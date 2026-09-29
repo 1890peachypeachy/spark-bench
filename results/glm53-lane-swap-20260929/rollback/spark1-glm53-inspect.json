@@ -1,0 +1,372 @@
+[
+    {
+        "Id": "d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5",
+        "Created": "2026-09-29T06:59:21.662183812Z",
+        "Path": "/entrypoint.sh",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 1908944,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-09-29T06:59:21.7404965Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:0e1ed45ee41f1fd65fff3ab72cfd32c2898b6c9755302aa30a8c635fac960249",
+        "ResolvConfPath": "/var/lib/docker/containers/d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5/hostname",
+        "HostsPath": "/var/lib/docker/containers/d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5/hosts",
+        "LogPath": "/var/lib/docker/containers/d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5/d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5-json.log",
+        "Name": "/glm53",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/var/tmp/models/nvidia/GLM-5.3-Flash-NVFP4:/models/glm-5.3-flash-nvfp4:ro",
+                "/run/systemd/units:/host/systemd-units:ro",
+                "/var/tmp/models/incoai/GLM-5.3-Flash-DFlash2:/models/glm-5.3-flash-dflash2:ro",
+                "/var/tmp/glm53-cache:/root/.cache:rw",
+                "/var/tmp/glm53-logs:/logs:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "host",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": null,
+            "DnsSearch": null,
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "host",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": [
+                "label=disable"
+            ],
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [
+                {
+                    "PathOnHost": "/dev/infiniband",
+                    "PathInContainer": "/dev/infiniband",
+                    "CgroupPermissions": "rwm"
+                }
+            ],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": [
+                {
+                    "Driver": "nvidia",
+                    "Count": -1,
+                    "DeviceIDs": null,
+                    "Capabilities": [
+                        [
+                            "gpu"
+                        ]
+                    ],
+                    "Options": null
+                }
+            ],
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [
+                {
+                    "Name": "core",
+                    "Hard": 0,
+                    "Soft": 0
+                },
+                {
+                    "Name": "memlock",
+                    "Hard": -1,
+                    "Soft": -1
+                },
+                {
+                    "Name": "stack",
+                    "Hard": 67108864,
+                    "Soft": 67108864
+                }
+            ],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "GraphDriver": {
+            "Data": {
+                "ID": "d6645f3d0836c12f5bb3bbd51e231597cf1313edd746a131f13959c29e2339f5",
+                "LowerDir": "/var/lib/docker/overlay2/00a063debf0a11ea1fef9a35b91836afd8b2208d9223f7bed1485eb58ff05dec-init/diff:/var/lib/docker/overlay2/ede31429ebe36571caa8181260350d2cfedd57cec2fb9ed39022dccc5c768d6b/diff:/var/lib/docker/overlay2/9362b41186b59b613be0bb88181ac81a8e6f23fb23ba6eaffb77555f1e92dfb9/diff:/var/lib/docker/overlay2/3496487a74d0dfaaa2e7dd3aefe9bd512b066d0cc59d4cae02d8a361a2bfef0a/diff:/var/lib/docker/overlay2/50c5d2e2847e1b4a3f09aeb64b41a720fef68cd297307f78648cbc5f9b37c761/diff:/var/lib/docker/overlay2/c0787f9b36117df0e716e9751bb5f4f1589943c4a092dabbae87d4c77bcf1947/diff:/var/lib/docker/overlay2/73baa653bde0f4b98324ffb763dc1c6319dfe7f3c1cba134f3e52e4752645cfc/diff:/var/lib/docker/overlay2/16ef00b97db532bc1547e2f385c188636845f909230e4c61cf453fdff8a8ec1d/diff:/var/lib/docker/overlay2/1392bc5b2dfdfbb442f547153aa2fe82b8e8a0a3bdd23c325ba9802c64a847cf/diff:/var/lib/docker/overlay2/63a571708f0d2f04a8bfa1a09c0f6892d2a355e9baa37254bc8f2610fa55bc6b/diff:/var/lib/docker/overlay2/39a769377357c849dc297056887afd7368a566f7be4e7036d01cb697ca45a7f7/diff:/var/lib/docker/overlay2/1913c5509ac9e6785221e5c778b0a927061d084ed4fe07bd7038132deb2a4072/diff:/var/lib/docker/overlay2/90020406096cc65b75a09d5eb5145d6644244a9e757a58ab895dfba8c0df250f/diff:/var/lib/docker/overlay2/ad765eeb37f3afff5af53a858bdd68a92982f8cad98c21771b74715b1d1940ff/diff:/var/lib/docker/overlay2/19488ae04bf716a90bcf7787f2ed0b4d897b74454eb65d2f204363b83fdc7110/diff:/var/lib/docker/overlay2/daf9fc5783d89db358a659731115ff3771c00a4b2b103532cb20c7fe421e5d69/diff:/var/lib/docker/overlay2/0867b5c02ac4324a8b133d9c76dd2332a1be98dc37a846179a24b69d66c15770/diff:/var/lib/docker/overlay2/41193dd1f4286fab9d493c2591a9dd6ac98790805fe2f528fd0986d06f2401d0/diff:/var/lib/docker/overlay2/7d90a0dc42c8ca23e0026f75b2446f3dc2289735a7527bc4400ed4556da12d92/diff:/var/lib/docker/overlay2/262b5d9399d17a1c954d679e357ffad830aea2b3ee2861a35f2e74bb55caade6/diff:/var/lib/docker/overlay2/3a436957f7a9fd6c827570a901073b2fb198f009fa65be789ab502ea54405ee2/diff:/var/lib/docker/overlay2/92e786e302bcd0e4b1263146a2d44db41653ca1c058f6a15e57004a77cfeba7c/diff:/var/lib/docker/overlay2/30c4cf496ccfa1664ec480435a3ef056e39638e5f90dfa269de96351170003d9/diff:/var/lib/docker/overlay2/92355a723a6748af9212429e8277b00dae9a32db9438960ba2541a45432dd178/diff:/var/lib/docker/overlay2/01fb0b17db5656efd128f328c86bdc73fd599c7e145a0fa9db877ea7242d3928/diff:/var/lib/docker/overlay2/c67e534da15ee505f6772e48be7f94cd979a4dc3efdd6a0166cdb56a99ed9d5b/diff:/var/lib/docker/overlay2/3ee14a83ad469419e5546ef35891c02edbacb93ac3545246e91dd4eb7d4dc8f7/diff:/var/lib/docker/overlay2/36c9c4b17d560c7e45f68159b81709de87cb6aea8899f62ac4538651dc7cc367/diff:/var/lib/docker/overlay2/a43a04e2c52d96b4d522c9ea0958daacc6168323a89ee63b008217ebdf24a0c9/diff:/var/lib/docker/overlay2/975038a0a91777c51b1c1090fb8936b11bf57e41edc6dff8f33dfa861a498774/diff:/var/lib/docker/overlay2/c82474fc0e79394c449f019033b89af503ec3db463ed13ed343996e0303564cd/diff:/var/lib/docker/overlay2/28d01d2428ced9d5a1af23c62f71cdf90c3ad98f4fdfc939a16a3bd3f4d5ae3a/diff:/var/lib/docker/overlay2/d099edb23f24e55f6d5b724706e1630106dfd9f364188d64454b0b45c0da3f6b/diff:/var/lib/docker/overlay2/69d9b091f052378eaf5e51c2445defd730d85a098d40e16a32d81e0e03ab2e79/diff:/var/lib/docker/overlay2/59aa9159a77cd30c9158593647d81c1d0584e7fdd1b31eb009a17ad76273a8a5/diff:/var/lib/docker/overlay2/0dccce94b2161878eb8a9d23f35ed047c3182213706cc3f1080d9ca07df7e045/diff:/var/lib/docker/overlay2/5cbebbd9a87f105b8f0fd26729366089c9e8f9394e06c1a3feb4b6dcf6487890/diff:/var/lib/docker/overlay2/4e1f9df6d63b0eb1590213f83cee857bb7d906f0c546ff040cd32c34417be478/diff:/var/lib/docker/overlay2/4c8e92ab093f2f1633813629f3ed0471645fcca588452452cafa86a59f237cdd/diff:/var/lib/docker/overlay2/db68460e223cccc4a993ff00182abe602efaea8c8ea80f7d892caf22c08f8ead/diff:/var/lib/docker/overlay2/0d126b0130ae117f3402ed6053a029ba8edf1b2ebec55660f831f83497a1cc01/diff:/var/lib/docker/overlay2/18f45d3f56da544ddf77e428fe14b28ddcb02424ebc0f941cb701f253c4bb4a5/diff:/var/lib/docker/overlay2/950a18c1ad7438287b1fe9a20673f61eaa374ca7e16d27241e26d3861de33224/diff:/var/lib/docker/overlay2/5a80d63ef172d82152dce66b6ffd9f0692eb27227d3c2e35dff84985a1249a5c/diff:/var/lib/docker/overlay2/87a88737cf911b900f91dc8bee246eea131b60ed32b9fe86c1cb92d5c8f93c0c/diff:/var/lib/docker/overlay2/1aae1dac65395e169d277d065a9e5ba14fbbeb76d7faf335b9cf5a32637b631d/diff:/var/lib/docker/overlay2/47610e08cf77011f96120695d5d6c66d175220b7b96124a53c571f4fea463912/diff:/var/lib/docker/overlay2/c13b6117fdee5ae1600ec1719417ea40383ce3a12e47f1abb00d849a43085b9f/diff:/var/lib/docker/overlay2/02b9ec388c79caa55edb4e8eefc44e7bf93b39567ab527cd62e378618f64a27d/diff:/var/lib/docker/overlay2/da620938e185e129f7293ccbd4d8ed5169597824c2e3a81f1e5c816117af9168/diff:/var/lib/docker/overlay2/45a1bda8562a85958f53fbc08dc01b6b56e609ef44a4eba3222a2eb76bbba25a/diff:/var/lib/docker/overlay2/54556e1ad08768c06d8eafdf993661c7b12e163370542fae53083f18acfbe4c0/diff:/var/lib/docker/overlay2/610ae06bf05df5ea7c12ec69bd62f7ce41c81f86084f01b1542774634a2e9deb/diff:/var/lib/docker/overlay2/c36c7c1a16cd1bd60f24f6eab4c92ce6aa51d9bb5e8bd4960e2288f86e7a2d56/diff:/var/lib/docker/overlay2/6407a368bd94e40524302c3eab5999faae25990530e7cad63fe3b524b5fc6de8/diff:/var/lib/docker/overlay2/a74083b2394d341b64c9dda932f2f17af383888746aed94120b471b4372c1a84/diff:/var/lib/docker/overlay2/52ebe1bfc6d66dbd76e90f8b7de8f3284ad9bc8644a3d7adc083d1bdf1a15af9/diff:/var/lib/docker/overlay2/ca6633225269c4a91cff8e83410436a4914384bc8f96dafe65f082d9a17c6a44/diff:/var/lib/docker/overlay2/84c8b7eb1184c2d3a71759f4eadf736cdeb04cf944cc43e5658b824f1bd705f9/diff:/var/lib/docker/overlay2/26af357a61fe0a0cc0af6f830e9ca72fdcb4029bb4fd14c4e0609a82a459e902/diff:/var/lib/docker/overlay2/1bede2bac9cb535938393ceb271c380316c645d7398a919a066ac64826df7c50/diff:/var/lib/docker/overlay2/58605480b4f831fd68683c00938cda917e7ed4ddf699eb6d6f0a76ceb87998c0/diff:/var/lib/docker/overlay2/0016efae6dd04b5b2b4504fc6917add37e63270bc0638851ffb6f02fecaeedee/diff:/var/lib/docker/overlay2/ac5c97f04a6cb7d2a999731a380dc2762d102a7eac97acef3663f4298a0f929a/diff:/var/lib/docker/overlay2/e7b1f6cf5271c88a8ac66a8274beb1023506fedc64da137953c40945b8f1f8f3/diff:/var/lib/docker/overlay2/4eb94ed04b3c48031117b85570dbab2d693866d9cdf4e8831c2129a5b8789506/diff:/var/lib/docker/overlay2/355e4d0560723fc5b02461e5c6464d3d34f03efac1e36494a75e536218e2807a/diff:/var/lib/docker/overlay2/23852ea582494958d6145665711fa18c5a692ce0f8fe5823e50c6ef495d631ba/diff:/var/lib/docker/overlay2/507e125faad18e9d63e92c85716b9cf5fe7282ac644894dbb8954a9fe8ba7047/diff:/var/lib/docker/overlay2/ffadc7eb1228887d1e15afd5551ae26b139afa7d3d6367af5c0c4f3d79576abf/diff:/var/lib/docker/overlay2/4dab4ac718297ce2fe5f9349ecc9fc0a0501a7153240765a338c26a1ffb95b9f/diff:/var/lib/docker/overlay2/54c851cf8b59a1810ad8ded8c679d60587ea0f414a715a7a9010c02e480e9b0a/diff:/var/lib/docker/overlay2/d5d8fe6d761e04856a634fa3774be3e0d40509e6223b50b98627d8ac9c1a7086/diff:/var/lib/docker/overlay2/87902646db1404c60066ac2937d07d644401af941c44bcfd3a8091771ad3d042/diff:/var/lib/docker/overlay2/b5151f750325ffc4a50722f13d960f9f612290cd68d9c835277e69b43da43828/diff",
+                "MergedDir": "/var/lib/docker/overlay2/00a063debf0a11ea1fef9a35b91836afd8b2208d9223f7bed1485eb58ff05dec/merged",
+                "UpperDir": "/var/lib/docker/overlay2/00a063debf0a11ea1fef9a35b91836afd8b2208d9223f7bed1485eb58ff05dec/diff",
+                "WorkDir": "/var/lib/docker/overlay2/00a063debf0a11ea1fef9a35b91836afd8b2208d9223f7bed1485eb58ff05dec/work"
+            },
+            "Name": "overlay2"
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/var/tmp/glm53-cache",
+                "Destination": "/root/.cache",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/var/tmp/glm53-logs",
+                "Destination": "/logs",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/var/tmp/models/nvidia/GLM-5.3-Flash-NVFP4",
+                "Destination": "/models/glm-5.3-flash-nvfp4",
+                "Mode": "ro",
+                "RW": false,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/run/systemd/units",
+                "Destination": "/host/systemd-units",
+                "Mode": "ro",
+                "RW": false,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/var/tmp/models/incoai/GLM-5.3-Flash-DFlash2",
+                "Destination": "/models/glm-5.3-flash-dflash2",
+                "Mode": "ro",
+                "RW": false,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "spark-40a4",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "8002/tcp": {},
+                "8082/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "SERVED_NAME=GLM-5.3-Flash-EXL3",
+                "MENTAT_GROUP=",
+                "TORCH_MEM_TRACE_DIR=",
+                "MENTAT_MCP_API=",
+                "LIMIT_MM=",
+                "GPU_MEM_UTIL=",
+                "NCCL_MAX_NCHANNELS=",
+                "ROCE_SETTLE_S=",
+                "SPEC_METHOD=",
+                "ITERATION_DETAILS=",
+                "TORCH_MEM_FRACTION=",
+                "MENTAT_OPENAI_API=",
+                "MOE_BACKEND=",
+                "NCCL_DEBUG=",
+                "RAY_ADDRESS=",
+                "LONG_PREFILL_TOKEN_THRESHOLD=",
+                "CUDAGRAPH_CAPTURE_SIZES=",
+                "HEAD_HOST=192.168.0.165",
+                "EXTRA_ARGS=",
+                "CUDAGRAPH_METRICS=",
+                "DECODE_RESERVE_TOKENS=",
+                "SKIP_MM_PROFILING=",
+                "MENTAT_MODEL_PROVIDER=",
+                "SERVICE_NAME=glm53",
+                "SPEC_TOKENS=",
+                "MCP_LOG_DIR=/logs",
+                "PYTORCH_CUDA_ALLOC_CONF=",
+                "NCCL_IB_HCA=",
+                "MAX_JOBS=",
+                "STATUS_PORT=",
+                "MENTAT_NODE_IP=192.168.0.19",
+                "PEERS=",
+                "DFLASH_MODEL=",
+                "MODEL_DIR=",
+                "MAX_NUM_SEQS=",
+                "NCCL_MIN_NCHANNELS=",
+                "ROLE",
+                "NVIDIA_VISIBLE_DEVICES=all",
+                "NCCL_IB_GID_INDEX=",
+                "VLLM_HOST_IP",
+                "FABRIC_SUBNETS=",
+                "MAX_MODEL_LEN=",
+                "FABRIC_WAIT_S=",
+                "MTP=",
+                "SAFETENSORS_LOAD_STRATEGY=",
+                "CLUSTER_SUBNET",
+                "CONTAINER_NAME=glm53",
+                "KV_CACHE_DTYPE=",
+                "SELF_TEST=",
+                "NCCL_SOCKET_IFNAME=",
+                "API_PORT=8888",
+                "WORKER_WAIT_S=",
+                "KV_CACHE_MEMORY=",
+                "TORCH_MEM_STATS_INTERVAL=",
+                "TP=",
+                "TORCH_MEM_STATS_DIR=/logs",
+                "MAX_NUM_BATCHED_TOKENS=",
+                "THROUGHPUT_INTERVAL_S=60",
+                "PATH=/usr/local/cuda/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NVARCH=sbsa",
+                "NVIDIA_REQUIRE_CUDA=cuda>=13.0 brand=unknown,driver>=535,driver<536 brand=grid,driver>=535,driver<536 brand=tesla,driver>=535,driver<536 brand=nvidia,driver>=535,driver<536 brand=quadro,driver>=535,driver<536 brand=quadrortx,driver>=535,driver<536 brand=nvidiartx,driver>=535,driver<536 brand=vapps,driver>=535,driver<536 brand=vpc,driver>=535,driver<536 brand=vcs,driver>=535,driver<536 brand=vws,driver>=535,driver<536 brand=cloudgaming,driver>=535,driver<536 brand=unknown,driver>=550,driver<551 brand=grid,driver>=550,driver<551 brand=tesla,driver>=550,driver<551 brand=nvidia,driver>=550,driver<551 brand=quadro,driver>=550,driver<551 brand=quadrortx,driver>=550,driver<551 brand=nvidiartx,driver>=550,driver<551 brand=vapps,driver>=550,driver<551 brand=vpc,driver>=550,driver<551 brand=vcs,driver>=550,driver<551 brand=vws,driver>=550,driver<551 brand=cloudgaming,driver>=550,driver<551 brand=unknown,driver>=565,driver<566 brand=grid,driver>=565,driver<566 brand=tesla,driver>=565,driver<566 brand=nvidia,driver>=565,driver<566 brand=quadro,driver>=565,driver<566 brand=quadrortx,driver>=565,driver<566 brand=nvidiartx,driver>=565,driver<566 brand=vapps,driver>=565,driver<566 brand=vpc,driver>=565,driver<566 brand=vcs,driver>=565,driver<566 brand=vws,driver>=565,driver<566 brand=cloudgaming,driver>=565,driver<566 brand=unknown,driver>=570,driver<571 brand=grid,driver>=570,driver<571 brand=tesla,driver>=570,driver<571 brand=nvidia,driver>=570,driver<571 brand=quadro,driver>=570,driver<571 brand=quadrortx,driver>=570,driver<571 brand=nvidiartx,driver>=570,driver<571 brand=vapps,driver>=570,driver<571 brand=vpc,driver>=570,driver<571 brand=vcs,driver>=570,driver<571 brand=vws,driver>=570,driver<571 brand=cloudgaming,driver>=570,driver<571 brand=unknown,driver>=575,driver<576 brand=grid,driver>=575,driver<576 brand=tesla,driver>=575,driver<576 brand=nvidia,driver>=575,driver<576 brand=quadro,driver>=575,driver<576 brand=quadrortx,driver>=575,driver<576 brand=nvidiartx,driver>=575,driver<576 brand=vapps,driver>=575,driver<576 brand=vpc,driver>=575,driver<576 brand=vcs,driver>=575,driver<576 brand=vws,driver>=575,driver<576 brand=cloudgaming,driver>=575,driver<576",
+                "NV_CUDA_CUDART_VERSION=13.0.96-1",
+                "CUDA_VERSION=13.0.2",
+                "LD_LIBRARY_PATH=/usr/local/nvidia/lib64:/usr/local/cuda/lib64:/usr/local/cuda/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64",
+                "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+                "DEBIAN_FRONTEND=noninteractive",
+                "CUDA_HOME=/usr/local/cuda",
+                "CRIU_CUDA_PLUGIN_DIR=/usr/local/lib/criu",
+                "UV_HTTP_TIMEOUT=500",
+                "UV_INDEX_STRATEGY=unsafe-best-match",
+                "UV_LINK_MODE=copy",
+                "UV_PYTHON_INSTALL_DIR=/opt/uv/python",
+                "UV_CACHE_DIR=/opt/uv/cache",
+                "UV_OVERRIDE=/etc/uv-overrides.txt",
+                "VLLM_ENABLE_CUDA_COMPATIBILITY=0",
+                "TORCH_CUDA_ARCH_LIST=8.0 8.7 8.9 9.0 10.0 11.0 12.0",
+                "VLLM_USAGE_SOURCE=production-docker-image",
+                "VLLM_BUILD_COMMIT=ddd6fbca148a867aad1fcab7ec72f582b9977db4",
+                "VLLM_BUILD_PIPELINE=019d130e-464e-4ff7-b84b-492992c0c06b",
+                "VLLM_BUILD_URL=https://buildkite.com/vllm/release-v2/builds/7306",
+                "VLLM_IMAGE_TAG=vllm/vllm-openai:nightly-ddd6fbca148a867aad1fcab7ec72f582b9977db4"
+            ],
+            "Cmd": null,
+            "Image": "spark-glm53:v9",
+            "Volumes": null,
+            "WorkingDir": "/vllm-workspace",
+            "Entrypoint": [
+                "/entrypoint.sh"
+            ],
+            "Labels": {
+                "ai.vllm.build.commit": "ddd6fbca148a867aad1fcab7ec72f582b9977db4",
+                "ai.vllm.build.pipeline": "019d130e-464e-4ff7-b84b-492992c0c06b",
+                "ai.vllm.build.url": "https://buildkite.com/vllm/release-v2/builds/7306",
+                "ai.vllm.image.tag": "vllm/vllm-openai:nightly-ddd6fbca148a867aad1fcab7ec72f582b9977db4",
+                "com.docker.compose.config-hash": "89461f4f63c096b7d8d0f69c3800ebeb6a7811f800df2bdc71d64adc7aea460a",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:0e1ed45ee41f1fd65fff3ab72cfd32c2898b6c9755302aa30a8c635fac960249",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "glm53",
+                "com.docker.compose.project.config_files": "/var/tmp/glm53-gx10/compose/glm53.yaml",
+                "com.docker.compose.project.working_dir": "/var/tmp/glm53-gx10/compose",
+                "com.docker.compose.service": "glm53",
+                "com.docker.compose.version": "5.0.2",
+                "maintainer": "NVIDIA CORPORATION <cudatools@nvidia.com>",
+                "org.opencontainers.image.ref.name": "ubuntu",
+                "org.opencontainers.image.revision": "ddd6fbca148a867aad1fcab7ec72f582b9977db4",
+                "org.opencontainers.image.source": "https://github.com/vllm-project/vllm",
+                "org.opencontainers.image.url": "https://buildkite.com/vllm/release-v2/builds/7306",
+                "org.opencontainers.image.version": "vllm/vllm-openai:nightly-ddd6fbca148a867aad1fcab7ec72f582b9977db4"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "9997348f5a8bc9c7f2472939fddc43167e25c2f53524121b862e10eada652d52",
+            "SandboxKey": "/var/run/docker/netns/default",
+            "Ports": {},
+            "Networks": {
+                "host": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "4f6cb2283960cd3507344b3eb9e0f2e0db6b8f434d75eb2eecbe439464b3279d",
+                    "EndpointID": "604b053c0669fb7b6317066d2debad25dde99fa644f50c8b5e0e4c33a4f7ed66",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "MacAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        }
+    }
+]

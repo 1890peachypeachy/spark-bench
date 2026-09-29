@@ -1,0 +1,273 @@
+# GLM-5.3-Flash NVFP4, TP=4 across four GB10 nodes (one head, three workers),
+# with the DFlash2 drafter.
+#
+# Run the SAME file on every node:
+#   docker compose -f compose/glm53.yaml up -d
+# compose/.env is optional. Addresses and roles come from mentat, and paths
+# and the image have defaults (.env.example lists the overrides). Compose
+# reads .env from this file's directory, whatever the working directory.
+#
+# Ordering: from cold, any rank may start first -- registration retries
+# forever, and the host-level mentatd (mentatd.yaml from
+# https://github.com/mmastrac/mentat) just has to be running on every box. Replacing a running stack is different: take all four
+# ranks down first (README, "Replacing a running stack").
+#
+# Nothing else fits beside it. GLM's weights alone are ~90.7 GiB per node out
+# of 121.6 GiB, so stop any other model on these boxes first.
+#
+# network_mode: host is required -- RoCE/NCCL needs the real interfaces, and
+# Ray's actor ports are not practically mappable. It is also how the
+# container reaches the box's mentatd, on 127.0.0.1:6379 and :6380.
+#
+# Pinned so the project is not named after this directory ("compose"). Before
+# the first `up`, take down a stack started under another project name: this
+# one reuses container_name glm53 and would collide with it.
+name: glm53
+services:
+  glm53:
+    # image/build.sh's default tag. Keep the two in step: the entrypoint's
+    # defaults live in the image, and an older tag boots silently mistuned.
+    image: ${IMAGE:-spark-glm53:v9}
+    container_name: glm53
+    network_mode: host
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+      # A crash must not dump core. The engine maps ~90 GiB, and the dumping
+      # thread holds the NVIDIA RM lock the whole time it writes: on
+      # 2026-08-27 that turned one CUDA OOM on a node into a box with no
+      # ssh, no userspace and no way back except a power cycle, while the
+      # kernel sat in nvidia_close for 860+ seconds. core_pattern on these
+      # hosts is a plain file, so nothing rate-limits or discards it either.
+      core: 0
+    devices:
+      - /dev/infiniband:/dev/infiniband
+    volumes:
+      # The full 181 GiB checkpoint, read-only. There is no transcoded cache:
+      # this image loads plain safetensors, so EVERY rank reads the whole
+      # checkpoint and it must be present on EACH node's local disk.
+      # Local rather than NFS on purpose -- an NFS mount races the network at
+      # boot and fails (seen on one node on 2026-08-26), and a model that only
+      # starts when the NAS is awake will eventually fail to start.
+      - ${MODEL_HOST_DIR:-/srv/models/glm-5.3-flash-nvfp4}:/models/glm-5.3-flash-nvfp4:ro
+      # The host's list of running systemd units, read by the preflight to warn
+      # about a desktop session (README, "What you need").
+      - /run/systemd/units:/host/systemd-units:ro
+      # The DFlash2 drafter, also on every node: speculation runs on every TP
+      # rank. A separate Qwen3-based model that reads auxiliary hidden states
+      # from target layers 5, 14, 24, 33 and 42 (image/patches/glm53_eagle3_aux.py
+      # supplies them; upstream GLM5next does not).
+      - ${DFLASH_HOST_DIR:-/srv/models/glm-5.3-flash-dflash2}:/models/glm-5.3-flash-dflash2:ro
+      # JIT caches (FlashInfer, torch.compile, Triton, TileLang), and the
+      # experimental weight snapshots (~48 GB a node). WITHOUT this they live
+      # inside the container and are discarded on every `compose down`, so
+      # each restart recompiles. The FlashInfer autotune cache is the
+      # exception: at TP>1 the entrypoint keeps it in /tmp and wipes it.
+      # Unset, a named volume. `down -v` deletes it.
+      - ${CACHE_HOME:-cache}:/root/.cache
+      # The engine log and the allocator counters behind /memory, read through
+      # the status server's MCP tools. Unset, a named volume.
+      - ${LOG_DIR:-logs}:/logs
+    # RULE: any knob that also has a default in entrypoint.sh is left EMPTY
+    # here. A default in both places means two places to change and one
+    # silently winning -- which happened repeatedly on 2026-08-27, with the
+    # compose defaults from the pre-SM90 attempts quietly overriding tuned
+    # values (MTP off, GPU_MEM_UTIL 0.86, MAX_MODEL_LEN 131072). The exceptions
+    # are the knobs the status server reads itself (SERVICE_NAME, SERVED_NAME,
+    # PEERS, MCP_LOG_DIR, THROUGHPUT_INTERVAL_S). Its own defaults are
+    # generic, not this model's, so they are set here explicitly.
+    environment:
+      # Passed through only when .env (or the shell running compose) sets
+      # them. Unset, the entrypoint takes them from the box's mentatd.
+      #
+      # ROLE and HEAD_HOST, both unset: the boxes elect the live agent with
+      # the lowest address as head. Set, the roles are fixed: ROLE is head on
+      # one box and worker on the rest, and HEAD_HOST is the head's LAN
+      # address on every box, the head included.
+      - ROLE
+      - HEAD_HOST
+      # This node's LAN address. mentat identifies a node by it, and the agent
+      # and daemon must agree on one string. Unset = the address mentatd tags
+      # lan.
+      - VLLM_HOST_IP
+      # This box's name in the mesh. discover.sh only derives it when ROLE,
+      # HEAD_HOST and MENTAT_NODE_IP are ALL unset, i.e. when the boxes elect a
+      # head. With HEAD_HOST pinned, the agent instead gets named by the TCP
+      # source address it reaches the head's daemon from -- which is the default
+      # route's address, not necessarily the LAN one. The agent and daemon then
+      # register as two different nodes and the head sees 1 GPU, not TP. Set it
+      # per box to that box's daemon node_ip; mentat refuses any other value.
+      - MENTAT_NODE_IP=${MENTAT_NODE_IP:-}
+      # Address prefix of the fabric, with its trailing dot. Unset = the first
+      # of FABRIC_SUBNETS.
+      - CLUSTER_SUBNET
+      # The status server reads these two itself, and its default name is
+      # "vllm", so they carry a default here too.
+      - SERVICE_NAME=${SERVICE_NAME:-glm53}
+      - SERVED_NAME=${SERVED_NAME:-glm53}
+      # mentat subcluster identity; empty = SERVICE_NAME (the entrypoint's
+      # default). Set it only to run the same model as a second parallel
+      # stack, which needs a distinct group per stack.
+      - MENTAT_GROUP=${MENTAT_GROUP:-}
+      # Empty = 127.0.0.1:6379 when the boxes elect a head, else HEAD_HOST:6379.
+      - RAY_ADDRESS=${RAY_ADDRESS:-}
+      # One subnet per ConnectX PCIe root NCCL should use, space-separated. Each
+      # names an interface; the entrypoint maps it to its RDMA device and GID.
+      # Both roots made a 126k prefill 11% faster on TP=4 (2026-09-26). Empty =
+      # CLUSTER_SUBNET when that is set, else one subnet per address mentatd
+      # tags rdma.
+      - FABRIC_SUBNETS=${FABRIC_SUBNETS:-}
+      # How long to wait for the fabric and for the peer's GPUs before giving
+      # up. Both default to waiting forever, because the usual reason either is
+      # missing is a switch reboot, and a container that exits then just races
+      # it. Set a bound only where a stuck stack must surface as a failure.
+      - FABRIC_WAIT_S=${FABRIC_WAIT_S:-}
+      - WORKER_WAIT_S=${WORKER_WAIT_S:-}
+      # How long the RoCE device and its GID table get to appear once the
+      # address is already up. Local state, so it settles in seconds or is
+      # broken: this one is deliberately bounded, and the container exits so
+      # the failure is visible rather than a container that waits forever.
+      - ROCE_SETTLE_S=${ROCE_SETTLE_S:-}
+      # LEFT EMPTY ON PURPOSE so the entrypoint derives it at start. There is
+      # no correct constant: the GID table is indexed by (address, RoCE version)
+      # with first-free allocation, so the index differs per node AND per boot.
+      # On 2026-08-26 the right entry was 6 on one node and 5 on its peer, and the
+      # first node's table had an empty slot 3 left by four failed DHCP cycles plus
+      # a profile replacement during an earlier boot. Reboot that node with the static
+      # profile in place and its correct index moves 6 -> 5, so a pinned value
+      # is a latent NCCL failure rather than a fix. Set it only to override.
+      - NCCL_IB_GID_INDEX=${NCCL_IB_GID_INDEX:-}
+      # Empty = all four RDMA devices, which is what reaches 196 Gb/s rather
+      # than 112. Override only to restrict NCCL to one PCIe root.
+      - NCCL_IB_HCA=${NCCL_IB_HCA:-}
+      # Empty = the interface holding VLLM_HOST_IP, derived in the entrypoint.
+      - NCCL_SOCKET_IFNAME=${NCCL_SOCKET_IFNAME:-}
+      # Channel count and NCCL logging; defaults and why in the entrypoint.
+      - NCCL_MIN_NCHANNELS=${NCCL_MIN_NCHANNELS:-}
+      - NCCL_MAX_NCHANNELS=${NCCL_MAX_NCHANNELS:-}
+      - NCCL_DEBUG=${NCCL_DEBUG:-}
+      - TP=${TP:-}
+      # Speculation. SPEC_METHOD is dflash, mtp or none (entrypoint default
+      # dflash, k=7); MTP=0 turns it off whichever is named. An MTP drafter
+      # costs ~3.4 GiB and a rejection-sampler warmup, which were what killed
+      # rank 0 on 2026-08-27 while this comment wrongly said MTP was off.
+      - MTP=${MTP:-}
+      - SPEC_METHOD=${SPEC_METHOD:-}
+      - SPEC_TOKENS=${SPEC_TOKENS:-}
+      - DFLASH_MODEL=${DFLASH_MODEL:-}
+      - MODEL_DIR=${MODEL_DIR:-}
+      # Default and KV arithmetic in the entrypoint. Raise it against the
+      # "GPU KV cache size" line at boot.
+      - MAX_MODEL_LEN=${MAX_MODEL_LEN:-}
+      # Per-prompt multimodal caps. Raising the image cap raises the peak a
+      # single request can demand. With SKIP_MM_PROFILING=1 the vision encoder
+      # is never budgeted at startup, so those bytes come out of the same
+      # headroom a long prefill needs.
+      - LIMIT_MM=${LIMIT_MM:-}
+      - SKIP_MM_PROFILING=${SKIP_MM_PROFILING:-}
+      # lazy|eager|prefetch|torchao; eager in the entrypoint, which says why.
+      - SAFETENSORS_LOAD_STRATEGY=${SAFETENSORS_LOAD_STRATEGY:-}
+      # Which NVFP4 MoE kernel: flashinfer_cutlass (entrypoint default) or
+      # marlin. The entrypoint has the history.
+      - MOE_BACKEND=${MOE_BACKEND:-}
+      # 0.88 is the measured ceiling under mentat (2026-08-27): CUDA-visible
+      # free memory on the head is 108.0 GiB regardless of page cache, 0.90
+      # wants 109.46 and failed the startup check four times, 0.88 wants
+      # 107.03 and served with 0.63 GiB to spare -- KV 1,842,951 tokens vs
+      # ~1.07M at the old 0.84. Under real Ray the ceiling was lower still
+      # (its object store and daemons sat in this pool).
+      #
+      # 0.90 starts on a freshly booted box, which is the trap. It is worth
+      # real KV -- 1,541,820 tokens against 1,200,343 here, +28%, because KV
+      # gets only what the weights leave -- and it still must not be used: it
+      # ran the driver out of memory 90 seconds into serving
+      # (NV_ERR_NO_MEMORY in dmesg, hours before anything visible went wrong)
+      # and both ranks died with the boxes needing a power cycle. A driver OOM
+      # during startup PROFILING is normal at any setting; one during steady
+      # serving is the signal.
+      - GPU_MEM_UTIL=${GPU_MEM_UTIL:-}
+      # Allocator and per-worker memory ceiling; defaults and why in the
+      # entrypoint.
+      - PYTORCH_CUDA_ALLOC_CONF=${PYTORCH_CUDA_ALLOC_CONF:-}
+      - TORCH_MEM_FRACTION=${TORCH_MEM_FRACTION:-}
+      # Set to a writable directory to record an allocation stack per block
+      # and dump a snapshot the first time the ceiling above is crossed. The
+      # stack is taken in the allocating thread, so it names the caller. It
+      # costs time and memory to record, so leave it empty outside an
+      # investigation. /logs is already mounted and MCP-readable.
+      - TORCH_MEM_TRACE_DIR=${TORCH_MEM_TRACE_DIR:-}
+      # Where each worker publishes its allocator counters, which is how the
+      # status page's /memory answers whether torch or something else is
+      # holding the node's memory. One counter read per worker per interval,
+      # so unlike the trace above this is cheap enough to leave on.
+      - TORCH_MEM_STATS_DIR=${TORCH_MEM_STATS_DIR:-/logs}
+      - TORCH_MEM_STATS_INTERVAL=${TORCH_MEM_STATS_INTERVAL:-}
+      # Appended to the serve command verbatim. Nothing the entrypoint selects
+      # belongs here: EXTRA_ARGS is one string, and an override restating it
+      # drops whatever else it carried -- how the fail-closed tool parser once
+      # vanished from production.
+      - EXTRA_ARGS=${EXTRA_ARGS:-}
+      # KV pool in bytes; the entrypoint pins 26 GiB. Pinned, vLLM "skips
+      # memory profiling" AND "does not respect the gpu_memory_utilization
+      # config", so the pin is not a fix for a warmup OOM -- lower GPU_MEM_UTIL
+      # or the pin for that.
+      - KV_CACHE_MEMORY=${KV_CACHE_MEMORY:-}
+      # Empty = fp8_e4m3, the entrypoint's default and what every measurement
+      # here used. Never plain `fp8`: that selects the fp8_ds_mla packed format,
+      # which hardcodes pe_dim == 64. This model is NoPE sparse MLA
+      # (qk_rope_head_dim is 0), so that kernel refuses at KV cache init --
+      # after a full 10-minute weight load.
+      - KV_CACHE_DTYPE=${KV_CACHE_DTYPE:-}
+      # Left EMPTY on purpose so the entrypoint owns the defaults. A default
+      # here as well as there means two places to change and one silently
+      # winning.
+      - MAX_NUM_BATCHED_TOKENS=${MAX_NUM_BATCHED_TOKENS:-}
+      # Capped by the KDA recurrent state, not by throughput. 34 of 45 layers
+      # are linear attention and each keeps one fixed-size state per sequence
+      # ("Mamba cache block"); exactly 32 fit after weights at GPU_MEM_UTIL
+      # 0.86. vLLM's default of 256 aborts at CUDA graph capture AFTER the full
+      # weight load. Empty here so the entrypoint owns the default.
+      - MAX_NUM_SEQS=${MAX_NUM_SEQS:-}
+      - LONG_PREFILL_TOKEN_THRESHOLD=${LONG_PREFILL_TOKEN_THRESHOLD:-}
+      - DECODE_RESERVE_TOKENS=${DECODE_RESERVE_TOKENS:-}
+      - CUDAGRAPH_CAPTURE_SIZES=${CUDAGRAPH_CAPTURE_SIZES:-}
+      - CUDAGRAPH_METRICS=${CUDAGRAPH_METRICS:-}
+      - ITERATION_DETAILS=${ITERATION_DETAILS:-}
+      # Empty = 8002 (API) and 8082 (status page and MCP), from the
+      # entrypoint.
+      - API_PORT=${API_PORT:-}
+      - STATUS_PORT=${STATUS_PORT:-}
+      # Status-page peers, host:port, comma-separated. Empty shows this node
+      # alone; mentatd-serve gives the cluster view.
+      - PEERS=${PEERS:-}
+      - MCP_LOG_DIR=${MCP_LOG_DIR:-/logs}
+      # mentat's agent id is group@container@node_ip. Without this the agent
+      # falls back to the hostname, which under network_mode: host is the
+      # HOST's name, so every container on a node would claim the same id.
+      - CONTAINER_NAME=${CONTAINER_NAME:-glm53}
+      # What the agent announces to mentatd-serve. Empty = port form (8002/v1,
+      # 8082/mcp), which the router resolves against every address the node
+      # announces. A URL pins one address. A worker holds a TP rank and
+      # answers no requests, so the entrypoint drops its OpenAI endpoint
+      # however this is set.
+      - MENTAT_OPENAI_API=${MENTAT_OPENAI_API:-}
+      - MENTAT_MCP_API=${MENTAT_MCP_API:-}
+      - MENTAT_MODEL_PROVIDER=${MENTAT_MODEL_PROVIDER:-}
+      - MAX_JOBS=${MAX_JOBS:-}
+      - SELF_TEST=${SELF_TEST:-}
+      - THROUGHPUT_INTERVAL_S=${THROUGHPUT_INTERVAL_S:-60}
+      - NVIDIA_VISIBLE_DEVICES=all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+# Used only when CACHE_HOME or LOG_DIR is unset.
+volumes:
+  cache:
+  logs:

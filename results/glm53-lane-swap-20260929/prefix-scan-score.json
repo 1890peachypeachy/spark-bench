@@ -1,0 +1,92 @@
+{
+ "verdict": "PASS",
+ "reasons": [],
+ "drift": {
+  "cold_cold": 0.0464,
+  "cold_warm": 0.039,
+  "limit": 0.0696,
+  "reps": 3,
+  "warm_without_hit": 0,
+  "warm_only_anomalies": []
+ },
+ "by_phase": {
+  "cold": {
+   "responses": 24,
+   "degenerate": 0,
+   "errors": 0,
+   "misquotes": 2,
+   "false_anomaly": 0,
+   "scan": 6,
+   "incorrect": 6
+  },
+  "warm": {
+   "responses": 24,
+   "degenerate": 0,
+   "errors": 0,
+   "misquotes": 1,
+   "false_anomaly": 0,
+   "scan": 6,
+   "incorrect": 7
+  }
+ },
+ "degenerate": 0,
+ "prefix": {
+  "lines": 2998,
+  "sizing": "2998 records, P 97361-97419, P mod 2304 593-651"
+ },
+ "solo_correct": [
+  {
+   "kind": "lookup",
+   "target": [
+    299,
+    1049
+   ],
+   "cold": true,
+   "warm": true
+  },
+  {
+   "kind": "lookup",
+   "target": [
+    1798,
+    2548
+   ],
+   "cold": true,
+   "warm": true
+  },
+  {
+   "kind": "lookup",
+   "target": [
+    2938,
+    2973
+   ],
+   "cold": true,
+   "warm": true
+  },
+  {
+   "kind": "lookup",
+   "target": [
+    2958,
+    2990
+   ],
+   "cold": true,
+   "warm": true
+  },
+  {
+   "kind": "scan",
+   "target": [],
+   "cold": false,
+   "warm": false
+  },
+  {
+   "kind": "scan",
+   "target": [],
+   "cold": false,
+   "warm": false
+  }
+ ],
+ "examples": [
+  "Record 02973: HXJTN (truth HCNPM)",
+  "Record 02973: HXJTN (truth HCNPM)",
+  "Record 02973: HXJTN (truth HCNPM)"
+ ]
+}

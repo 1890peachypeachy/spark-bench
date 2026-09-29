@@ -1,0 +1,1460 @@
+{
+ "label": "alignfix-20260929",
+ "started": "20260929-141216",
+ "args": {
+  "cmd": "run",
+  "label": "alignfix-20260929",
+  "base": "http://127.0.0.1:8888",
+  "model": "GLM-5.3-Flash-EXL3",
+  "conc": 8,
+  "rounds": 3,
+  "temp": 0.8,
+  "top_p": 0.95,
+  "max_tokens": 1200,
+  "solo_max_tokens": 200,
+  "thinking": "default",
+  "lines": 0,
+  "block": 2304,
+  "drift_reps": 3,
+  "drift_tokens": 64,
+  "seed": 7,
+  "logprobs": true,
+  "strict": false,
+  "out": "/var/tmp/prefix-scan-alignfix-20260929.json"
+ },
+ "rounds": [
+  {
+   "round": 0,
+   "phase": "cold",
+   "salt": "prefix-scan-alignfix-20260929-20260929-141216-r0",
+   "wall_s": 55.2,
+   "metrics_delta": {
+    "vllm:spec_decode_num_draft_tokens": 4277.0,
+    "vllm:spec_decode_num_accepted_tokens": 1426.0,
+    "vllm:prefix_cache_queries": 779076.0,
+    "vllm:prefix_cache_hits": 677376.0
+   },
+   "responses": [
+    {
+     "i": 0,
+     "kind": "lookup",
+     "score": {
+      "ntok": 41,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "299": "MPMCQ",
+       "1049": "GXWBN"
+      },
+      "correct": true
+     },
+     "content": "Record 00299: MPMCQ\nRecord 01049: GXWBN",
+     "prompt_tokens": 97379
+    },
+    {
+     "i": 1,
+     "kind": "lookup",
+     "score": {
+      "ntok": 41,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "1798": "PVCRT",
+       "2548": "ESZGN"
+      },
+      "correct": true
+     },
+     "content": "Record 01798: PVCRT\nRecord 02548: ESZGN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 2,
+     "kind": "lookup",
+     "score": {
+      "ntok": 45,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [
+       "Record 02973: HXJTN (truth HCNPM)"
+      ],
+      "false_anomaly": null,
+      "answer": {
+       "2938": "GAXJJ",
+       "2973": "HXJTN"
+      },
+      "correct": false
+     },
+     "content": "Record 02938: GAXJJ\nRecord 02973: HXJTN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 3,
+     "kind": "lookup",
+     "score": {
+      "ntok": 21,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2958": "DUWCE",
+       "2990": "ZMSMZ"
+      },
+      "correct": true
+     },
+     "content": "Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 4,
+     "kind": "quote",
+     "score": {
+      "ntok": 160,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 01499 host=node-20 state=stale retries=2 at t=10493s ref=LALGQ; lease held then released.\nRecord 01500 host=node-21 state=dead retries=1 at t=10500s ref=DKQWM; lease held then released.",
+     "prompt_tokens": 97374
+    },
+    {
+     "i": 5,
+     "kind": "quote",
+     "score": {
+      "ntok": 119,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 02995 host=node-08 state=dead retries=1 at t=20965s ref=JVSBA; lease held then released.\nRecord 02996 host=node-09 state=idle retries=2 at t=20972s ref=HSVHK; lease held then released.\nRecord 02997 host=node-10 state=leased retries=2 at t=20979s ref=KTFZS; lease held then released.",
+     "prompt_tokens": 97361
+    },
+    {
+     "i": 6,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97400
+    },
+    {
+     "i": 7,
+     "kind": "scan",
+     "score": {
+      "ntok": 412,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "NONE",
+      "correct": true
+     },
+     "content": "NONE",
+     "prompt_tokens": 97419
+    }
+   ]
+  },
+  {
+   "round": 0,
+   "phase": "warm",
+   "salt": "prefix-scan-alignfix-20260929-20260929-141216-r0",
+   "wall_s": 29.3,
+   "metrics_delta": {
+    "vllm:spec_decode_num_draft_tokens": 5789.0,
+    "vllm:spec_decode_num_accepted_tokens": 2020.0,
+    "vllm:prefix_cache_queries": 779076.0,
+    "vllm:prefix_cache_hits": 774144.0
+   },
+   "responses": [
+    {
+     "i": 0,
+     "kind": "lookup",
+     "score": {
+      "ntok": 39,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "299": "MPMCQ",
+       "1049": "GXWBN"
+      },
+      "correct": true
+     },
+     "content": "Record 00299: MPMCQ\nRecord 01049: GXWBN",
+     "prompt_tokens": 97379
+    },
+    {
+     "i": 1,
+     "kind": "lookup",
+     "score": {
+      "ntok": 43,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "1798": "PVCRT",
+       "2548": "ESZGN"
+      },
+      "correct": true
+     },
+     "content": "Record 01798: PVCRT\nRecord 02548: ESZGN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 2,
+     "kind": "lookup",
+     "score": {
+      "ntok": 45,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [
+       "Record 02973: HXJTN (truth HCNPM)"
+      ],
+      "false_anomaly": null,
+      "answer": {
+       "2938": "GAXJJ",
+       "2973": "HXJTN"
+      },
+      "correct": false
+     },
+     "content": "Record 02938: GAXJJ\nRecord 02973: HXJTN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 3,
+     "kind": "lookup",
+     "score": {
+      "ntok": 45,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2958": "DUWCE",
+       "2990": "ZMSMZ"
+      },
+      "correct": true
+     },
+     "content": "Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 4,
+     "kind": "quote",
+     "score": {
+      "ntok": 149,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 01499 host=node-20 state=stale retries=2 at t=10493s ref=LALGQ; lease held then released.\nRecord 01500 host=node-21 state=dead retries=1 at t=10500s ref=DKQWM; lease held then released.",
+     "prompt_tokens": 97374
+    },
+    {
+     "i": 5,
+     "kind": "quote",
+     "score": {
+      "ntok": 119,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 02995 host=node-08 state=dead retries=1 at t=20965s ref=JVSBA; lease held then released.\nRecord 02996 host=node-09 state=idle retries=2 at t=20972s ref=HSVHK; lease held then released.\nRecord 02997 host=node-10 state=leased retries=2 at t=20979s ref=KTFZS; lease held then released.",
+     "prompt_tokens": 97361
+    },
+    {
+     "i": 6,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97400
+    },
+    {
+     "i": 7,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97419
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "phase": "cold",
+   "salt": "prefix-scan-alignfix-20260929-20260929-141216-r1",
+   "wall_s": 59.4,
+   "metrics_delta": {
+    "vllm:spec_decode_num_draft_tokens": 5628.0,
+    "vllm:spec_decode_num_accepted_tokens": 2109.0,
+    "vllm:prefix_cache_queries": 779076.0,
+    "vllm:prefix_cache_hits": 677376.0
+   },
+   "responses": [
+    {
+     "i": 0,
+     "kind": "lookup",
+     "score": {
+      "ntok": 41,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "299": "MPMCQ",
+       "1049": "GXWBN"
+      },
+      "correct": true
+     },
+     "content": "Record 00299: MPMCQ\nRecord 01049: GXWBN",
+     "prompt_tokens": 97379
+    },
+    {
+     "i": 1,
+     "kind": "lookup",
+     "score": {
+      "ntok": 75,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "1798": "PVCRT",
+       "2548": "ESZGN"
+      },
+      "correct": true
+     },
+     "content": "Record 01798: PVCRT\nRecord 02548: ESZGN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 2,
+     "kind": "lookup",
+     "score": {
+      "ntok": 45,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [
+       "Record 02973: HXJTN (truth HCNPM)"
+      ],
+      "false_anomaly": null,
+      "answer": {
+       "2938": "GAXJJ",
+       "2973": "HXJTN"
+      },
+      "correct": false
+     },
+     "content": "Record 02938: GAXJJ\nRecord 02973: HXJTN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 3,
+     "kind": "lookup",
+     "score": {
+      "ntok": 45,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2958": "DUWCE",
+       "2990": "ZMSMZ"
+      },
+      "correct": true
+     },
+     "content": "Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 4,
+     "kind": "quote",
+     "score": {
+      "ntok": 81,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 01499 host=node-20 state=stale retries=2 at t=10493s ref=LALGQ; lease held then released.\nRecord 01500 host=node-21 state=dead retries=1 at t=10500s ref=DKQWM; lease held then released.",
+     "prompt_tokens": 97374
+    },
+    {
+     "i": 5,
+     "kind": "quote",
+     "score": {
+      "ntok": 218,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 02995 host=node-08 state=dead retries=1 at t=20965s ref=JVSBA; lease held then released.\nRecord 02996 host=node-09 state=idle retries=2 at t=20972s ref=HSVHK; lease held then released.\nRecord 02997 host=node-10 state=leased retries=2 at t=20979s ref=KTFZS; lease held then released.",
+     "prompt_tokens": 97361
+    },
+    {
+     "i": 6,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97400
+    },
+    {
+     "i": 7,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97419
+    }
+   ]
+  },
+  {
+   "round": 1,
+   "phase": "warm",
+   "salt": "prefix-scan-alignfix-20260929-20260929-141216-r1",
+   "wall_s": 28.1,
+   "metrics_delta": {
+    "vllm:spec_decode_num_draft_tokens": 5824.0,
+    "vllm:spec_decode_num_accepted_tokens": 2068.0,
+    "vllm:prefix_cache_queries": 779076.0,
+    "vllm:prefix_cache_hits": 774144.0
+   },
+   "responses": [
+    {
+     "i": 0,
+     "kind": "lookup",
+     "score": {
+      "ntok": 39,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "299": "MPMCQ",
+       "1049": "GXWBN"
+      },
+      "correct": true
+     },
+     "content": "Record 00299: MPMCQ\nRecord 01049: GXWBN",
+     "prompt_tokens": 97379
+    },
+    {
+     "i": 1,
+     "kind": "lookup",
+     "score": {
+      "ntok": 74,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "1798": "PVCRT",
+       "2548": "ESZGN"
+      },
+      "correct": true
+     },
+     "content": "Record 01798: PVCRT\nRecord 02548: ESZGN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 2,
+     "kind": "lookup",
+     "score": {
+      "ntok": 64,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2938": "GAXJJ",
+       "2973": "HCNPM"
+      },
+      "correct": true
+     },
+     "content": "Record 02938: GAXJJ\nRecord 02973: HCNPM",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 3,
+     "kind": "lookup",
+     "score": {
+      "ntok": 45,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2958": "DUWCE",
+       "2990": "ZMSMZ"
+      },
+      "correct": true
+     },
+     "content": "Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 4,
+     "kind": "quote",
+     "score": {
+      "ntok": 146,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 01499 host=node-20 state=stale retries=2 at t=10493s ref=LALGQ; lease held then released.\nRecord 01500 host=node-21 state=dead retries=1 at t=10500s ref=DKQWM; lease held then released.",
+     "prompt_tokens": 97374
+    },
+    {
+     "i": 5,
+     "kind": "quote",
+     "score": {
+      "ntok": 133,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 02995 host=node-08 state=dead retries=1 at t=20965s ref=JVSBA; lease held then released.\nRecord 02996 host=node-09 state=idle retries=2 at t=20972s ref=HSVHK; lease held then released.\nRecord 02997 host=node-10 state=leased retries=2 at t=20979s ref=KTFZS; lease held then released.",
+     "prompt_tokens": 97361
+    },
+    {
+     "i": 6,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97400
+    },
+    {
+     "i": 7,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97419
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "phase": "cold",
+   "salt": "prefix-scan-alignfix-20260929-20260929-141216-r2",
+   "wall_s": 58.8,
+   "metrics_delta": {
+    "vllm:spec_decode_num_draft_tokens": 5313.0,
+    "vllm:spec_decode_num_accepted_tokens": 1194.0,
+    "vllm:prefix_cache_queries": 779076.0,
+    "vllm:prefix_cache_hits": 677376.0
+   },
+   "responses": [
+    {
+     "i": 0,
+     "kind": "lookup",
+     "score": {
+      "ntok": 40,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "299": "MPMCQ",
+       "1049": "GXWBN"
+      },
+      "correct": true
+     },
+     "content": "Record 00299: MPMCQ\nRecord 01049: GXWBN",
+     "prompt_tokens": 97379
+    },
+    {
+     "i": 1,
+     "kind": "lookup",
+     "score": {
+      "ntok": 42,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "1798": "PVCRT",
+       "2548": "ESZGN"
+      },
+      "correct": true
+     },
+     "content": "Record 01798: PVCRT\nRecord 02548: ESZGN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 2,
+     "kind": "lookup",
+     "score": {
+      "ntok": 44,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2938": "GAXJJ",
+       "2973": "HCNPM"
+      },
+      "correct": true
+     },
+     "content": "Record 02938: GAXJJ\nRecord 02973: HCNPM",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 3,
+     "kind": "lookup",
+     "score": {
+      "ntok": 43,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2958": "DUWCE",
+       "2990": "ZMSMZ"
+      },
+      "correct": true
+     },
+     "content": "Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 4,
+     "kind": "quote",
+     "score": {
+      "ntok": 81,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 01499 host=node-20 state=stale retries=2 at t=10493s ref=LALGQ; lease held then released.\nRecord 01500 host=node-21 state=dead retries=1 at t=10500s ref=DKQWM; lease held then released.",
+     "prompt_tokens": 97374
+    },
+    {
+     "i": 5,
+     "kind": "quote",
+     "score": {
+      "ntok": 119,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 02995 host=node-08 state=dead retries=1 at t=20965s ref=JVSBA; lease held then released.\nRecord 02996 host=node-09 state=idle retries=2 at t=20972s ref=HSVHK; lease held then released.\nRecord 02997 host=node-10 state=leased retries=2 at t=20979s ref=KTFZS; lease held then released.",
+     "prompt_tokens": 97361
+    },
+    {
+     "i": 6,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97400
+    },
+    {
+     "i": 7,
+     "kind": "scan",
+     "score": {
+      "ntok": 386,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "NONE",
+      "correct": true
+     },
+     "content": "NONE",
+     "prompt_tokens": 97419
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "phase": "warm",
+   "salt": "prefix-scan-alignfix-20260929-20260929-141216-r2",
+   "wall_s": 26.7,
+   "metrics_delta": {
+    "vllm:spec_decode_num_draft_tokens": 5929.0,
+    "vllm:spec_decode_num_accepted_tokens": 1935.0,
+    "vllm:prefix_cache_queries": 779076.0,
+    "vllm:prefix_cache_hits": 774144.0
+   },
+   "responses": [
+    {
+     "i": 0,
+     "kind": "lookup",
+     "score": {
+      "ntok": 39,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "299": "MPMCQ",
+       "1049": "GXWBN"
+      },
+      "correct": true
+     },
+     "content": "Record 00299: MPMCQ\nRecord 01049: GXWBN",
+     "prompt_tokens": 97379
+    },
+    {
+     "i": 1,
+     "kind": "lookup",
+     "score": {
+      "ntok": 43,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "1798": "PVCRT",
+       "2548": "ESZGN"
+      },
+      "correct": true
+     },
+     "content": "Record 01798: PVCRT\nRecord 02548: ESZGN",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 2,
+     "kind": "lookup",
+     "score": {
+      "ntok": 44,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2938": "GAXJJ",
+       "2973": "HCNPM"
+      },
+      "correct": true
+     },
+     "content": "Record 02938: GAXJJ\nRecord 02973: HCNPM",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 3,
+     "kind": "lookup",
+     "score": {
+      "ntok": 54,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": {
+       "2958": "DUWCE",
+       "2990": "ZMSMZ"
+      },
+      "correct": true
+     },
+     "content": "Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+     "prompt_tokens": 97381
+    },
+    {
+     "i": 4,
+     "kind": "quote",
+     "score": {
+      "ntok": 79,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 01499 host=node-20 state=stale retries=2 at t=10493s ref=LALGQ; lease held then released.\nRecord 01500 host=node-21 state=dead retries=1 at t=10500s ref=DKQWM; lease held then released.",
+     "prompt_tokens": 97374
+    },
+    {
+     "i": 5,
+     "kind": "quote",
+     "score": {
+      "ntok": 119,
+      "run": 1,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "stop",
+      "misquotes": [],
+      "false_anomaly": null,
+      "correct": true
+     },
+     "content": "Record 02995 host=node-08 state=dead retries=1 at t=20965s ref=JVSBA; lease held then released.\nRecord 02996 host=node-09 state=idle retries=2 at t=20972s ref=HSVHK; lease held then released.\nRecord 02997 host=node-10 state=leased retries=2 at t=20979s ref=KTFZS; lease held then released.",
+     "prompt_tokens": 97361
+    },
+    {
+     "i": 6,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97400
+    },
+    {
+     "i": 7,
+     "kind": "scan",
+     "score": {
+      "ntok": 1200,
+      "run": 2,
+      "loop": 0,
+      "degenerate": false,
+      "lp_bad": 0,
+      "finish": "length",
+      "misquotes": [],
+      "false_anomaly": null,
+      "answer": "UNPARSED:",
+      "correct": false
+     },
+     "content": "",
+     "prompt_tokens": 97419
+    }
+   ]
+  }
+ ],
+ "solo": [
+  {
+   "kind": "lookup",
+   "target": [
+    299,
+    1049
+   ],
+   "cold": {
+    "score": {
+     "ntok": 41,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "299": "MPMCQ",
+      "1049": "GXWBN"
+     },
+     "correct": true
+    },
+    "content": "Record 00299: ref=MPMCQ. Record 01049: ref=GXWBN.Record 00299: MPMCQ\nRecord 01049: GXWBN",
+    "error": null
+   },
+   "warm": {
+    "score": {
+     "ntok": 41,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "299": "MPMCQ",
+      "1049": "GXWBN"
+     },
+     "correct": true
+    },
+    "content": "Record 00299: ref=MPMCQ. Record 01049: ref=GXWBN.Record 00299: MPMCQ\nRecord 01049: GXWBN",
+    "error": null
+   }
+  },
+  {
+   "kind": "lookup",
+   "target": [
+    1798,
+    2548
+   ],
+   "cold": {
+    "score": {
+     "ntok": 43,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "1798": "PVCRT",
+      "2548": "ESZGN"
+     },
+     "correct": true
+    },
+    "content": "Record 01798: ref=PVCRT. Record 02548: ref=ESZGN.Record 01798: PVCRT\nRecord 02548: ESZGN",
+    "error": null
+   },
+   "warm": {
+    "score": {
+     "ntok": 43,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "1798": "PVCRT",
+      "2548": "ESZGN"
+     },
+     "correct": true
+    },
+    "content": "Record 01798: ref=PVCRT. Record 02548: ref=ESZGN.Record 01798: PVCRT\nRecord 02548: ESZGN",
+    "error": null
+   }
+  },
+  {
+   "kind": "lookup",
+   "target": [
+    2938,
+    2973
+   ],
+   "cold": {
+    "score": {
+     "ntok": 44,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "2938": "GAXJJ",
+      "2973": "HCNPM"
+     },
+     "correct": true
+    },
+    "content": "Record 02938: ref=GAXJJ. Record 02973: ref=HCNPM.Record 02938: GAXJJ\nRecord 02973: HCNPM",
+    "error": null
+   },
+   "warm": {
+    "score": {
+     "ntok": 75,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "2938": "GAXJJ",
+      "2973": "HCNPM"
+     },
+     "correct": true
+    },
+    "content": "Record 02938: host=node-09 state=leased retries=4 at t=20566s ref=GAXJJ\nRecord 02973: host=node-15 state=idle retries=2 at t=20811s ref=HCNPMRecord 02938: GAXJJ\nRecord 02973: HCNPM",
+    "error": null
+   }
+  },
+  {
+   "kind": "lookup",
+   "target": [
+    2958,
+    2990
+   ],
+   "cold": {
+    "score": {
+     "ntok": 45,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "2958": "DUWCE",
+      "2990": "ZMSMZ"
+     },
+     "correct": true
+    },
+    "content": "Record 02958: ref=DUWCE. Record 02990: ref=ZMSMZ.Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+    "error": null
+   },
+   "warm": {
+    "score": {
+     "ntok": 45,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "stop",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": {
+      "2958": "DUWCE",
+      "2990": "ZMSMZ"
+     },
+     "correct": true
+    },
+    "content": "Record 02958: ref=DUWCE. Record 02990: ref=ZMSMZ.Record 02958: DUWCE\nRecord 02990: ZMSMZ",
+    "error": null
+   }
+  },
+  {
+   "kind": "scan",
+   "target": [],
+   "cold": {
+    "score": {
+     "ntok": 200,
+     "run": 2,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "length",
+     "misquotes": [],
+     "false_anomaly": [
+      0,
+      1,
+      29
+     ],
+     "answer": [
+      0,
+      1,
+      29
+     ],
+     "correct": false
+    },
+    "content": "The task: scan every line for malformed, truncated, merged, out of order, or missing records. If all well-formed, answer \"NONE\".\n\nRecords 00000 through 02997. Each record should have format: Record NNNNN host=node-XX state=... retries=N at t=Ns ref=XXXXX; lease held then released.\n\nLet me check sequence: record numbers increment by 1, hosts cycle node-00..node-28, t increments by 7s, ref is 5 uppercase letters.\n\nI need to check each line carefully. This is a long log. Let me scan for anomalies.\n\nRecord 00000: t=0s, host node-00. OK.\nRecord 00001: t=7s node-01. OK.\n... pattern: t = 7*n, host = node-(n mod 29).\n\nLet me verify a few:\nRecord 00029: host=node-00, t=203s.",
+    "error": null
+   },
+   "warm": {
+    "score": {
+     "ntok": 200,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "length",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": "UNPARSED:We need to check the log for malformed, truncated, merged, out-of-order, or miss",
+     "correct": false
+    },
+    "content": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records. The records go from 00000 to 02997. Let me check the sequence.\n\nRecords 00000 through 02997. Let me verify the sequence is complete and each line is well-formed.\n\nLet me scan through the record numbers:\n00000-00099: sequential\n00100-00199: sequential\n00200-00299: sequential\n00300-00399: sequential\n00400-00499: sequential\n00500-00599: sequential\n00600-00699: sequential\n00700-00799: sequential\n00800-00899: sequential\n00900-00999: sequential\n01000-01099: sequential\n01100-01199: sequential\n01200-01299: sequential\n01300-01399:",
+    "error": null
+   }
+  },
+  {
+   "kind": "scan",
+   "target": [],
+   "cold": {
+    "score": {
+     "ntok": 200,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "length",
+     "misquotes": [],
+     "false_anomaly": null,
+     "answer": "UNPARSED:I need to check the log for malformed, truncated, merged, out-of-order, or missi",
+     "correct": false
+    },
+    "content": "I need to check the log for malformed, truncated, merged, out-of-order, or missing records. The records should be consecutive from 00000 to 02997.\n\nLet me scan through the record numbers to check for gaps or issues.\n\nLooking at the records:\n- 00000 through 00028 - sequential\n- 00029 - node-00 again (cycle restarts, that's fine)\n- ...continuing...\n\nLet me check for any gaps in the sequence. The records go from 00000 to 02997. Let me verify they're all consecutive.\n\nLooking through the log carefully...\n\nI need to check each record number. Let me trace through:\n\n00000-00028: nodes 00-28\n00029-00057: nodes 00-28\n00058-00086: nodes 00-28\n00087-00115: nodes 00-28\n00116-00144: nodes 00-28\n001",
+    "error": null
+   },
+   "warm": {
+    "score": {
+     "ntok": 200,
+     "run": 1,
+     "loop": 0,
+     "degenerate": false,
+     "lp_bad": 0,
+     "finish": "length",
+     "misquotes": [],
+     "false_anomaly": [
+      0,
+      1,
+      28
+     ],
+     "answer": [
+      0,
+      1,
+      28
+     ],
+     "correct": false
+    },
+    "content": "I need to check the log for malformed, truncated, merged, out-of-order, or missing records. The records should be consecutive from 00000 to 02997.\n\nLet me scan through the record numbers to check for gaps or issues.\n\nLooking at the records:\n- 00000 through 00028: node-00 through node-28\n- 00029: node-00 (cycle restarts)\n- 00030: node-01\n- ...\n- 00057: node-28\n- 00058: node-00\n- ...\n\nThe pattern is that hosts cycle node-00 through node-28 (29 nodes), and record numbers increment by 1 each time. So record N should have host node-(N mod 29).\n\nLet me verify this pattern holds throughout.\n\nRecord 00000: node-00 \u2713 (0 mod 29 = 0)\nRecord 00001: node-01 \u2713\n...\nRecord 00028: node-",
+    "error": null
+   }
+  }
+ ],
+ "drift": [
+  {
+   "cc": [
+    4,
+    0.0464
+   ],
+   "cw": [
+    4,
+    0.1371
+   ],
+   "warm_hits": 96768.0,
+   "prompt_tokens": 97400,
+   "texts": {
+    "coldA": "We need to check every record from 00000 to 02997 for malformed lines, missing records, out of order, etc.\n\nLet me check the record numbers sequentially. Records go 00000 through 02997. Let me verify each record number appears in order.\n\nLooking through the log, record numbers",
+    "coldB": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records.\n\nLet me check the record numbers sequentially from 00000 to 02997.\n\nRecord 00000 through 02997. Let me verify the sequence increments by 1 each time.\n\nLet me scan through",
+    "warmA": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records. The records go from 00000 to 02997. Let me check the sequence.\n\nRecords 00000 through 02997. Let me verify the sequence is continuous and each line is well-formed.\n\n"
+   }
+  },
+  {
+   "cc": [
+    39,
+    0.0373
+   ],
+   "cw": [
+    39,
+    0.0327
+   ],
+   "warm_hits": 96768.0,
+   "prompt_tokens": 97400,
+   "texts": {
+    "coldA": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records.\n\nThe records go from 00000 to 02997. Let me check the sequence and format.\n\nEach record should be: \"Record NNNNN host=node-XX state=... retries=N at t=",
+    "coldB": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records.\n\nThe records go from 00000 to 02997. Let me check the sequence.\n\nRecord numbers should be sequential: 00000, 00001, ..., 02997. Total records = ",
+    "warmA": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records.\n\nThe records go from 00000 to 02997. Let me check the sequence.\n\nRecord numbers should be sequential: 00000, 00001, ..., 02997. Total expected: "
+   }
+  },
+  {
+   "cc": [
+    4,
+    0.0901
+   ],
+   "cw": [
+    20,
+    0.039
+   ],
+   "warm_hits": 96768.0,
+   "prompt_tokens": 97400,
+   "texts": {
+    "coldA": "We need to check every record from 00000 to 02997 for well-formedness, ordering, missing records.\n\nRecords go 00000 through 02997. Let me check the sequence: each record number increments by 1, host cycles node-00 to node-28, time increments by ",
+    "coldB": "We need to check the log for malformed, truncated, merged, out-of-order, or missing records.\n\nThe records go from 00000 to 02997. Let me check the sequence.\n\nRecord numbers: 00000 through 02997. Let me verify each record number increments by 1.\n\nLet",
+    "warmA": "We need to check every record from 00000 to 02997 for well-formedness, order, missing records.\n\nRecords go 00000 through 02997. Let me check the sequence: 00000...02997. That's 2998 records. Let me verify continuity by scanning"
+   }
+  }
+ ],
+ "prefix": {
+  "lines": 2998,
+  "sizing": "2998 records, P 97361-97419, P mod 2304 593-651"
+ },
+ "summary": {
+  "verdict": "PASS",
+  "reasons": [],
+  "drift": {
+   "cold_cold": 0.0464,
+   "cold_warm": 0.039,
+   "limit": 0.0696,
+   "reps": 3,
+   "warm_without_hit": 0,
+   "warm_only_anomalies": []
+  },
+  "by_phase": {
+   "cold": {
+    "responses": 24,
+    "degenerate": 0,
+    "errors": 0,
+    "misquotes": 2,
+    "false_anomaly": 0,
+    "scan": 6,
+    "incorrect": 6
+   },
+   "warm": {
+    "responses": 24,
+    "degenerate": 0,
+    "errors": 0,
+    "misquotes": 1,
+    "false_anomaly": 0,
+    "scan": 6,
+    "incorrect": 7
+   }
+  },
+  "degenerate": 0,
+  "prefix": {
+   "lines": 2998,
+   "sizing": "2998 records, P 97361-97419, P mod 2304 593-651"
+  },
+  "solo_correct": [
+   {
+    "kind": "lookup",
+    "target": [
+     299,
+     1049
+    ],
+    "cold": true,
+    "warm": true
+   },
+   {
+    "kind": "lookup",
+    "target": [
+     1798,
+     2548
+    ],
+    "cold": true,
+    "warm": true
+   },
+   {
+    "kind": "lookup",
+    "target": [
+     2938,
+     2973
+    ],
+    "cold": true,
+    "warm": true
+   },
+   {
+    "kind": "lookup",
+    "target": [
+     2958,
+     2990
+    ],
+    "cold": true,
+    "warm": true
+   },
+   {
+    "kind": "scan",
+    "target": [],
+    "cold": false,
+    "warm": false
+   },
+   {
+    "kind": "scan",
+    "target": [],
+    "cold": false,
+    "warm": false
+   }
+  ],
+  "examples": [
+   "Record 02973: HXJTN (truth HCNPM)",
+   "Record 02973: HXJTN (truth HCNPM)",
+   "Record 02973: HXJTN (truth HCNPM)"
+  ]
+ }
+}
