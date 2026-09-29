@@ -1,0 +1,80 @@
+{
+ "category": "marketing-copy",
+ "kind": "accuracy",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:05:44-0700",
+ "cases": [
+  {
+   "case": "mkt-t1-hook-fit",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 2.35,
+   "output": "B\n\nIt leans on **specificity** \u2014 the concrete number and personal story feel more relatable and credible than a generic claim.",
+   "prompt_tokens": 83,
+   "completion_tokens": 44,
+   "tok_s": 18.72,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t1-angle-match",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 1.32,
+   "output": "B",
+   "prompt_tokens": 79,
+   "completion_tokens": 19,
+   "tok_s": 14.39,
+   "score": {
+    "pass": true,
+    "detail": "match='B'"
+   }
+  },
+  {
+   "case": "mkt-t2-cta-choice",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.06,
+   "output": "End Bedtime Battles Tonight\n\nIt mirrors the exact frustration the visitor arrived with from the blog post and promises immediate relief, making the click feel like the solution they were already searching for.",
+   "prompt_tokens": 76,
+   "completion_tokens": 71,
+   "tok_s": 17.49,
+   "score": {
+    "pass": false,
+    "detail": "missing=['start', 'free']"
+   }
+  },
+  {
+   "case": "mkt-t2-price-framing",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 8.37,
+   "output": "**B is more persuasive** \u2014 because it reframes the price increase as a *gain* (new modules, expanded guidance) rather than a *loss* (paying more for the same thing), leveraging loss aversion in reverse: buyers accept higher prices far more readily when the increase is anchored to added value instead of framed as a cost hike.\n\n**Pick: B** \u2705\n\nQuick note: A draws attention to the increase itself (\"small increase\") and subtly signals you *know* it stings \u2014 which invites price scrutiny. B shifts the conversation entirely away from the price change and onto what's new.",
+   "prompt_tokens": 81,
+   "completion_tokens": 153,
+   "tok_s": 18.28,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t3-audience-fit",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 9.75,
+   "output": "**B) The OT practice's newsletter.**\n\nParents reading about sensory regulation are already actively seeking professional solutions for self-regulation struggles\u2014which are the root cause of most bedtime battles\u2014so they arrive with high intent and trust in the source, unlike the broader or more casual audiences in A and C.",
+   "prompt_tokens": 98,
+   "completion_tokens": 186,
+   "tok_s": 19.08,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

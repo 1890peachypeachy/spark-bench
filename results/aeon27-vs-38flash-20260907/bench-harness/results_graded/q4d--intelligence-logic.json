@@ -1,0 +1,80 @@
+{
+ "category": "intelligence-logic",
+ "kind": "intelligence",
+ "model": "q4d",
+ "model_id": "distill-q4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-22T04:04:30-0700",
+ "cases": [
+  {
+   "case": "int-t1-sequence",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.03,
+   "output": "NO, because \"ships before\" does not guarantee \"arrives before,\" so book A could have shipped earlier but taken longer transit time and arrived after Monday.",
+   "prompt_tokens": 50,
+   "completion_tokens": 269,
+   "tok_s": 88.78,
+   "score": {
+    "pass": true,
+    "detail": "match='NO'"
+   }
+  },
+  {
+   "case": "int-t1-trap-plausible",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 2.14,
+   "output": "**True.** The new refund count is 0.031 \u00d7 1.4V = 0.0434V, which is clearly greater than the original 0.022V.",
+   "prompt_tokens": 53,
+   "completion_tokens": 205,
+   "tok_s": 95.79,
+   "score": {
+    "pass": true,
+    "detail": "match='True'"
+   }
+  },
+  {
+   "case": "int-t2-constraint-roster",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 5.48,
+   "output": "**Reasoning:**\n\n- **Thursday & Friday** \u2192 Hermes (given).\n- **Wednesday** \u2192 Spark (given).\n- **Tuesday** \u2192 Astrid (immediately before Spark on Wednesday).\n- **Monday** \u2192 The only remaining day. Peachy hasn't been assigned yet, and since *each* agent must work at least one day, Peachy must take Monday.\n\nThis satisfies all constraints: each agent works \u22651 day, and exactly one agent (Hermes) works two days.\n\nAnswer: Peachy",
+   "prompt_tokens": 92,
+   "completion_tokens": 553,
+   "tok_s": 100.91,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: Peachy'"
+   }
+  },
+  {
+   "case": "int-t3-ordering-puzzle",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 7.75,
+   "output": "Let me work through the constraints step by step.\n\n**Fixed position:** Course bundle = 3rd.\n\n**Workbook immediately before audio series:** They must occupy two consecutive slots. The possible pairs are (1,2) or (4,5), since position 3 is already taken.\n\n**Flashcard deck earlier than course bundle (3rd):** Flashcard deck must be in position 1 or 2.\n\n**Checking (Workbook, Audio series) in positions 1\u20132:** This would fill positions 1 and 2, leaving no room for the flashcard deck to be earlier than position 3. **Invalid.**\n\n**Checking (Workbook, Audio series) in positions 4\u20135:** This works. Positions 1 and 2 are open for the flashcard deck and gift card. The gift card is not last (position 5 is audio series), so that constraint is satisfied.\n\nThe final order is:\n1. Flashcard deck (or gift card)\n2. Gift card (or flashcard deck)\n3. Course bundle\n4. Workbook\n5. **Audio series**\n\nAnswer: audio series",
+   "prompt_tokens": 85,
+   "completion_tokens": 804,
+   "tok_s": 103.74,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: audio series'"
+   }
+  },
+  {
+   "case": "int-t3-trap-invalid-premise",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 2.54,
+   "output": "VALID \u2014 this is an instance of modus tollens: from \"every answerer is online\" (\u2200x, Answered(x) \u2192 Online(x)) and \"Didi is not online\" (\u00acOnline(Didi)), it necessarily follows that \"Didi is not an answerer\" (\u00acAnswered(Didi)).",
+   "prompt_tokens": 64,
+   "completion_tokens": 252,
+   "tok_s": 99.21,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

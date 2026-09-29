@@ -1,0 +1,74 @@
+{
+ "category": "partnerships-b2b",
+ "kind": "intelligence",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:06:10-0700",
+ "cases": [
+  {
+   "case": "b2b-t1-genuine",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 7.25,
+   "output": "\n\n```json\n{\n  \"is_partnership\": true,\n  \"reason\": \"The message identifies a specific business entity (pediatric sleep consultancy), proposes a relevant and low-risk collaboration (cross-promoting a webinar), and demonstrates knowledge of the recipient's audience overlap, indicating a tailored and genuine outreach effort.\"\n}\n```",
+   "prompt_tokens": 66,
+   "completion_tokens": 569,
+   "tok_s": 78.48,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t1-spam",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 7.38,
+   "output": "\n\n{\n  \"is_partnership\": false,\n  \"reason\": \"The message uses spammy language, unrealistic guarantees ('10x ROI'), excessive punctuation, and lacks specific details about the sender, company, or mutual value, which are hallmarks of SEO link-building spam rather than a legitimate partnership proposal.\"\n}",
+   "prompt_tokens": 70,
+   "completion_tokens": 628,
+   "tok_s": 85.09,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t2-fit",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 5.92,
+   "output": "\n\nB) Pediatric OTs directly address children's emotional regulation and anxiety, making their audience of parents and caregivers a highly aligned match for your wellness-focused offerings.",
+   "prompt_tokens": 81,
+   "completion_tokens": 484,
+   "tok_s": 81.76,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "b2b-t2-outreach-prioritize",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 21.19,
+   "output": "\n\n[1, 3, 2, 4]",
+   "prompt_tokens": 73,
+   "completion_tokens": 1637,
+   "tok_s": 77.25,
+   "score": {
+    "pass": false,
+    "detail": "array=['1', '3', '2', '4'] expected_front=['3', '1', '2'] ok=False"
+   }
+  },
+  {
+   "case": "b2b-t3-prioritize-revenue",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 21.85,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}

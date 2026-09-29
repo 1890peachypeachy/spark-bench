@@ -1,0 +1,66 @@
+{
+ "category": "accuracy-extraction",
+ "kind": "accuracy",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T18:58:07-0700",
+ "cases": [
+  {
+   "case": "ext-t1-commitments",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.61,
+   "output": "```json\n{\"commitments\": [{\"owner\": \"Victor\", \"deadline\": \"Wednesday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}\n```\n\n**Excluded items:**\n- *Anna hopes to review scripts soon* \u2014 \"hopes\" is not a commitment, and \"soon\" is not a concrete deadline.\n- *The team should celebrate Friday* \u2014 \"the team\" is not a specific owner, and \"should\" indicates a suggestion rather than a commitment.",
+   "prompt_tokens": 91,
+   "completion_tokens": 174,
+   "tok_s": 37.74,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "ext-t2-distractor-dates",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.86,
+   "output": "March 11",
+   "prompt_tokens": 99,
+   "completion_tokens": 136,
+   "tok_s": 47.55,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t2-order-math",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.12,
+   "output": "**#2230**\n\n- #2230: Aug 15 \u2192 Aug 17 = 2 days\n- #2231: Aug 16 \u2192 Aug 19 = 3 days\n- #2232: Aug 21 \u2192 Aug 26 = 5 days",
+   "prompt_tokens": 97,
+   "completion_tokens": 119,
+   "tok_s": 56.13,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t3-negated-fact",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 1.39,
+   "output": "NO. Sleep onset improved by 9 minutes in the treatment group versus 7 minutes in the placebo group, a difference of only 2 minutes, which is not a substantial improvement.",
+   "prompt_tokens": 86,
+   "completion_tokens": 57,
+   "tok_s": 41.01,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

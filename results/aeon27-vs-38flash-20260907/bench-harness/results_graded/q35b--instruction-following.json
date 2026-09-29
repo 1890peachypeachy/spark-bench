@@ -1,0 +1,56 @@
+{
+ "category": "instruction-following",
+ "kind": "instruction",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T18:59:43-0700",
+ "cases": [
+  {
+   "case": "inst-t1-exact-count",
+   "tier": 1,
+   "ok": false,
+   "latency_s": 19.48,
+   "error": "empty content finish=length",
+   "tok_s": null
+  },
+  {
+   "case": "inst-t2-multi-constraint",
+   "tier": 2,
+   "ok": false,
+   "latency_s": 18.22,
+   "error": "empty content finish=length",
+   "tok_s": null
+  },
+  {
+   "case": "inst-t2-json-schema",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 16.43,
+   "output": "\n\n{\n  \"risk\": \"high\",\n  \"reason\": \"Larger audience and higher pricing create significant competitive threat.\",\n  \"tags\": [\n    \"competitive-threat\",\n    \"audience-gap\"\n  ]\n}",
+   "prompt_tokens": 90,
+   "completion_tokens": 1397,
+   "tok_s": 85.03,
+   "score": {
+    "pass": true,
+    "detail": "keys=True risk=True reason10=True tags2=True onlyjson=True"
+   }
+  },
+  {
+   "case": "inst-t3-negative-constraint",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 19.15,
+   "error": "empty content finish=length",
+   "tok_s": null
+  },
+  {
+   "case": "inst-t3-format-sandwich",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 18.73,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}

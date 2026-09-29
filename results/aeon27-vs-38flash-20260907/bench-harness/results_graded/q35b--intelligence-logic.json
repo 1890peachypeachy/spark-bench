@@ -1,0 +1,80 @@
+{
+ "category": "intelligence-logic",
+ "kind": "intelligence",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:01:43-0700",
+ "cases": [
+  {
+   "case": "int-t1-sequence",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 21.45,
+   "output": "\n\nNO. A book shipping earlier does not guarantee an earlier arrival if its transit time is longer, so A could arrive after Monday.",
+   "prompt_tokens": 50,
+   "completion_tokens": 1762,
+   "tok_s": 82.14,
+   "score": {
+    "pass": true,
+    "detail": "match='NO'"
+   }
+  },
+  {
+   "case": "int-t1-trap-plausible",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 22.45,
+   "output": "\n\nTrue, because 3.1% of 140% of the original order volume equals 4.34% of the original base, which is strictly greater than the original 2.2% refund count, guaranteeing an increase in absolute refunds.",
+   "prompt_tokens": 53,
+   "completion_tokens": 1896,
+   "tok_s": 84.45,
+   "score": {
+    "pass": true,
+    "detail": "match='True'"
+   }
+  },
+  {
+   "case": "int-t2-constraint-roster",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 17.41,
+   "output": "\n\nHermes works Thursday and Friday, which satisfies the condition that exactly one agent works two days. This means the other three agents each work exactly one day. Spark is assigned to Wednesday. Astrid works the day immediately before Spark, so she works Tuesday. The only remaining day is Monday, and the only remaining agent is Peachy. Therefore, Peachy must work Monday.\n\nAnswer: Peachy",
+   "prompt_tokens": 92,
+   "completion_tokens": 1452,
+   "tok_s": 83.4,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: Peachy'"
+   }
+  },
+  {
+   "case": "int-t3-ordering-puzzle",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 28.42,
+   "output": "\n\nBased on the constraints:\n- The course bundle is fixed at position 3.\n- The workbook and audio series must launch consecutively (workbook immediately before audio series). This pair can only occupy positions 1\u20132 or 4\u20135.\n- If they occupied positions 1\u20132, there would be no available spot before position 3 for the flashcard deck to satisfy the condition that it launches earlier than the course bundle. Therefore, the workbook/audio series pair must occupy positions 4\u20135.\n- This leaves positions 1 and 2 for the flashcard deck and gift card, which satisfies all remaining conditions (flashcard deck is before 3rd, gift card is not last).\n- Consequently, position 5 is occupied by the audio series.\n\nAnswer: audio series",
+   "prompt_tokens": 85,
+   "completion_tokens": 2368,
+   "tok_s": 83.32,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: audio series'"
+   }
+  },
+  {
+   "case": "int-t3-trap-invalid-premise",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 17.75,
+   "output": "\n\nVALID. The argument is logically valid because it instantiates a universal conditional statement and applies modus tollens: if answering the ticket entails being online, then being offline necessarily entails not having answered the ticket.",
+   "prompt_tokens": 64,
+   "completion_tokens": 1489,
+   "tok_s": 83.89,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

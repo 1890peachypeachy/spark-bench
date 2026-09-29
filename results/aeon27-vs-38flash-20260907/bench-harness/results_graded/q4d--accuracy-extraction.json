@@ -1,0 +1,66 @@
+{
+ "category": "accuracy-extraction",
+ "kind": "accuracy",
+ "model": "q4d",
+ "model_id": "distill-q4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-22T04:03:44-0700",
+ "cases": [
+  {
+   "case": "ext-t1-commitments",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.44,
+   "output": "{\"commitments\": [{\"owner\": \"Victor\", \"deadline\": \"Wednesday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}",
+   "prompt_tokens": 91,
+   "completion_tokens": 330,
+   "tok_s": 95.93,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "ext-t2-distractor-dates",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 1.32,
+   "output": "March 11",
+   "prompt_tokens": 102,
+   "completion_tokens": 122,
+   "tok_s": 92.42,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t2-order-math",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 1.28,
+   "output": "#2230",
+   "prompt_tokens": 108,
+   "completion_tokens": 124,
+   "tok_s": 96.88,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t3-negated-fact",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 1.87,
+   "output": "NO. Sleep onset improved by only 9 minutes in the treatment group versus 7 minutes in the placebo group, a difference of just 2 minutes.",
+   "prompt_tokens": 87,
+   "completion_tokens": 171,
+   "tok_s": 91.44,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

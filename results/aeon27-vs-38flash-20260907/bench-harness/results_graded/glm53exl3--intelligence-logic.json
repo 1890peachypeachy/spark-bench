@@ -1,0 +1,80 @@
+{
+ "category": "intelligence-logic",
+ "kind": "intelligence",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:03:30-0700",
+ "cases": [
+  {
+   "case": "int-t1-sequence",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.42,
+   "output": "NO \u2014 We only know A shipped before B shipped, but shipping order doesn't guarantee arrival order, so A could still arrive after B and thus after Monday.",
+   "prompt_tokens": 52,
+   "completion_tokens": 99,
+   "tok_s": 22.4,
+   "score": {
+    "pass": true,
+    "detail": "match='NO'"
+   }
+  },
+  {
+   "case": "int-t1-trap-plausible",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.3,
+   "output": "**True** \u2014 since refunds = rate \u00d7 orders, the new count is 0.031 \u00d7 1.4N = 0.0434N, which exceeds the original 0.022N regardless of the starting order volume.",
+   "prompt_tokens": 54,
+   "completion_tokens": 102,
+   "tok_s": 30.91,
+   "score": {
+    "pass": true,
+    "detail": "match='True'"
+   }
+  },
+  {
+   "case": "int-t2-constraint-roster",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 7.42,
+   "output": "Hermes works Thursday and Friday. Spark works Wednesday, so Astrid must work Tuesday (the day immediately before Spark). That leaves Monday for Peachy.\n\nAnswer: Peachy",
+   "prompt_tokens": 92,
+   "completion_tokens": 215,
+   "tok_s": 28.98,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: Peachy'"
+   }
+  },
+  {
+   "case": "int-t3-ordering-puzzle",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 23.52,
+   "output": "The workbook/audio pair must occupy positions 4 and 5, so the audio series launches fifth.\n\nAnswer: audio seriesWe need answer logic puzzle. Need be careful. Five launches: flashcard deck F, workbook W, audio A, course bundle C, gift card G. Constraints: W immediately before A. C third. G not last. F earlier than C. Need fifth.\n\nPositions 1-5. C=3. F earlier than C => F pos1 or2. W immediately before A => W,A consecutive. Since C at 3, possible W,A pairs: (1,2), (2,3 impossible C), (3,4 impossible), (4,5). Also maybe (??). So W,A either 1-2 or 4-5. F earlier than C means F at 1 or2. If W,A at1-2, positions1,2 occupied W,A, no room for F before C. impossible. Thus W,A at4-5. Then positions1,2 are F and G. G not last satisfied. F earlier than C yes. Fifth is audio series. Need end exactly \"Answer: <item>\". Could include brief reasoning. Ensure final ends with Answer: audio series.The workbook/audio series pair must occupy positions 4 and 5, so the audio series launches fifth.\n\nAnswer: audio series",
+   "prompt_tokens": 87,
+   "completion_tokens": 637,
+   "tok_s": 27.08,
+   "score": {
+    "pass": true,
+    "detail": "match='Answer: audio seriesWe need answer logic puzzle. Need be careful. Five launches: flashcard deck F, workbook W, audio A, course bundle C, gift card'"
+   }
+  },
+  {
+   "case": "int-t3-trap-invalid-premise",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 4.06,
+   "output": "**VALID.** The argument has the form: \u2200x (Answered(x) \u2192 Online(x)), \u00acOnline(Didi), therefore \u00acAnswered(Didi) \u2014 a valid application of modus tollens (universal instantiation plus contraposition).",
+   "prompt_tokens": 65,
+   "completion_tokens": 114,
+   "tok_s": 28.08,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  }
+ ]
+}

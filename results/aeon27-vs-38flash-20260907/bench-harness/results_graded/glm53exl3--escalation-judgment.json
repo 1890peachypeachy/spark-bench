@@ -1,0 +1,66 @@
+{
+ "category": "escalation-judgment",
+ "kind": "intelligence",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T18:59:09-0700",
+ "cases": [
+  {
+   "case": "esc-t1-needs-human",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 11.53,
+   "output": "```json\n{\"needs_human\": true, \"why\": \"The customer cannot verify their identity (no account email access, card locked), so automated verification and refund processing are impossible. Identity verification for a financial transaction like a refund requires human review to prevent fraud and securely recover account access.\"}\n```",
+   "prompt_tokens": 68,
+   "completion_tokens": 110,
+   "tok_s": 9.54,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t1-auto",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 5.84,
+   "output": "```json\n{\"needs_human\": false, \"why\": \"Routine order status inquiry that can be resolved by checking tracking information for order #2231. No complaints, refunds, or complex issues requiring human judgment.\"}\n```",
+   "prompt_tokens": 61,
+   "completion_tokens": 64,
+   "tok_s": 10.96,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t2-refund-call",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 5.11,
+   "output": "**B** \u2014 Lead with a sincere apology, give the customer the choice of a replacement or full refund, and escalate to a supervisor so the rude first interaction and the fulfillment failure get properly addressed.",
+   "prompt_tokens": 115,
+   "completion_tokens": 48,
+   "tok_s": 9.39,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "esc-t3-severity-rank",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 11.44,
+   "output": "```json\n[\"1\", \"2\", \"3\", \"4\"]\n```\n\n**Reasoning:**\n1. **Ticket 1** \u2014 Child safety incident involving a swallowed toy part. Potential medical emergency and serious product safety/liability issue. Must be escalated immediately.\n2. **Ticket 2** \u2014 Time-sensitive shipping failure with a hard deadline (customer leaves tomorrow). Urgent but not a safety issue.\n3. **Ticket 3** \u2014 Address change is routine and the order hasn't shipped yet, so there's still a window to act, but no stated deadline.\n4. **Ticket 4** \u2014 Newsletter signup bug is a non-critical technical issue affecting some users; no immediate customer harm or deadline.",
+   "prompt_tokens": 96,
+   "completion_tokens": 166,
+   "tok_s": 14.51,
+   "score": {
+    "pass": false,
+    "detail": "array=['1', '2', '3', '4'] expected_front=['1', '2', '4'] ok=False"
+   }
+  }
+ ]
+}

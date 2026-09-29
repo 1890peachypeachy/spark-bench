@@ -1,0 +1,74 @@
+{
+ "category": "marketing-copy",
+ "kind": "accuracy",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:04:13-0700",
+ "cases": [
+  {
+   "case": "mkt-t1-hook-fit",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 20.59,
+   "output": "\n\nB\nIt leans on specificity by using a concrete number and a personal story.",
+   "prompt_tokens": 81,
+   "completion_tokens": 1681,
+   "tok_s": 81.64,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t1-angle-match",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 7.62,
+   "output": "\n\nB",
+   "prompt_tokens": 76,
+   "completion_tokens": 585,
+   "tok_s": 76.77,
+   "score": {
+    "pass": true,
+    "detail": "match='B'"
+   }
+  },
+  {
+   "case": "mkt-t2-cta-choice",
+   "tier": 2,
+   "ok": false,
+   "latency_s": 23.31,
+   "error": "empty content finish=length",
+   "tok_s": null
+  },
+  {
+   "case": "mkt-t2-price-framing",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 18.0,
+   "output": "\n\n**B** is more persuasive because it justifies the price increase by highlighting tangible added value, shifting customer focus from cost to benefit and reducing price resistance. **Pick: B**",
+   "prompt_tokens": 85,
+   "completion_tokens": 1478,
+   "tok_s": 82.11,
+   "score": {
+    "pass": false,
+    "detail": "missing=['module']"
+   }
+  },
+  {
+   "case": "mkt-t3-audience-fit",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 22.12,
+   "output": "\n\nOption B. Parents actively seeking occupational therapy for sensory regulation are highly qualified, trust the professional source, and are already problem-solving for their 2\u20136 year old\u2019s bedtime struggles, resulting in significantly higher purchase intent and conversion than a broad Facebook group or generic email list.",
+   "prompt_tokens": 97,
+   "completion_tokens": 1745,
+   "tok_s": 78.89,
+   "score": {
+    "pass": false,
+    "detail": "missing=['OT']"
+   }
+  }
+ ]
+}

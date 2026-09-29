@@ -1,0 +1,80 @@
+{
+ "category": "instruction-following",
+ "kind": "instruction",
+ "model": "q4d",
+ "model_id": "distill-q4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-22T04:04:06-0700",
+ "cases": [
+  {
+   "case": "inst-t1-exact-count",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 1.4,
+   "output": "1. Improved vocabulary growth\n2. Better focus skills\n3. Stronger imagination development",
+   "prompt_tokens": 40,
+   "completion_tokens": 123,
+   "tok_s": 87.86,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 numbered3=True max5w=True"
+   }
+  },
+  {
+   "case": "inst-t2-multi-constraint",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 13.95,
+   "output": "A consistent evening routine helps toddlers wind down before resting. Parents might read a gentle story, sing a soft lullaby, or offer a warm bath. These quiet activities create a calm atmosphere that signals the body to prepare for rest.\n\nThe final steps involve dimming lights, tucking in little ones, and whispering goodnight. A calm presence from caregivers reassures children that the day is over and they can rest peacefully. END OF NOTES",
+   "prompt_tokens": 97,
+   "completion_tokens": 1550,
+   "tok_s": 111.11,
+   "score": {
+    "pass": true,
+    "detail": "paras=2 wc=[40, 30] calm2=True no_sleep=True end=True (para1 short is OK)"
+   }
+  },
+  {
+   "case": "inst-t2-json-schema",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 3.01,
+   "output": "{\"risk\":\"medium\",\"reason\":\"Competitor has 10x audience with higher price point\",\"tags\":[\"pricing\",\"competitive-threat\"]}",
+   "prompt_tokens": 90,
+   "completion_tokens": 258,
+   "tok_s": 85.71,
+   "score": {
+    "pass": true,
+    "detail": "keys=True risk=True reason10=True tags2=True onlyjson=True"
+   }
+  },
+  {
+   "case": "inst-t3-negative-constraint",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 2.62,
+   "output": "The delivery arrived six days past the expected date and the container was damaged. When requesting a return of funds, the representative refused and ended the call, leaving the customer completely furious.",
+   "prompt_tokens": 82,
+   "completion_tokens": 249,
+   "tok_s": 95.04,
+   "score": {
+    "pass": true,
+    "detail": "used_banned=[] sentences=2"
+   }
+  },
+  {
+   "case": "inst-t3-format-sandwich",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 3.21,
+   "output": "VERDICT: APPROVED\nThe $79 price reflects the enhanced value and quality improvements delivered to students.\n2026-08-24",
+   "prompt_tokens": 100,
+   "completion_tokens": 323,
+   "tok_s": 100.62,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 verdict=True sent=True date=True"
+   }
+  }
+ ]
+}

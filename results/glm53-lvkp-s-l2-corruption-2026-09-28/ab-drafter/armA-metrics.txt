@@ -1,0 +1,11 @@
+vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 127254.0
+vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 6559.0
+vllm:prefix_cache_queries_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 6261.0
+vllm:prefix_cache_queries_created{engine="0",model_name="GLM-5.3-Flash-FP8"} 1.7906276039015925e+09
+vllm:prefix_cache_hits_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 0.0
+vllm:prefix_cache_hits_created{engine="0",model_name="GLM-5.3-Flash-FP8"} 1.790627603901603e+09
+vllm:external_prefix_cache_queries_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 0.0
+vllm:external_prefix_cache_queries_created{engine="0",model_name="GLM-5.3-Flash-FP8"} 1.79062760390161e+09
+vllm:external_prefix_cache_hits_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 0.0
+vllm:external_prefix_cache_hits_created{engine="0",model_name="GLM-5.3-Flash-FP8"} 1.7906276039016166e+09
+vllm:num_preemptions_total{engine="0",model_name="GLM-5.3-Flash-FP8"} 0.0

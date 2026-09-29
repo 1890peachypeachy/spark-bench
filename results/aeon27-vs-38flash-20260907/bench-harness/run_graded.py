@@ -36,6 +36,9 @@ MODELS = {
                  "id": "unsloth/Qwen3.6-35B-A3B-NVFP4", "reasoning_effort": "high"},
     "glm53exl3": {"url": "http://100.99.120.29:8888/v1/chat/completions",
                  "id": "GLM-5.3-Flash-EXL3", "reasoning_effort": "high"},
+    # 2026-09-22 night: empero distill Q4_K_M via llama.cpp on spark2 (replaces standby 35B seat for the test window)
+    "q4d":      {"url": "http://100.71.248.116:8899/v1/chat/completions",
+                 "id": "distill-q4", "reasoning_effort": "high"},
 }
 
 

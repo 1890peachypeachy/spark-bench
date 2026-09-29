@@ -1,0 +1,52 @@
+{
+  "ts": "2026-09-22T04:05:29.965452",
+  "endpoint": "http://100.71.248.116:8899/v1",
+  "model": "distill-q4",
+  "label": "q4d-llamacpp",
+  "tag": "",
+  "concurrency": 1,
+  "ctx_target": 100000,
+  "runs": [
+    {
+      "agent": 0,
+      "steps": [
+        {
+          "label": "q4d-llamacpp-agent0",
+          "type": "tool_loop",
+          "turns": [
+            {
+              "turn": 0,
+              "prompt_tokens": 88,
+              "completion_tokens": 205,
+              "cached_tokens": 0,
+              "wall_s": 2.333,
+              "ttft_s": 0.248,
+              "err": null
+            },
+            {
+              "turn": 1,
+              "prompt_tokens": 510,
+              "completion_tokens": 53,
+              "cached_tokens": 84,
+              "wall_s": 0.883,
+              "ttft_s": 0.428,
+              "err": null
+            },
+            {
+              "turn": 2,
+              "prompt_tokens": 777,
+              "completion_tokens": 56,
+              "cached_tokens": 506,
+              "wall_s": 0.803,
+              "ttft_s": 0.323,
+              "err": null
+            }
+          ],
+          "total_s": 4.019,
+          "total_completion": 314
+        }
+      ]
+    }
+  ],
+  "wall_clock_s": 4.025
+}

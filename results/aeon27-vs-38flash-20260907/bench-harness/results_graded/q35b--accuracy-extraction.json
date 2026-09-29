@@ -1,0 +1,60 @@
+{
+ "category": "accuracy-extraction",
+ "kind": "accuracy",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T18:57:10-0700",
+ "cases": [
+  {
+   "case": "ext-t1-commitments",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 17.2,
+   "output": "\n\n{\"commitments\": [{\"owner\": \"Victor\", \"deadline\": \"Wednesday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}",
+   "prompt_tokens": 91,
+   "completion_tokens": 1444,
+   "tok_s": 83.95,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "ext-t2-distractor-dates",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 7.92,
+   "output": "\n\nMarch 11",
+   "prompt_tokens": 102,
+   "completion_tokens": 641,
+   "tok_s": 80.93,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t2-order-math",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 12.75,
+   "output": "\n\n#2230",
+   "prompt_tokens": 108,
+   "completion_tokens": 1095,
+   "tok_s": 85.88,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "ext-t3-negated-fact",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 19.03,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}

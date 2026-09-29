@@ -1,0 +1,2 @@
+out.json#0: decode tokens 69, retokenized 69 (ALIGNED)
+       0+: decode mean -0.171  rescored mean -0.277  mean |diff| 0.163  |diff|>1 per 1k 58

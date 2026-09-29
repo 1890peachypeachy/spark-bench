@@ -1,0 +1,80 @@
+{
+ "category": "instruction-following",
+ "kind": "instruction",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:01:15-0700",
+ "cases": [
+  {
+   "case": "inst-t1-exact-count",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 1.58,
+   "output": "1. Builds vocabulary and language skills\n2. Improves focus and concentration\n3. Sparks imagination and creativity",
+   "prompt_tokens": 42,
+   "completion_tokens": 33,
+   "tok_s": 20.89,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 numbered3=True max5w=True"
+   }
+  },
+  {
+   "case": "inst-t2-multi-constraint",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 16.27,
+   "output": "A consistent evening sequence helps toddlers transition from busy play to rest. Start with a warm bath, then dim the lights and read a favorite story together. Keeping the atmosphere calm signals that the day is winding down.\n\nOffer a small snack and a cuddle before tucking your little one in, using the same phrases each night. Predictability builds calm and security, reducing bedtime struggles. Stay patient and consistent, and peaceful evenings will follow. END OF NOTES",
+   "prompt_tokens": 96,
+   "completion_tokens": 573,
+   "tok_s": 35.22,
+   "score": {
+    "pass": true,
+    "detail": "paras=2 wc=[38, 36] calm2=True no_sleep=True end=True (para1 short is OK)"
+   }
+  },
+  {
+   "case": "inst-t2-json-schema",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.45,
+   "output": "{\"risk\": \"medium\", \"reason\": \"Larger competitor, but our lower price is an advantage\", \"tags\": [\"competitive-pricing\", \"market-share-threat\"]}",
+   "prompt_tokens": 88,
+   "completion_tokens": 83,
+   "tok_s": 18.65,
+   "score": {
+    "pass": true,
+    "detail": "keys=True risk=True reason10=True tags2=True onlyjson=True"
+   }
+  },
+  {
+   "case": "inst-t3-negative-constraint",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 3.53,
+   "output": "The delivery arrived six days past the promised date, and the box was crushed. When the customer requested their money back, the representative refused and hung up, leaving them absolutely furious.",
+   "prompt_tokens": 83,
+   "completion_tokens": 68,
+   "tok_s": 19.26,
+   "score": {
+    "pass": true,
+    "detail": "used_banned=[] sentences=2"
+   }
+  },
+  {
+   "case": "inst-t3-format-sandwich",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 1.91,
+   "output": "VERDICT: Reasonable\nRaising the price from $59 to $79 remains fair if course value justifies it.\n2026-08-24",
+   "prompt_tokens": 92,
+   "completion_tokens": 71,
+   "tok_s": 37.17,
+   "score": {
+    "pass": true,
+    "detail": "lines=3 verdict=True sent=True date=True"
+   }
+  }
+ ]
+}

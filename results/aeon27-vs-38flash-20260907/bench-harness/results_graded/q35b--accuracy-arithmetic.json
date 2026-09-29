@@ -1,0 +1,68 @@
+{
+ "category": "accuracy-arithmetic",
+ "kind": "accuracy",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T18:55:52-0700",
+ "cases": [
+  {
+   "case": "acc-t1-wow-orders",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 11.41,
+   "output": "\n\n127",
+   "prompt_tokens": 65,
+   "completion_tokens": 1003,
+   "tok_s": 87.91,
+   "score": {
+    "pass": true,
+    "detail": "match='127'"
+   }
+  },
+  {
+   "case": "acc-t1-refund-rate",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 14.66,
+   "output": "\n\nsecond\nFirst week: 2.8%\nSecond week: 2.2%",
+   "prompt_tokens": 70,
+   "completion_tokens": 1277,
+   "tok_s": 87.11,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "acc-t2-ad-budget",
+   "tier": 2,
+   "ok": false,
+   "latency_s": 18.6,
+   "error": "empty content finish=length",
+   "tok_s": null
+  },
+  {
+   "case": "acc-t2-inventory-split",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.82,
+   "output": "\n\n56",
+   "prompt_tokens": 54,
+   "completion_tokens": 394,
+   "tok_s": 81.74,
+   "score": {
+    "pass": true,
+    "detail": "match='56'"
+   }
+  },
+  {
+   "case": "acc-t3-cascade-discount",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 21.32,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}

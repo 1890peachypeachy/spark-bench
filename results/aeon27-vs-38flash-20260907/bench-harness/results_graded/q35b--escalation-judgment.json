@@ -1,0 +1,60 @@
+{
+ "category": "escalation-judgment",
+ "kind": "intelligence",
+ "model": "q35b",
+ "model_id": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T18:58:18-0700",
+ "cases": [
+  {
+   "case": "esc-t1-needs-human",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 7.13,
+   "output": "\n\n```json\n{\n  \"needs_human\": true,\n  \"why\": \"The ticket requires account recovery and identity verification due to a forgotten email and locked card, combined with a refund request. These security-sensitive actions require manual verification and cannot be safely handled by an automated system.\"\n}\n```",
+   "prompt_tokens": 67,
+   "completion_tokens": 565,
+   "tok_s": 79.24,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t1-auto",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 6.52,
+   "output": "\n\n```json\n{\n  \"needs_human\": false,\n  \"why\": \"This is a routine order tracking request with a specific order number. Automated systems or self-service tools can directly query the order management platform to retrieve shipping status and tracking details without requiring human intervention.\"\n}\n```",
+   "prompt_tokens": 61,
+   "completion_tokens": 509,
+   "tok_s": 78.07,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "esc-t2-refund-call",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 17.13,
+   "output": "\n\nB) Apologize for the poor experience and damaged order, offer a full refund or replacement, and escalate to a supervisor to ensure proper resolution.",
+   "prompt_tokens": 115,
+   "completion_tokens": 1407,
+   "tok_s": 82.14,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "esc-t3-severity-rank",
+   "tier": 3,
+   "ok": false,
+   "latency_s": 20.29,
+   "error": "empty content finish=length",
+   "tok_s": null
+  }
+ ]
+}

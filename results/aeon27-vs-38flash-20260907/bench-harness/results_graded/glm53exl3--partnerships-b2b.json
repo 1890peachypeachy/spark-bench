@@ -1,0 +1,80 @@
+{
+ "category": "partnerships-b2b",
+ "kind": "intelligence",
+ "model": "glm53exl3",
+ "model_id": "GLM-5.3-Flash-EXL3",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-21T19:07:14-0700",
+ "cases": [
+  {
+   "case": "b2b-t1-genuine",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.65,
+   "output": "```json\n{\"is_partnership\": true, \"reason\": \"The sender proposes a concrete collaboration: cross-promoting a free webinar between their pediatric sleep consultancy and your bedtime course audience. This is a clear business partnership/collaboration inquiry, though you should verify their legitimacy before engaging.\"}\n```",
+   "prompt_tokens": 67,
+   "completion_tokens": 79,
+   "tok_s": 21.64,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t1-spam",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.58,
+   "output": "```json\n{\"is_partnership\": false, \"reason\": \"This message exhibits classic spam characteristics: exaggerated claims (guaranteed 10x ROI), excessive punctuation and urgency ('contact us now!!!'), and promotion of low-quality SEO schemes like link exchanges and paid backlinks. Genuine partnership inquiries are typically personalized, professional, and propose mutually beneficial collaboration rather than unsolicited promotional offers.\"}\n```",
+   "prompt_tokens": 69,
+   "completion_tokens": 90,
+   "tok_s": 19.65,
+   "score": {
+    "pass": true,
+    "detail": "ok"
+   }
+  },
+  {
+   "case": "b2b-t2-fit",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 3.96,
+   "output": "**B** \u2014 A pediatric OT newsletter reaches exactly your target audience (parents and professionals focused on children's emotional and developmental well-being), making a content swap a natural, high-trust fit, while the robotics toy and gaming chair brands have little overlap with your anxiety/wellness niche.",
+   "prompt_tokens": 83,
+   "completion_tokens": 77,
+   "tok_s": 19.44,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "b2b-t2-outreach-prioritize",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 19.26,
+   "output": "```json\n[3, 1, 2, 4]\n```\n\n**Reasoning:**\n\n1. **School district OT department (3)** \u2014 Occupational therapists directly address emotional regulation, sensory needs, and coping skills in children. Highest topical alignment and potential for credible, professional endorsement or program integration.\n\n2. **Pediatrician's office waiting-room TV (1)** \u2014 Reaches exactly the right audience (parents of young children) in a trusted health context, though it's a passive, less targeted channel.\n\n3. **Local toy store (2)** \u2014 Parents of kids are present, but intent is play/entertainment rather than wellness; fit is moderate and depends heavily on the store's positioning.\n\n4. **Mom fashion influencer (4)** \u2014 Audience overlap exists (mothers), but zero topical relevance to children's mental wellness; weakest credibility and engagement fit.",
+   "prompt_tokens": 76,
+   "completion_tokens": 379,
+   "tok_s": 19.68,
+   "score": {
+    "pass": true,
+    "detail": "array=['3', '1', '2', '4'] expected_front=['3', '1', '2'] ok=True"
+   }
+  },
+  {
+   "case": "b2b-t3-prioritize-revenue",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 13.25,
+   "output": "**Analysis (revenue weighted over reach):**\n\n1. **Shopify collab** \u2014 40% rev-share exposed to a 200k list. Highest revenue rate *and* largest audience; wins on both dimensions.\n2. **Influencer** \u2014 20% rev-share to 50k. Half the rate and a quarter of the reach of Shopify, but it's the only other direct-revenue deal, and the high kids-affinity could lift conversion.\n3. **Newsletter swap** \u2014 Zero revenue. Pure reach play (16k combined), so it ranks last under a revenue-first weighting.\n\n```json\n{\n  \"shopify_collab\": 1,\n  \"influencer\": 2,\n  \"newsletter_swap\": 3\n}\n```\n\nRanking: [shopify_collab, influencer, newsletter_swap]",
+   "prompt_tokens": 125,
+   "completion_tokens": 358,
+   "tok_s": 27.02,
+   "score": {
+    "pass": false,
+    "detail": "no JSON array found"
+   }
+  }
+ ]
+}

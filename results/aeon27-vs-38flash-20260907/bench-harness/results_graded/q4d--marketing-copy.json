@@ -1,0 +1,80 @@
+{
+ "category": "marketing-copy",
+ "kind": "accuracy",
+ "model": "q4d",
+ "model_id": "distill-q4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-22T04:04:51-0700",
+ "cases": [
+  {
+   "case": "mkt-t1-hook-fit",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 3.79,
+   "output": "B\n\nIt leans on specificity, using the concrete number \"five\" and the personal detail \"my daughter's worries\" to make the promise feel tangible and relatable rather than abstractly authoritative.",
+   "prompt_tokens": 81,
+   "completion_tokens": 311,
+   "tok_s": 82.06,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t1-angle-match",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 4.12,
+   "output": "B",
+   "prompt_tokens": 76,
+   "completion_tokens": 348,
+   "tok_s": 84.47,
+   "score": {
+    "pass": true,
+    "detail": "match='B'"
+   }
+  },
+  {
+   "case": "mkt-t2-cta-choice",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.28,
+   "output": "Get Your Child In Bed\n\nIt directly mirrors the blog post's pain point and promises the exact outcome the frustrated parent is seeking, making the transition from problem to solution feel inevitable.",
+   "prompt_tokens": 76,
+   "completion_tokens": 372,
+   "tok_s": 86.92,
+   "score": {
+    "pass": false,
+    "detail": "missing=['start', 'free', 'bedtime']"
+   }
+  },
+  {
+   "case": "mkt-t2-price-framing",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 4.8,
+   "output": "**B is more persuasive** because it reframes the price increase as a natural consequence of added value (a \"new edition\" with more modules and guidance), so the customer's brain processes the benefit *before* the cost, whereas Option A forces the customer to confront the price change first and then scramble to justify it.",
+   "prompt_tokens": 85,
+   "completion_tokens": 418,
+   "tok_s": 87.08,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "mkt-t3-audience-fit",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 3.59,
+   "output": "**Placement A** \u2014 A moms' Facebook group posting about toddler tantrums, because the audience is actively experiencing the exact pain point (sleep disruption) your course solves, making them warm, intent-driven buyers rather than passive scrollers.",
+   "prompt_tokens": 97,
+   "completion_tokens": 288,
+   "tok_s": 80.22,
+   "score": {
+    "pass": false,
+    "detail": "missing=['OT', 'sensory']"
+   }
+  }
+ ]
+}

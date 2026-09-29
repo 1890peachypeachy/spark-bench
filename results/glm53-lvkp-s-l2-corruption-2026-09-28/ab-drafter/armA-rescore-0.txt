@@ -1,0 +1,9 @@
+out.json#0: decode tokens 16000, retokenized 16000 (ALIGNED)
+       0+: decode mean -0.402  rescored mean -0.440  mean |diff| 0.099  |diff|>1 per 1k 10
+    2000+: decode mean -0.492  rescored mean -0.522  mean |diff| 0.096  |diff|>1 per 1k 6
+    4000+: decode mean -0.456  rescored mean -0.481  mean |diff| 0.093  |diff|>1 per 1k 3
+    6000+: decode mean -0.500  rescored mean -0.536  mean |diff| 0.109  |diff|>1 per 1k 6
+    8000+: decode mean -0.514  rescored mean -0.535  mean |diff| 0.102  |diff|>1 per 1k 8
+   10000+: decode mean -0.517  rescored mean -0.534  mean |diff| 0.091  |diff|>1 per 1k 4
+   12000+: decode mean -0.422  rescored mean -0.447  mean |diff| 0.078  |diff|>1 per 1k 5
+   14000+: decode mean -0.437  rescored mean -0.450  mean |diff| 0.073  |diff|>1 per 1k 3

@@ -1,0 +1,80 @@
+{
+ "category": "accuracy-arithmetic",
+ "kind": "accuracy",
+ "model": "q4d",
+ "model_id": "distill-q4",
+ "reasoning_effort": "high",
+ "recorded_at": "2026-09-22T04:03:34-0700",
+ "cases": [
+  {
+   "case": "acc-t1-wow-orders",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 1.46,
+   "output": "127",
+   "prompt_tokens": 65,
+   "completion_tokens": 131,
+   "tok_s": 89.73,
+   "score": {
+    "pass": true,
+    "detail": "match='127'"
+   }
+  },
+  {
+   "case": "acc-t1-refund-rate",
+   "tier": 1,
+   "ok": true,
+   "latency_s": 2.23,
+   "output": "**second**\n\n- First week: 4/142 = **2.8%**\n- Second week: 2/90 = **2.2%**",
+   "prompt_tokens": 70,
+   "completion_tokens": 229,
+   "tok_s": 102.69,
+   "score": {
+    "pass": true,
+    "detail": "all present"
+   }
+  },
+  {
+   "case": "acc-t2-ad-budget",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 2.11,
+   "output": "4340",
+   "prompt_tokens": 76,
+   "completion_tokens": 214,
+   "tok_s": 101.42,
+   "score": {
+    "pass": true,
+    "detail": "match='4340'"
+   }
+  },
+  {
+   "case": "acc-t2-inventory-split",
+   "tier": 2,
+   "ok": true,
+   "latency_s": 1.66,
+   "output": "56",
+   "prompt_tokens": 54,
+   "completion_tokens": 166,
+   "tok_s": 100.0,
+   "score": {
+    "pass": true,
+    "detail": "match='56'"
+   }
+  },
+  {
+   "case": "acc-t3-cascade-discount",
+   "tier": 3,
+   "ok": true,
+   "latency_s": 3.02,
+   "output": "$42.43",
+   "prompt_tokens": 75,
+   "completion_tokens": 328,
+   "tok_s": 108.61,
+   "score": {
+    "pass": true,
+    "detail": "match='42.43'"
+   }
+  }
+ ]
+}
