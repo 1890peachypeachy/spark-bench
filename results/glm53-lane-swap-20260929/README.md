@@ -38,14 +38,24 @@ with `block_size 2304`, `max_num_batched_tokens 6919`.
 
 ## Decode: measured, c1, same script both lanes (`spark-bench/bench/c1_decode_screen.py`)
 
-| prompt | old lane (mentat/gx10) | new lane (knapcio align-fix) | change |
-|---|---|---|---|
-| prose | 35.8 | **62.2** (idle window) | **+74 %** |
-| code | 42.0 | 48.9 (1 concurrent req) | +16 % (understated) |
-| structured | 76.1 | 81.4 (1 concurrent req) | +7 % (understated) |
+All new-lane numbers below are idle-gated: any sample whose peak concurrency
+exceeded our own request was discarded and retried. Three independent runs
+converged (prose 61–63, code 80–87, structured 126–132).
 
-Upstream's claim for this release: prose 90.3 at default clocks, 83.8 at the
-2200 MHz cap. **We measure 62.2.** The gap is not speculative decoding failing —
+| prompt | old lane (mentat/gx10) | new lane (knapcio align-fix) | upstream @2200 cap |
+|---|---|---|---|
+| prose | 35.8 (suspect) | **62.1** | 83.8 |
+| code | 42.0 (suspect) | **81.1** | 125.2 |
+| structured | 76.1 (suspect) | **126.7** | 114.8 (JSON) |
+
+**The old-lane baseline is NOT trustworthy** — it was taken with the same
+un-gated harness that understated the new lane by 1.6–1.8x, so the *before*
+column is a floor, not a measurement, and the before/after deltas must not be
+quoted. Only the new lane's absolute numbers are sound. A true comparison needs
+the old lane brought back up and re-measured idle-gated.
+
+Against upstream: structured exceeds their capped JSON figure; prose and code sit
+at ~70 % of theirs. The gap is not speculative decoding failing —
 acceptance is healthy: 27.0 % of draft tokens accepted, 1.89 accepted per draft
 step (≈2.89 tokens per target forward pass), per-position 73.6 / 43.8 / 27.8 /
 17.6 / 12.3 / 8.4 %. Unexplained; spark1's 2190 MHz clock cap (vs 3003 max) is a

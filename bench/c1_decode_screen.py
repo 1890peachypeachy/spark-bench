@@ -8,6 +8,7 @@ only our own before/after is.
 import argparse
 import json
 import statistics
+import threading
 import time
 import urllib.request
 
@@ -19,6 +20,65 @@ PROMPTS = {
     "structured": "Produce a JSON array of 12 objects describing fictional server nodes. Each object must have "
                   "keys: hostname, rack, cpu_cores, ram_gb, role, commissioned (ISO date). Output only JSON.",
 }
+
+
+def requests_running(base):
+    """Concurrent requests on the lane, or -1 if /metrics is unreadable.
+
+    Required for c1: with GLM's batch-uniform speculative mode, ONE extra
+    concurrent request drops the whole batch from 7 drafts to 5, and a "c1"
+    sample taken next to live traffic reads 1.6-1.8x low.
+    """
+    try:
+        with urllib.request.urlopen(base.rstrip("/") + "/metrics", timeout=5) as r:
+            for line in r.read().decode().splitlines():
+                if line.startswith("vllm:num_requests_running{"):
+                    return float(line.split()[-1])
+    except Exception:
+        return -1.0
+    return -1.0
+
+
+def wait_for_idle(base, tries=45, delay=4.0):
+    """Block until the lane is idle so a c1 sample is really c1."""
+    for _ in range(tries):
+        if requests_running(base) == 0.0:
+            return True
+        time.sleep(delay)
+    return False
+
+
+class ConcurrencyWatch:
+    """Poll /metrics during a sample and remember the peak concurrency.
+
+    Checking only before/after misses traffic that joins AND leaves inside the
+    sample window, which still cut the draft length for part of the decode.
+    """
+
+    def __init__(self, base, interval=1.0):
+        self.base = base
+        self.interval = interval
+        self.peak = 0.0
+        self._stop = threading.Event()
+        self._thread = None
+
+    def __enter__(self):
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+        return self
+
+    def _loop(self):
+        while not self._stop.is_set():
+            n = requests_running(self.base)
+            if n > self.peak:
+                self.peak = n
+            self._stop.wait(self.interval)
+
+    def __exit__(self, *exc):
+        self._stop.set()
+        if self._thread:
+            self._thread.join(timeout=3)
+        return False
 
 
 def run_one(base, model, kind, max_tokens, effort):
@@ -98,19 +158,46 @@ def main():
     ap.add_argument("--effort", default="")
     ap.add_argument("--out", default="")
     ap.add_argument("--warmup", type=int, default=1)
+    ap.add_argument("--allow-busy", action="store_true",
+                    help="measure without waiting for an idle lane; results are not c1")
+    ap.add_argument("--max-attempts", type=int, default=6,
+                    help="attempts per wanted sample before giving up on a clean c1")
     args = ap.parse_args()
 
     for _ in range(args.warmup):
         run_one(args.base, args.model, "prose", 128, args.effort)
 
     records = []
+    discarded = 0
     for kind in ("prose", "code", "structured"):
-        for _ in range(args.repeat):
-            rec = run_one(args.base, args.model, kind, args.max_tokens, args.effort)
-            if rec:
-                records.append(rec)
-                print(f"{kind:11s} {rec['decode_tok_s']:7.1f} tok/s  "
-                      f"({rec['completion_tokens']} tok, ttft {rec['ttft_s']}s)", flush=True)
+        kept = 0
+        for _ in range(args.repeat * args.max_attempts):
+            if kept >= args.repeat:
+                break
+            if not args.allow_busy and not wait_for_idle(args.base):
+                print(f"{kind}: no idle window found; skipping (use --allow-busy to "
+                      f"measure anyway, but the result is NOT c1)", flush=True)
+                break
+            with ConcurrencyWatch(args.base) as watch:
+                rec = run_one(args.base, args.model, kind, args.max_tokens, args.effort)
+            if not rec:
+                continue
+            # Our own request counts as 1, so anything above that is foreign traffic.
+            rec["peak_concurrent"] = watch.peak
+            rec["concurrent_after"] = requests_running(args.base)
+            # Traffic that overlapped ANY part of the sample makes this c2+, not c1:
+            # batch-uniform spec decode cut the draft length, so the rate reads low.
+            if not args.allow_busy and (watch.peak > 1 or rec["concurrent_after"] > 0):
+                discarded += 1
+                print(f"{kind:11s} {rec['decode_tok_s']:7.1f} tok/s  DISCARDED "
+                      f"(peak concurrency {watch.peak:.0f} -> not c1)", flush=True)
+                continue
+            records.append(rec)
+            kept += 1
+            print(f"{kind:11s} {rec['decode_tok_s']:7.1f} tok/s  "
+                  f"({rec['completion_tokens']} tok, ttft {rec['ttft_s']}s)", flush=True)
+        if kept < args.repeat:
+            print(f"{kind}: only {kept}/{args.repeat} clean c1 samples obtained", flush=True)
 
     print("\n=== median c1 decode tok/s ===")
     summary = {}
