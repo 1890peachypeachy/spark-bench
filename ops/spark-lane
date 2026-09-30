@@ -72,7 +72,14 @@ GLM53_IMAGE="ghcr.io/miaai-lab/glm-5.3-flash-2x-dgx-sparks:exl3-instanttensor"
 GLM53_TP4_KIT="/var/tmp/glm53-recipe-tp4"
 GLM53_TP4_CLI="./start.sh"
 GLM53_TP4_ENV=".env"
-GLM53_TP4_CTN="glm53-alignfix-20260929"
+#
+# NAME WARNING (restored 2026-09-29 — it applies to this recipe too): the served name
+# says EXL3 and the weights are NOT EXL3. Verified on spark3's own config.json:
+# quant_method=modelopt, quant_algo=MIXED_PRECISION (NVFP4 experts + MXFP8/FP8_BLOCK
+# attention). The name is a stable IDENTITY LABEL that 99 Hermes config references pin
+# to; it is not evidence of the backend. Do NOT "correct" it to match the quantization —
+# that repoints every client. Read config.json when you need to know what is loaded.
+GLM53_TP4_CTN="glm53-alignfix-20260929"   # DEFAULT ONLY — the kit's .env wins, see glm53_tp4_resolve_ctn()
 GLM53_TP4_IMAGE="glm53-roce:v11-b58f34ea"
 GLM53_TP4_WEIGHTS="/var/tmp/models/glm-quant-mix/lossless8"
 GLM53_TP4_DRAFTER="/var/tmp/models/incoai/GLM-5.3-Flash-DFlash2-fp8blk"
@@ -247,9 +254,12 @@ node_occupant() {
   # FIXED 2026-09-25.
   if    echo "$out" | grep -qiE 'dsv41-3x|sglang.*3'; then lane="dsv41-tp3"
   elif  echo "$out" | grep -qiE 'dsv41-4x';               then lane="dsv41-tp4"
-  # Anchored, and BEFORE the exl3/glm-5 arm: the mentat TP4 container is bare `glm53`.
-  elif  echo "$out" | grep -qE  '^glm53[|]';              then lane="glm53-tp4"
+  # Anchored, and BEFORE the exl3/glm-5 arm. `glm53-alignfix` is the CURRENT registered
+  # TP4 recipe's rank prefix. Bare `^glm53[|]` is the DEREGISTERED mentat container: kept
+  # only so a leftover from that kit still registers as an occupant and blocks an `up`
+  # rather than reading as a free node — it is no longer what `glm53-tp4` launches.
   elif  echo "$out" | grep -qiE 'glm53-alignfix';         then lane="glm53-tp4"
+  elif  echo "$out" | grep -qE  '^glm53[|]';              then lane="glm53-tp4"
   elif  echo "$out" | grep -qiE 'glm53-lvkp|glm53-roce';  then lane="glm53-tp4"
   elif  echo "$out" | grep -qiE 'glm53-exl3|glm-5';       then lane="glm53-tp3"
   else  lane="llm-lane-unknown"; fi
@@ -884,6 +894,28 @@ glm53_down() {
 #   * mem   — spark2 runs a genuine ~10-18G below its siblings when the kernel
 #             MemAvailable anomaly is present. The documented fix is a REBOOT of
 #             that node, not lowering GPU_UTIL (see the recipe README).
+# The KIT's .env is the source of truth for CTN, not the constant above. Upstream
+# bumps it on every redeploy -- start.sh:149 verbatim: "stop, never remove: the
+# containers stay for inspection or `docker start`; a new deployment needs a fresh
+# CTN". A stale constant here is NOT cosmetic, and the two failure modes are
+# asymmetric:
+#   up   -> identity counts 0/4 ranks and FAILS a perfectly healthy lane (annoying)
+#   down -> the sweep matches nothing, "verify torn down" greps nothing, and the
+#           lane reports PASS WHILE ALL FOUR RANKS KEEP SERVING (dangerous)
+# The second is the exact class rule 7 exists to prevent, so resolve from the head
+# and treat the constant as a fallback only.
+glm53_tp4_resolve_ctn() {
+  [[ -n "${GLM53_TP4_CTN_RESOLVED:-}" ]] && return 0
+  GLM53_TP4_CTN_RESOLVED=1
+  local live
+  live="$(sshx "$GLM53_HEAD_HOST" "grep -E '^CTN=' $GLM53_TP4_KIT/$GLM53_TP4_ENV | tail -1 | cut -d= -f2" 2>/dev/null | tr -d '[:space:]\"'\''')"
+  if [[ -n "$live" && "$live" != "$GLM53_TP4_CTN" ]]; then
+    warn "kit .env says CTN=$live, registry default is $GLM53_TP4_CTN — using the kit's"
+    info "if this is a redeploy, update GLM53_TP4_CTN in this file so detection keys off the name too"
+    GLM53_TP4_CTN="$live"
+  fi
+}
+
 glm53_tp4_weights_ok() {   # $1 = node ; success = checkpoint + drafter READABLE on that node
   # The knapcio recipe is NFS-backed: spark3 holds the checkpoint locally and exports it,
   # spark1/2/4 read it over the fabric mount. So on a worker this is really a mount test,
@@ -946,6 +978,7 @@ glm53_tp4_up() {
     return 1
   fi
   ok "launcher + .env present on the head"
+  glm53_tp4_resolve_ctn   # must follow the kit check: it reads that .env
 
   step "image" "$GLM53_TP4_IMAGE on all 4 nodes"
   local missing=""
@@ -972,7 +1005,18 @@ glm53_tp4_up() {
       result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(already up, unchanged)"
       return 0
     fi
-    warn "endpoint answers but the chat canary failed — doing a full bring-up"
+    # Zombie head: the endpoint answers but cannot complete a chat. Do NOT fall
+    # through into a bring-up. The old ranks are still up holding their allocation,
+    # so the memory step below would find ~21 GiB free against an 87.6 GiB floor,
+    # FAIL on all four nodes, and mem_blame() would name this lane's OWN ranks as
+    # the co-tenants — telling the operator that the fleet's signature failure mode
+    # is a memory problem when it is really a wedged lane. Measured 2026-09-29 with
+    # the lane HEALTHY: 21/21/20/23 GiB free. Fail fast with the fix instead.
+    note_fail "already up?" "endpoint answers but the chat canary failed — the lane is wedged, not down"
+    info "a bring-up from here would misreport this as a memory failure: the live ranks still hold their allocation"
+    NEXT_CMD="spark-lane down $lane && spark-lane up $lane"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
   fi
   ok "not serving yet"
 
@@ -981,6 +1025,10 @@ glm53_tp4_up() {
   # RUNNING ranks of a healthy lane, and the bring-up then cheerfully reported
   # "not serving yet" about the lane it had just killed. Plain `docker rm` refuses
   # anything still running, so the worst case here is a no-op.
+  #
+  # This lane ALSO needs it because upstream's stop preserves containers by design,
+  # so a normal `down` legitimately leaves four EXITED ranks that would otherwise
+  # collide with the next `docker run` on the same CTN.
   step "cleanup" "removing EXITED ${GLM53_TP4_CTN}-r* ranks (recipe's own relaunch bug)"
   for n in $(lane_nodes "$lane"); do
     sshx "$n" "ids=\$(docker ps -a --filter name=^/${GLM53_TP4_CTN}-r --filter status=exited --filter status=created -q); [ -n \"\$ids\" ] && docker rm \$ids >/dev/null 2>&1; true"
@@ -1163,14 +1211,26 @@ glm53_tp4_down() {
   # teardown is the exact wildcard trap that wedged spark3 when a blanket sweep removed
   # the dsv41 NFS exporter while it was still mounted. Weights and mounts survive a down.
   step "stop" "$GLM53_TP4_CLI stop on the head (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
-  local n
+  local n stop_rc=0
+  glm53_tp4_resolve_ctn
   timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_HEAD_HOST" \
-    "cd $GLM53_TP4_KIT && $GLM53_TP4_CLI stop" >/dev/null 2>&1 || \
-    warn "$GLM53_HEAD_HOST: $GLM53_TP4_CLI stop returned non-zero or timed out — sweeping ranks directly"
-  for n in $(lane_nodes "$lane"); do
-    sshx "$n" "ids=\$(docker ps -a --filter name=^/${GLM53_TP4_CTN}-r -q); [ -n \"\$ids\" ] && docker rm -f \$ids >/dev/null 2>&1; true"
-  done
-  ok "stop issued + ranks swept on all 4 nodes (NFS export + mounts left up by design)"
+    "cd $GLM53_TP4_KIT && $GLM53_TP4_CLI stop" >/dev/null 2>&1 || stop_rc=1
+
+  # Upstream stops WITHOUT removing, on purpose (start.sh:149): the exited containers
+  # stay for forensics and for a fast `docker start` restart. So there is no blanket
+  # sweep here — force-removing them would throw away both. The sweep is a FALLBACK
+  # that fires only when stop actually failed, and `up`'s cleanup step removes the
+  # preserved ranks later anyway, right before they would collide with a fresh run.
+  if [[ $stop_rc -ne 0 ]]; then
+    warn "$GLM53_TP4_CLI stop returned non-zero or timed out — falling back to a direct sweep"
+    for n in $(lane_nodes "$lane"); do
+      sshx "$n" "ids=\$(docker ps -a --filter name=^/${GLM53_TP4_CTN}-r -q); [ -n \"\$ids\" ] && docker rm -f \$ids >/dev/null 2>&1; true"
+    done
+    ok "ranks force-swept on all 4 nodes (stop had failed)"
+  else
+    ok "stop issued on all 4 ranks; containers PRESERVED for inspection/restart (upstream design)"
+  fi
+  info "NFS export + worker mounts deliberately left up — unmounting mid-teardown is what wedged spark3 on 2026-09-25"
 
   step "verify torn down" "no ${GLM53_TP4_CTN}-r* ranks left on $(lane_nodes "$lane")"
   local left="" c
@@ -1362,7 +1422,7 @@ case "$ACT" in
       glm53-tp3) kit="$GLM53_KIT"; host="$GLM53_HEAD_HOST" ;;
       glm53-tp4) kit="$GLM53_TP4_KIT"; host="$GLM53_HEAD_HOST" ;;
       dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
-      *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3>" >&2; exit 2 ;;
+      *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4>" >&2; exit 2 ;;
     esac
     echo "${B}newest bring-up log on $host${N} (tail ${TAIL:-40})"
     sshx "$host" "f=\$(ls -1t $kit/lane-up-*.log 2>/dev/null | head -1); if [[ -n \"\$f\" ]]; then echo \"--- \$f\"; tail -${TAIL:-40} \"\$f\"; else echo 'no lane-up log yet'; fi" ;;
