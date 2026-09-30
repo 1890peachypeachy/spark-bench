@@ -1,0 +1,244 @@
+[
+    {
+        "Id": "76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3",
+        "Created": "2026-09-29T06:59:01.150923219Z",
+        "Path": "mentatd",
+        "Args": [
+            "daemon"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 570392,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-09-29T06:59:11.251210266Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:5cc341089928a3aa1e5fa0087170a0495446382661cb51de8b4503e958a7eed7",
+        "ResolvConfPath": "/var/lib/docker/containers/76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3/hostname",
+        "HostsPath": "/var/lib/docker/containers/76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3/hosts",
+        "LogPath": "/var/lib/docker/containers/76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3/76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3-json.log",
+        "Name": "/mentatd",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/dev/null:/run/mentat/secret:ro"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "host",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": null,
+            "DnsSearch": null,
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "GraphDriver": {
+            "Data": {
+                "ID": "76a6a58e3e0ae16e654f983ad4b62a78574e99dde2326de918bbcae5c8ed3eb3",
+                "LowerDir": "/var/lib/docker/overlay2/86b9721f8c808eee75261c9afa3470724452ebcc4dd56b8344befa00fa768c90-init/diff:/var/lib/docker/overlay2/bc3fe2777d6d1467d248183bdd13cbb88b5cc18c6de041177a4c465ee2bfff77/diff:/var/lib/docker/overlay2/96e9cc1c375a57f457f12748f1518b9d8b3a6dff359e761469d42f530a63a0f7/diff:/var/lib/docker/overlay2/56d34a8433299c1e12672507742abb4f09d6eb47a443889f4b774dc714cd78df/diff:/var/lib/docker/overlay2/4220a57bab18b5f876c263502008309ae5e55b8bc8d61de136fc6c9ef1c044f2/diff",
+                "MergedDir": "/var/lib/docker/overlay2/86b9721f8c808eee75261c9afa3470724452ebcc4dd56b8344befa00fa768c90/merged",
+                "UpperDir": "/var/lib/docker/overlay2/86b9721f8c808eee75261c9afa3470724452ebcc4dd56b8344befa00fa768c90/diff",
+                "WorkDir": "/var/lib/docker/overlay2/86b9721f8c808eee75261c9afa3470724452ebcc4dd56b8344befa00fa768c90/work"
+            },
+            "Name": "overlay2"
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/dev/null",
+                "Destination": "/run/mentat/secret",
+                "Mode": "ro",
+                "RW": false,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "gx10-395e",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "6379/tcp": {},
+                "6380/tcp": {},
+                "6382/udp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "MENTAT_PEER_DEAD_AFTER_MS=",
+                "MENTAT_PEER_STATUS_INTERVAL_MS=",
+                "MENTAT_PEER_STALE_AFTER_MS=",
+                "MENTAT_SLOW_CALL_WARN_MS=",
+                "MENTAT_SECRET=",
+                "MENTAT_ANNOUNCE_IFACES=enp1s0f1np1=connectx+rdma,enP2p1s0f1np1=connectx+rdma,enP7s7=lan",
+                "MENTAT_AGENT_DEGRADED_AFTER_MS=",
+                "MENTAT_ISLAND_PLACEMENT=",
+                "MENTAT_ANNOUNCE_PORT=",
+                "MENTAT_PG_PENDING_TIMEOUT_MS=",
+                "MENTAT_UNIVERSE=",
+                "MENTAT_HISTORY_KEEP_MS=",
+                "MENTAT_PROBE_TIMEOUT_MS=",
+                "MENTAT_PROBE_INTERVAL_MS=",
+                "MENTAT_ANNOUNCE_ADDR=",
+                "MENTAT_SESSION_REAP_GRACE_MS=",
+                "MENTAT_NODE_IP=192.168.0.246",
+                "MENTAT_ELECTION_HOLD_DOWN_MS=",
+                "MENTAT_SECRET_FILE=",
+                "MENTAT_TCP_DEAD_AFTER_MS=",
+                "MENTAT_AGENT_DEAD_AFTER_MS=",
+                "MENTAT_ANNOUNCE_ADDRS=",
+                "MENTAT_PEERS=192.168.0.165:6379",
+                "MENTAT_ISLAND_HOLD_DOWN_MS=",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "daemon"
+            ],
+            "Image": "mmastrac/mentatd:0.14.0",
+            "Volumes": null,
+            "WorkingDir": "/",
+            "Entrypoint": [
+                "mentatd"
+            ],
+            "Labels": {
+                "com.docker.compose.config-hash": "7a01536fff96773f945e4532bb9f9cc6dcd2dcefde34afa97675c279688833e8",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:5cc341089928a3aa1e5fa0087170a0495446382661cb51de8b4503e958a7eed7",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "mentat",
+                "com.docker.compose.project.config_files": "/var/tmp/mentat/mentatd.yaml",
+                "com.docker.compose.project.working_dir": "/var/tmp/mentat",
+                "com.docker.compose.replace": "mentatd",
+                "com.docker.compose.service": "mentatd",
+                "com.docker.compose.version": "5.0.2",
+                "org.opencontainers.image.description": "Minimal Ray replacement for vLLM multi-node serving",
+                "org.opencontainers.image.licenses": "MIT OR Apache-2.0",
+                "org.opencontainers.image.source": "https://github.com/mmastrac/mentat",
+                "org.opencontainers.image.title": "mentatd"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "552abbaa99e48b93657cacd22251f62e12b3e3fa14198eecdc55f116632e930f",
+            "SandboxKey": "/var/run/docker/netns/default",
+            "Ports": {},
+            "Networks": {
+                "host": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "6c7188d62d1f6eab536d112448490325f9f01e9b769f9a24e44b6b3a4369466e",
+                    "EndpointID": "1c20120a2ff02d82b6ac09ad4a6c41a75bfaab8a1fa773072c25dfacdc486595",
+                    "Gateway": "",
+                    "IPAddress": "",
+                    "MacAddress": "",
+                    "IPPrefixLen": 0,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": null
+                }
+            }
+        }
+    }
+]

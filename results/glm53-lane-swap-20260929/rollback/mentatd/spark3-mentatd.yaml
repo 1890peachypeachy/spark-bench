@@ -1,0 +1,87 @@
+# mentatd: the host-level daemon, one per node. Deploy with one .env for the
+# fleet:
+#
+#   MENTAT_PEERS=10.0.0.1:6379
+#   MENTAT_ANNOUNCE_IFACES=en*f*np*=connectx+rdma,en*=lan
+#
+# One MENTAT_PEERS entry that reaches any live daemon is enough: the mesh is
+# learned from it, a peer is dialed on any of its addresses, and the entry
+# naming this daemon itself is skipped. MENTAT_NODE_IP is this node's
+# cluster identity and defaults to the default route's address, which is the
+# LAN on these boxes. Set it only when that is the wrong link. Containers
+# do not need an address: the daemon files each under the box it connected
+# from and hands every rank its node's address.
+#
+# MENTAT_ANNOUNCE_IFACES lets the daemons probe which links are cabled
+# together and hand each rank MENTAT_FABRIC_IP, which retires the per-node
+# VLLM_HOST_IP. See GUIDE.md "Fabrics".
+#
+# Model containers register with this daemon on 127.0.0.1:6379 and retry, so
+# a container that starts first waits for it. The daemon relays them to the
+# head, so a container never needs another daemon's address.
+services:
+  mentatd:
+    image: ${IMAGE:-mentatd:0.14.0}
+    container_name: mentatd
+    # The control port must listen on 127.0.0.1:6379 for agents in
+    # host-network model containers and on the cluster subnets for remote
+    # agents and the mesh.
+    network_mode: host
+    restart: unless-stopped
+    # The HMAC key when it lives in a file. Point MENTAT_SECRET_HOST_FILE at
+    # the key on the host and set MENTAT_SECRET_FILE=/run/mentat/secret.
+    # Unset, this mounts /dev/null, which reads empty and costs nothing.
+    volumes:
+      - ${MENTAT_SECRET_HOST_FILE:-/dev/null}:/run/mentat/secret:ro
+    environment:
+      - MENTAT_NODE_IP=${MENTAT_NODE_IP:-}
+      - MENTAT_PEERS=${MENTAT_PEERS:-}
+      # Lifecycle tuning, in milliseconds. GUIDE.md "Environment" has the
+      # defaults. Empty uses the default.
+      - MENTAT_PG_PENDING_TIMEOUT_MS=${MENTAT_PG_PENDING_TIMEOUT_MS:-}
+      - MENTAT_AGENT_DEGRADED_AFTER_MS=${MENTAT_AGENT_DEGRADED_AFTER_MS:-}
+      - MENTAT_AGENT_DEAD_AFTER_MS=${MENTAT_AGENT_DEAD_AFTER_MS:-}
+      - MENTAT_PEER_STALE_AFTER_MS=${MENTAT_PEER_STALE_AFTER_MS:-}
+      - MENTAT_PEER_DEAD_AFTER_MS=${MENTAT_PEER_DEAD_AFTER_MS:-}
+      - MENTAT_ELECTION_HOLD_DOWN_MS=${MENTAT_ELECTION_HOLD_DOWN_MS:-}
+      - MENTAT_PEER_STATUS_INTERVAL_MS=${MENTAT_PEER_STATUS_INTERVAL_MS:-}
+      - MENTAT_SLOW_CALL_WARN_MS=${MENTAT_SLOW_CALL_WARN_MS:-}
+      - MENTAT_HISTORY_KEEP_MS=${MENTAT_HISTORY_KEEP_MS:-}
+      - MENTAT_SESSION_REAP_GRACE_MS=${MENTAT_SESSION_REAP_GRACE_MS:-}
+      - MENTAT_TCP_DEAD_AFTER_MS=${MENTAT_TCP_DEAD_AFTER_MS:-}
+      # UDP self-announcement for mentatd-serve discovery. Empty = broadcast
+      # on port 6382 every 5s; 0 disables. MENTAT_ANNOUNCE_ADDR adds
+      # unicast targets for a listener outside every broadcast domain.
+      - MENTAT_ANNOUNCE_PORT=${MENTAT_ANNOUNCE_PORT:-}
+      - MENTAT_ANNOUNCE_ADDR=${MENTAT_ANNOUNCE_ADDR:-}
+      # Interfaces to announce on, preferred first, with optional tags.
+      # Empty picks every up non-loopback interface except the container
+      # bridges, in kernel order and untagged. Names are `*`/`?` patterns,
+      # so one line serves every node:
+      #
+      #   MENTAT_ANNOUNCE_IFACES=en*f*np*=connectx+rdma,en*=lan
+      #
+      # The `rdma` tag claims that this link is cabled into a fabric. The
+      # daemons probe it before placement acts on it. A tag on the wrong
+      # interface fails its probes, is logged, and stays out of placement.
+      - MENTAT_ANNOUNCE_IFACES=${MENTAT_ANNOUNCE_IFACES:-}
+      # Addresses to announce instead of deriving them from interfaces,
+      # same syntax. For a node whose advertisable address is on none of its
+      # own interfaces.
+      - MENTAT_ANNOUNCE_ADDRS=${MENTAT_ANNOUNCE_ADDRS:-}
+      # Reachability probing and the fabric-island hold-down. Empty uses the
+      # defaults (15 s interval, 2 s per probe, 5 s hold-down).
+      - MENTAT_PROBE_INTERVAL_MS=${MENTAT_PROBE_INTERVAL_MS:-}
+      - MENTAT_PROBE_TIMEOUT_MS=${MENTAT_PROBE_TIMEOUT_MS:-}
+      - MENTAT_ISLAND_HOLD_DOWN_MS=${MENTAT_ISLAND_HOLD_DOWN_MS:-}
+      # `off` places multi-bundle groups without the one-fabric constraint,
+      # for a cluster whose probes disagree with its cabling.
+      - MENTAT_ISLAND_PLACEMENT=${MENTAT_ISLAND_PLACEMENT:-}
+      # HMAC key for announcements. Unset leaves them unsigned. A file keeps
+      # the key out of the environment.
+      - MENTAT_SECRET=${MENTAT_SECRET:-}
+      # Set this to /run/mentat/secret to use the mount above. A file that
+      # cannot be read, or reads empty, stops the daemon at boot.
+      - MENTAT_SECRET_FILE=${MENTAT_SECRET_FILE:-}
+      # Cluster name. Foreign universes are dropped without a log line.
+      - MENTAT_UNIVERSE=${MENTAT_UNIVERSE:-}
