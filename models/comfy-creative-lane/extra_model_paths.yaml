@@ -1,0 +1,19 @@
+comfy_models:
+    base_path: /models/comfy
+    diffusion_models: diffusion_models
+    text_encoders: text_encoders
+    vae: vae
+    model_patches: model_patches
+
+minimax_h3:
+    base_path: /models/h3
+    diffusion_models: diffusion_models
+    text_encoders: text_encoders
+    vae: vae
+    loras: loras
+    embeddings: embeddings
+
+yue2:
+    base_path: /models/yue2
+    checkpoints: checkpoints
+    audio_encoders: audio_encoders
