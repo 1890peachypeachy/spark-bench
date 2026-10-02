@@ -177,6 +177,43 @@ nodes — confirms H3's Context-IR and 2K-Regenerate passes were never open-rele
   See `stardust7700/ComfyUI` (`--cuda-uma`, fixes LoRA weight-backup memory doubling) and the
   `spark-comfyui` self-healing project before tuning.
 
+## Taking models down (`evict.sh` / `comfy-evict`)
+
+ComfyUI evicts **its own** weights automatically under pressure (Dynamic VRAM priority +
+watermark: most-recently-loaded wins, older weights are forced out). So switching Ming -> H3 ->
+YuE2 needs no manual step.
+
+It will **never** evict because *another process* wants memory. vLLM/GLM asking for VRAM does
+not make ComfyUI release anything. That is the one case you must free by hand:
+
+```
+done creating  ->  comfy-evict  ->  bring the GLM/TP rank up
+```
+
+Mechanisms (all verified 2026-10-01):
+
+| Path | Notes |
+|---|---|
+| `comfy-evict` on spark2 (`~/.local/bin` -> `comfy-build/evict.sh`) | prints before/after + proves UI still serving |
+| `COMFY_HOST=100.71.248.116 ./evict.sh` from any tailnet box | same, without local memory stats |
+| `POST /free {"unload_models":true,"free_memory":true}` | the underlying API, HTTP 200 |
+| UI command `Comfy.Memory.UnloadModelsAndExecutionCache` | weights **+** node execution cache |
+| UI command `Comfy.Memory.UnloadModels` | weights only |
+| `docker restart spark-comfy` | nuclear, ~70 s |
+
+**Neither UI command has a default keybinding and neither appears on the toolbar** -- assign one
+in Settings -> Keybinding (search "Unload"). For video work prefer the
+*AndExecutionCache* variant: cached latents for a 124+ frame clip are large.
+
+**Idle floor is 758 MiB** with nothing loaded. That is what remains after an evict -- the server
+and UI stay fully alive, so the browser tab keeps working.
+
+`evict.sh` gotchas it was written to survive:
+- The container publishes to the **tailnet IP only**, so `127.0.0.1:8188` does **not** resolve
+  even on spark2. The script defaults `HOST` to `tailscale ip -4`.
+- `free`/`docker` don't exist when run from the Mac mini; stats degrade to `n/a` and the evict
+  still works.
+
 ## Operational notes
 
 - Drop page cache before big runs on unified memory: `sync; echo 3 > /proc/sys/vm/drop_caches`.
