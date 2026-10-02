@@ -19,7 +19,7 @@
 #   spark-lane rotate <lane>       # park whatever conflicts, then bring it up
 #
 # LANES
-#   creative-engine   spark2        image lab :7862 + design lab :8765  (no LLM lane)
+#   comfy-engine      spark2        ComfyUI (music/image/design/video) -> :8188 (no LLM lane)
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8000/v1
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8000/v1 (Mia's fast line)
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (Mia's recipe)
@@ -88,12 +88,13 @@ GLM53_TP4_NFS_MOUNT="/var/tmp/models"
 # start.sh defaults --gpu-memory-utilization from GPU_UTIL; profiles/current.env ships 0.78
 # and our .env pins 0.72 (spark2 runs slightly less usable RAM than its siblings).
 GLM53_TP4_UTIL_DEFAULT="0.78"
-LAB_DESIGN_HOST="spark2"
-LAB_DESIGN_URL="http://100.71.248.116:8765"
-LAB_IMAGE_URL="http://100.71.248.116:7862"
-LAB_DESIGN_TIP="100.71.248.116"
-LAB_IMAGE_DIR="/home/spark2/spark-image-lab"
-LAB_DESIGN_DIR="/home/spark2/antling-design-lab"
+# ComfyUI creative engine (spark2). Replaced the two-lab creative-engine lane:
+# one GPU allocator for music/image/design/video instead of two labs with hard reservations.
+COMFY_HOST="spark2"
+COMFY_TIP="100.71.248.116"
+COMFY_URL="${COMFY_URL:-http://100.71.248.116:8188}"
+COMFY_CTN="spark-comfy"
+COMFY_DIR="/home/spark2/comfy-build"
 REPO_URL="https://github.com/1890peachypeachy/DeepSeek-v4.1-Flash-DGX-Sparks.git"
 # Resolve through the ~/.local/bin/spark-lane symlink -- a bare dirname on
 # BASH_SOURCE resolves to the symlink's own directory (~/.local/bin), not the
@@ -102,7 +103,7 @@ HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
 ENGINE_WAIT="${ENGINE_WAIT:-900}"            # engine boot budget once the image exists
 ENGINE_MAX_WAIT="${ENGINE_MAX_WAIT:-10800}"  # ceiling for a COLD bring-up (image build on 4 nodes)
-LAB_WAIT="${LAB_WAIT:-420}"
+COMFY_WAIT="${COMFY_WAIT:-420}"
 
 SSH_OPTS="-n -o ConnectTimeout=10 -o BatchMode=yes"
 
@@ -170,7 +171,7 @@ lane_container_names() {
     dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
     glm53-tp3)           echo "glm53-exl3-head glm53-exl3-worker" ;;
     glm53-tp4)           echo "${GLM53_TP4_CTN}-r0 ${GLM53_TP4_CTN}-r1 ${GLM53_TP4_CTN}-r2 ${GLM53_TP4_CTN}-r3" ;;
-    creative-engine)     echo "ming-layer-web spark-image-lab" ;;
+    comfy-engine)        echo "spark-comfy" ;;
     *) return 1 ;;
   esac
 }
@@ -240,12 +241,8 @@ node_occupant() {
   # matched the image half of "name|image". That is luck, not design — retag the image and
   # the live lane would report `down` while occupancy_conflict() called all 4 nodes FREE,
   # letting another `up` launch straight on top of live inference.
-  out="$(docker_names "$node" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|^glm53[|]' || true)"
+  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|^glm53[|]' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
-  if echo "$out" | grep -qE 'ming-layer-web|spark-image-lab'; then
-    echo "creative-engine"
-    return
-  fi
   # Detect which lane by container NAME (the grep above already matched a lane
   # container). We key off the container name, NOT the image path: GLM's image is
   # ghcr.io/miaai-lab/glm-5.3-flash... which does NOT contain "glm53", so matching
@@ -262,6 +259,15 @@ node_occupant() {
   elif  echo "$out" | grep -qE  '^glm53[|]';              then lane="glm53-tp4"
   elif  echo "$out" | grep -qiE 'glm53-lvkp|glm53-roce';  then lane="glm53-tp4"
   elif  echo "$out" | grep -qiE 'glm53-exl3|glm-5';       then lane="glm53-tp3"
+  # Creative detections sit LAST on purpose. spark2 can hold spark-comfy AND a live
+  # glm53 rank simultaneously (ComfyUI is a single-node sidecar, the rank is production).
+  # If comfy won precedence, spark2 would report comfy-engine, glm53-tp4 would read
+  # `partial 3/4` while all four ranks served, and the census would be lying about a
+  # production lane. LLM lanes win; comfy-engine then correctly reads `blocked by glm53-tp4`.
+  elif  echo "$out" | grep -qE  '^spark-comfy[|]';        then lane="comfy-engine"
+  # Retired two-lab kit: kept ONLY so a leftover container still registers as an occupant
+  # and blocks an `up` instead of reading as a free node. No lane launches these anymore.
+  elif  echo "$out" | grep -qiE 'ming-layer-web|spark-image-lab'; then lane="creative-engine-retired"
   else  lane="llm-lane-unknown"; fi
   echo "$lane"
 }
@@ -297,7 +303,7 @@ print("TEXT[%s] tok=%s" % (c.strip()[:40], u.get("completion_tokens","?")))
 census() {
   printf '%s── fleet census ─────────────────────────────────────────────%s\n' "$B" "$N"
   if command -v sparkdash-pp-cli >/dev/null 2>&1; then
-    echo "  (sparkDash — LLM lanes only; the creative engine is invisible here by design)"
+    echo "  (sparkDash — LLM lanes only; the comfy engine is invisible here by design)"
     if ! sparkdash-pp-cli status --agent 2>&1 | sed 's/^/    /'; then
       warn "sparkdash-pp-cli status failed — falling back to docker probes only"
     fi
@@ -308,19 +314,16 @@ census() {
   echo "  per-node containers (authoritative for occupancy):"
   local n o
   for n in spark1 spark2 spark3 spark4; do
-    o="$(docker_names "$n" | grep -E 'ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53' || true)"
+    o="$(docker_names "$n" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53' || true)"
     if [[ -z "$o" ]]; then printf '    %-8s %s(free)%s\n' "$n" "$D" "$N"
     else printf '    %-8s %s\n' "$n" "$(echo "$o" | paste -sd' ' -)"; fi
   done
   echo
-  echo "  creative engine (spark2 — not an LLM lane, so sparkDash never shows it):"
-  local dh ih dc ic
-  dh="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_DESIGN_URL/api/health" 2>/dev/null)"
-  ih="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_IMAGE_URL/" 2>/dev/null)"
-  dc="$(sshx spark2 'docker inspect --format "{{.State.Status}}" ming-layer-web 2>/dev/null' || true)"
-  ic="$(sshx spark2 'docker inspect --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}" spark-image-lab-lab-1 2>/dev/null' || true)"
-  printf '    design lab  :8765  http %-3s  container %-8s  %s\n' "${dh:-000}" "${dc:-absent}" "$LAB_DESIGN_URL"
-  printf '    image lab   :7862  http %-3s  container %-8s  %s\n' "${ih:-000}" "${ic:-absent}" "$LAB_IMAGE_URL"
+  echo "  comfy engine (spark2 — not an LLM lane, so sparkDash never shows it):"
+  local ch cc
+  ch="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$COMFY_URL/system_stats" 2>/dev/null)"
+  cc="$(sshx spark2 'docker inspect --format "{{.State.Status}}" spark-comfy 2>/dev/null' || true)"
+  printf '    ComfyUI     :8188  http %-3s  container %-8s  %s\n' "${ch:-000}" "${cc:-absent}" "$COMFY_URL"
   echo
   echo "  DeepSeek lane endpoint: $DSV41_ENDPOINT  (model: $DSV41_MODEL)"
   local models
@@ -334,7 +337,7 @@ except Exception: print("unreachable")' 2>/dev/null)"
 # ── lanes ────────────────────────────────────────────────────────────────────
 lane_nodes() {
   case "$1" in
-    creative-engine) echo "spark2" ;;
+    comfy-engine)    echo "spark2" ;;
     dsv41-tp3)       echo "spark1 spark3 spark4" ;;
     dsv41-tp4)       echo "spark1 spark2 spark3 spark4" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
@@ -343,11 +346,11 @@ lane_nodes() {
   esac
 }
 
-lane_endpoint() { case "$1" in creative-engine) echo "$LAB_DESIGN_URL + $LAB_IMAGE_URL" ;; glm53-tp3|glm53-tp4) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in creative-engine) echo "ming-image-0.1-design(+ -layer)" ;; glm53-tp3|glm53-tp4) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in comfy-engine) echo "$COMFY_URL" ;; glm53-tp3|glm53-tp4) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; glm53-tp3|glm53-tp4) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
-ALL_LANE_IDS="creative-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4"
+ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4"
 
 # Minimal JSON string escape (values here are ids/hosts/models — no control chars).
 json_str() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"; }
@@ -420,7 +423,7 @@ status_json() {
 # occupied by a lane OTHER than the one being brought up. A node occupied by the
 # SAME lane is not a conflict (the "already up?" check handles that case).
 # FIXED 2026-09-25: previously only flagged "llm-lane" (unknown) and
-# creative-engine-on-spark2, so a named lane like dsv41-tp4 occupying the nodes
+# comfy-engine-on-spark2, so a named lane like dsv41-tp4 occupying the nodes
 # was silently ignored and `up` launched on top of it (wedge risk).
 occupancy_conflict() {
   local lane="$1" n occ conflict=""
@@ -433,150 +436,98 @@ occupancy_conflict() {
   echo "$conflict"
 }
 
-# ── creative engine ──────────────────────────────────────────────────────────
-lab_image_up() {
-  step "image lab" "starting (compose: doctor gate, then detached)"
-  # TRAP (2026-09-27): if the spark-image-lab:local image is missing, the doctor
-  # gate silently becomes a FULL IMAGE BUILD (compose builds on the fly). That
-  # blows the step budget and the one-click dies as a mystery exit 1. Fail fast
-  # with the fix instead. Never auto-build here: builds are slow CUDA compiles.
-  if ! sshx spark2 "docker image inspect spark-image-lab:local >/dev/null 2>&1"; then
-    note_fail "image-lab-up" "spark-image-lab:local image MISSING on spark2 (pruned or never built); refusing to silently rebuild inside the gate"
-    NEXT_CMD="ssh spark2 'cd /home/spark2/spark-image-lab && docker compose build'   # then: spark-lane up creative-engine"
-    return 1
-  fi
-  sshx spark2 "cd $LAB_IMAGE_DIR && ./spark start" >/dev/null 2>&1
-  if [[ $? -ne 0 ]]; then
-    note_fail "image-lab-up" "spark start returned non-zero (doctor gate or compose error)"
-    NEXT_CMD="ssh spark2 'cd $LAB_IMAGE_DIR && ./spark start'   # run in the foreground to see the error"
-    return 1
-  fi
-  ok "image lab container started"
-  return 0
-}
-
-lab_design_up() {
-  step "design lab" "starting (detached, tailnet bind)"
-  # TRAP: the launcher does `docker run --name ming-layer-web` with NO pre-clean, so a
-  # leftover container (running or stopped) makes the re-run fail with "name already in
-  # use". Remove any leftover first -- this is the only destructive bit, and it only
-  # ever touches that one container.
-  if sshx spark2 "docker inspect ming-layer-web" >/dev/null 2>&1; then
-    info "leftover ming-layer-web present — removing before re-run"
-    sshx spark2 "docker rm -f ming-layer-web" >/dev/null 2>&1
-  fi
-  # Same trap as the image lab: a missing image must fail fast, not turn into a
-  # surprise Docker Hub pull attempt inside the step.
-  if ! sshx spark2 "docker image inspect ming-image-layer:gx10 >/dev/null 2>&1"; then
-    note_fail "design-lab-up" "ming-image-layer:gx10 image MISSING on spark2 (pruned or never built)"
-    NEXT_CMD="ssh spark2 'cd /home/spark2/antling-design-lab && docker build -t ming-image-layer:gx10 -f Dockerfile.gx10 .'   # then: spark-lane up creative-engine"
-    return 1
-  fi
-  sshx spark2 "cd $LAB_DESIGN_DIR && MING_DETACH=1 MING_BIND_IP=$LAB_DESIGN_TIP scripts/run_web_gx10.sh" >/dev/null 2>&1
-  if [[ $? -ne 0 ]]; then
-    note_fail "design-lab-up" "run_web_gx10.sh returned non-zero"
-    NEXT_CMD="ssh spark2 'cd $LAB_DESIGN_DIR && MING_DETACH=1 MING_BIND_IP=$LAB_DESIGN_TIP scripts/run_web_gx10.sh'"
-    return 1
-  fi
-  ok "design lab container started"
-  return 0
-}
-
-lab_wait_design() {
-  local t=0 st=""
-  step "wait healthy" "design lab container running (budget ${LAB_WAIT}s)"
-  # TRAP: the design lab's /api/health deliberately returns 400 with
-  # {"detail":"Use the Lab through localhost or an SSH tunnel"} when hit from
-  # outside the tailnet bind — it is DESIGNED to refuse external access. So a 200
-  # healthcheck can never pass. Judge health by the container's running state
-  # instead (the exposure step below still confirms it answers on the tailnet).
-  while [[ $t -lt $LAB_WAIT ]]; do
-    st="$(sshx spark2 'docker inspect --format "{{.State.Status}}" ming-layer-web 2>/dev/null' || true)"
+# ── comfy engine ─────────────────────────────────────────────────────────────
+# ComfyUI v0.38.1 on spark2 serves ALL FOUR creative families (music / image / design /
+# video) from ONE GPU allocator. It replaces the retired two-lab creative-engine lane
+# (spark-image-lab :7862 + ming-layer-web :8765), which reserved memory per-lab.
+#
+# WHY THIS LANE IS REGISTERED AT ALL: spark-comfy holds GB10 unified memory. While it was
+# unregistered the harness could not see it, so once a TP3 cutover frees spark2 the census
+# would report spark2 FREE with ComfyUI still resident — and occupancy_conflict() would
+# clear a 4-node bring-up straight on top of it. That is the 2026-09-27 UMA-starvation
+# wedge. Registering the lane is the fix; the memory cap that used to contain it is gone.
+#
+# BRING-UP IS DELEGATED to the recipe's own up.sh. The recipe repo is the source of truth
+# for docker flags (--gpus all, --disable-pinned-memory, model mounts, no --restart);
+# reconstructing them here would let the two drift.
+comfy_wait() {
+  local t=0 st code
+  step "wait healthy" "container running + /system_stats 200 (budget ${COMFY_WAIT}s)"
+  while [[ $t -lt $COMFY_WAIT ]]; do
+    st="$(sshx spark2 "docker inspect --format '{{.State.Status}}' $COMFY_CTN 2>/dev/null" || true)"
     if [[ "$st" == "running" ]]; then
-      ok "container running after ${t}s"
-      return 0
+      code="$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$COMFY_URL/system_stats")"
+      if [[ "$code" == "200" ]]; then ok "running + http 200 after ${t}s"; return 0; fi
     fi
     sleep 10; t=$((t + 10))
   done
-  note_fail "design-lab-health" "ming-layer-web not running within ${LAB_WAIT}s (last: ${st:-absent})"
-  NEXT_CMD="ssh spark2 'docker logs --tail 40 ming-layer-web'"
+  note_fail "wait" "not healthy within ${COMFY_WAIT}s (container=${st:-absent} http=${code:-000})"
+  NEXT_CMD="ssh spark2 'docker logs --tail 60 $COMFY_CTN'"
   return 1
 }
 
-lab_wait_image() {
-  local t=0 h=""
-  step "wait healthy" "image lab container healthcheck (budget ${LAB_WAIT}s)"
-  while [[ $t -lt $LAB_WAIT ]]; do
-    h="$(sshx spark2 'docker inspect --format "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}" spark-image-lab-lab-1 2>/dev/null' || true)"
-    case "$h" in
-      healthy) ok "healthy after ${t}s"; return 0 ;;
-      unhealthy) note_fail "image-lab-health" "container reports unhealthy"
-                 NEXT_CMD="ssh spark2 'cd $LAB_IMAGE_DIR && ./spark logs'"; return 1 ;;
-    esac
-    sleep 10; t=$((t + 10))
-  done
-  note_fail "image-lab-health" "container did not become healthy within ${LAB_WAIT}s (last: ${h:-absent})"
-  NEXT_CMD="ssh spark2 'cd $LAB_IMAGE_DIR && ./spark logs'"
-  return 1
-}
-
-creative_engine_up() {
-  STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
-  step "occupancy" "spark2 must be free (creative engine is the only lane that uses it)"
-  local occ; occ="$(node_occupant spark2)"
-  if [[ -n "$occ" && "$occ" != "creative-engine" ]]; then
-    note_fail "occupancy" "spark2 is running $occ — park it first"
-    NEXT_CMD="spark-lane rotate creative-engine   # parks the conflicting lane, then brings this one up"
-    result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")"
-    return 1
-  fi
-  ok "spark2 free (or already this lane)"
-
-  lab_image_up || { result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")"; return 1; }
-  lab_design_up || { result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")"; return 1; }
-  lab_wait_image || { result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")"; return 1; }
-  lab_wait_design || { result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")"; return 1; }
-
-  step "exposure" "both labs answer on the tailnet, nothing wider"
-  local dh ih
-  dh="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_DESIGN_URL/api/health")"
-  ih="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_IMAGE_URL/")"
-  ok "design http=$dh  image http=$ih  (bound to $LAB_DESIGN_TIP only)"
-
-  result "$LANE" "up" "$(lane_endpoint "$LANE")" "$(lane_model_id "$LANE")" "(no LLM lane: invisible to sparkDash)"
-  NEXT_CMD="nothing — creative engine is serving. To free spark2 for a 4-Spark lane: spark-lane down creative-engine"
-  return 0
-}
-
-creative_engine_down() {
+comfy_engine_up() {
   STEPS=4; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
-  step "design lab" "stopping + removing ming-layer-web"
-  if sshx spark2 "docker inspect ming-layer-web" >/dev/null 2>&1; then
-    sshx spark2 "docker rm -f ming-layer-web" >/dev/null 2>&1
-    ok "design lab stopped"
-  else
-    ok "design lab already stopped (no container)"
-  fi
 
-  step "image lab" "compose stop"
-  sshx spark2 "cd $LAB_IMAGE_DIR && ./spark stop" >/dev/null 2>&1
-  ok "image lab stopped"
-
-  step "verify freed" "no lab containers remain on spark2"
-  local left; left="$(sshx spark2 "docker ps --format '{{.Names}}' | grep -E 'ming-layer-web|spark-image-lab' || true")"
-  if [[ -n "$left" ]]; then
-    note_fail "freed" "still running on spark2: $left"
-    NEXT_CMD="ssh spark2 'docker rm -f $left'"
-    result "$LANE" "down" "$(lane_endpoint "$LANE")" "-"
+  step "occupancy" "spark2 must be free (ComfyUI wants the whole GB10 pool, uncapped)"
+  local occ; occ="$(node_occupant spark2)"
+  if [[ -n "$occ" && "$occ" != "comfy-engine" ]]; then
+    note_fail "occupancy" "spark2 is held by $occ"
+    NEXT_CMD="spark-lane down $occ   # then: spark-lane up comfy-engine"
+    result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
     return 1
   fi
-  step "verify freed" "GPU memory released on spark2"
-  local mem; mem="$(sshx spark2 "nvidia-smi --query-gpu=memory.used --format=csv,noheader 2>/dev/null | head -1" || true)"
-  ok "spark2 is free for a 4-Spark lane (vram now: ${mem:-unknown})"
+  ok "spark2 free (or already comfy-engine)"
 
-  result "$LANE" "down" "-" "-"
-  NEXT_CMD="nothing — spark2 is free. Bring up a fleet lane with: spark-lane up dsv41-tp4"
-  return 0
+  step "recipe" "$COMFY_DIR/up.sh present on spark2 (source of truth for flags)"
+  if ! sshx spark2 "test -x $COMFY_DIR/up.sh"; then
+    note_fail "recipe" "$COMFY_DIR/up.sh missing or not executable"
+    NEXT_CMD="ssh spark2 'ls -l $COMFY_DIR'"
+    result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
+    return 1
+  fi
+  ok "up.sh present"
+
+  step "start" "running the recipe up.sh"
+  if ! sshx spark2 "$COMFY_DIR/up.sh" >/dev/null 2>&1; then
+    warn "up.sh returned non-zero — still judging by health below"
+  fi
+  ok "up.sh invoked"
+
+  comfy_wait || { result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"; return 1; }
+
+  result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
+  [[ $FAILED -eq 0 ]] && NEXT_CMD="spark-lane verify comfy-engine"
+  return $FAILED
+}
+
+comfy_engine_down() {
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  # Evict BEFORE stopping so the GB10 pool is handed back deliberately rather than
+  # reclaimed by teardown. /free is ComfyUI's own unload endpoint; idle floor is ~758 MiB.
+  step "evict" "unload weights + execution cache via $COMFY_URL/free"
+  local fc
+  fc="$(curl -s -o /dev/null -w '%{http_code}' -m 20 -X POST -H 'Content-Type: application/json' -d '{"unload_models":true,"free_memory":true}' "$COMFY_URL/free" 2>/dev/null)"
+  if [[ "$fc" == "200" ]]; then ok "weights + cache evicted"; else warn "free returned ${fc:-000} (container may already be down)"; fi
+
+  step "stop" "stopping $COMFY_CTN (weights on disk are never deleted)"
+  sshx spark2 "docker stop $COMFY_CTN >/dev/null 2>&1 || true"
+  ok "stop issued"
+
+  step "confirm" "no creative container left on spark2"
+  sleep 3
+  local left
+  left="$(sshx spark2 "docker ps --format '{{.Names}}' | grep -E 'spark-comfy|ming-layer-web|spark-image-lab' || true")"
+  if [[ -n "$left" ]]; then
+    note_fail "confirm" "still running: $(echo "$left" | paste -sd' ' -)"
+    NEXT_CMD="ssh spark2 'docker stop $COMFY_CTN'"
+  else
+    ok "spark2 creative lane clear"
+  fi
+
+  result "comfy-engine" "down" "$COMFY_URL" "$(lane_model_id comfy-engine)"
+  return $FAILED
 }
 
 # ── DeepSeek lanes ───────────────────────────────────────────────────────────
@@ -706,7 +657,7 @@ except Exception: print("")' 2>/dev/null)"
   canary "$DSV41_ENDPOINT" "$DSV41_MODEL" || { result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"; return 1; }
 
   result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL" "(chat verified)"
-  NEXT_CMD="nothing — lane is serving. To put the creative engine back: spark-lane rotate creative-engine"
+  NEXT_CMD="nothing — lane is serving. To put the comfy engine back: spark-lane rotate comfy-engine"
   return 0
 }
 
@@ -843,7 +794,7 @@ except Exception: print("")' 2>/dev/null)"
   canary "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
 
   result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified)"
-  NEXT_CMD="nothing — lane is serving. To put the creative engine back: spark-lane rotate creative-engine"
+  NEXT_CMD="nothing — lane is serving. To put the comfy engine back: spark-lane rotate comfy-engine"
   return 0
 }
 
@@ -936,7 +887,7 @@ mem_blame() {
   local n names
   for n in "$@"; do
     names="$(sshx "$n" "docker ps --format '{{.Names}}|{{.Label \"x\"}}' 2>/dev/null | cut -d'|' -f1 \
-      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tp3|dsv41|qwen3|creative-engine' \
+      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tp3|dsv41|qwen3|spark-comfy' \
       | head -8 | paste -sd, -" 2>/dev/null)"
     if [[ -n "$names" ]]; then
       info "  $n co-tenants holding memory: $names"
@@ -1316,18 +1267,46 @@ stage_tp4() {
 verify_lane() {
   local lane="$1"
   STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
-  if [[ "$lane" == "creative-engine" ]]; then
-    # TRAP: the design lab's /api/health deliberately returns 400 with
-    # {"detail":"Use the Lab through localhost or an SSH tunnel"} when hit from
-    # outside the tailnet bind — it is DESIGNED to refuse external access. So a 200
-    # check can never pass. Judge the design lab by its container running state.
-    step "design lab" "ming-layer-web container running (api/health refuses external access by design)"
-    local ds; ds="$(sshx spark2 'docker inspect --format "{{.State.Status}}" ming-layer-web 2>/dev/null' || true)"
-    [[ "$ds" == "running" ]] && ok "container running" || { note_fail "design-lab" "container ${ds:-absent}"; NEXT_CMD="spark-lane up creative-engine"; }
-    step "image lab" "$LAB_IMAGE_URL/ + container health"
-    local ih; ih="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$LAB_IMAGE_URL/")"
-    [[ "$ih" == "200" ]] && ok "200" || { note_fail "image-lab" "http $ih"; NEXT_CMD="spark-lane up creative-engine"; }
-    result "$lane" "verify" "$(lane_endpoint "$lane")" "$(lane_model_id "$lane")"
+  # ComfyUI is NOT an OpenAI endpoint: no /v1/models, no chat completions. The standard
+  # path below would fail forever against it, so comfy-engine gets its own checks.
+  # The GPU step is the one that matters — ComfyUI will happily fall back to CPU and
+  # still answer 200, which looks healthy while being useless for a 5s video shot.
+  if [[ "$lane" == "comfy-engine" ]]; then
+    step "endpoint" "$COMFY_URL/system_stats"
+    local code; code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$COMFY_URL/system_stats")"
+    if [[ "$code" == "200" ]]; then ok "200"; else
+      note_fail "endpoint" "http ${code:-000}"; NEXT_CMD="spark-lane up comfy-engine"
+      result "$lane" "verify" "$COMFY_URL" "$(lane_model_id "$lane")"; return $FAILED
+    fi
+
+    step "gpu" "ComfyUI must report a CUDA device, not a CPU fallback"
+    local dev; dev="$(curl -s -m 10 "$COMFY_URL/system_stats" | python3 -c 'import json,sys
+try:
+    d = json.load(sys.stdin); x = (d.get("devices") or [{}])[0]
+    print("%s|%s|%.1f" % (x.get("type",""), x.get("name","?"), x.get("vram_total",0)/2**30))
+except Exception:
+    print("||0")' 2>/dev/null)"
+    case "$dev" in
+      cuda*) ok "cuda ${dev#*|} GiB" ;;
+      *)     note_fail "gpu" "not on CUDA (device='${dev:-unknown}') — CPU fallback is not acceptable"
+             NEXT_CMD="ssh spark2 'docker logs --tail 60 $COMFY_CTN'" ;;
+    esac
+
+    step "loaders" "the four creative families are visible to their loaders"
+    local fam; fam="$(curl -s -m 20 "$COMFY_URL/object_info" | python3 -c 'import json,sys
+try:
+    blob = json.dumps(json.load(sys.stdin))
+except Exception:
+    print("unreadable"); raise SystemExit
+want = {"music":"yue2", "image":"qwen_image", "design":"ming_image", "video":"h3"}
+print(" ".join(k if v in blob.lower() else k.upper()+"-MISSING" for k,v in want.items()))' 2>/dev/null)"
+    case "$fam" in
+      *MISSING*|unreadable|"") note_fail "loaders" "families: ${fam:-unreadable}"
+                               NEXT_CMD="ssh spark2 'ls /home/spark2/comfy-models'" ;;
+      *) ok "$fam" ;;
+    esac
+
+    result "$lane" "verify" "$COMFY_URL" "$(lane_model_id "$lane")"
     return $FAILED
   fi
   local ep model
@@ -1357,7 +1336,7 @@ spark-lane — one-shot lane bring-up / teardown / rotation (DGX Spark fleet)
   spark-lane stage dsv41-tp4     clone + fleet profile + weight check (no serve)
 
 lanes:
-  creative-engine   spark2        image lab :7862 + design lab :8765
+  comfy-engine      spark2        ComfyUI music/image/design/video -> $COMFY_URL
   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3 -> $DSV41_ENDPOINT
   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4 -> $DSV41_ENDPOINT  (fast line)
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
@@ -1385,11 +1364,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in creative-engine) creative_engine_up ;; glm53-tp3) glm53_up ;; glm53-tp4) glm53_tp4_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_up ;; glm53-tp4) glm53_tp4_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in creative-engine) creative_engine_down ;; glm53-tp3) glm53_down ;; glm53-tp4) glm53_tp4_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_down ;; glm53-tp4) glm53_tp4_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -1403,7 +1382,7 @@ case "$ACT" in
       o="$(node_occupant "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in creative-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4; do
+    for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4; do
       [[ "$other" == "$LANE" ]] && continue
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done
