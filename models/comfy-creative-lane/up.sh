@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Spark2 creation lane - ComfyUI v0.38.1 on GB10.
-# HARD RULES: no restart policy; tailnet-bound only; memory-capped (blast radius).
+# HARD RULES: no restart policy; tailnet-bound only.
+# Memory cap REMOVED 2026-10-01 at Victor's direction (one model at a time; see README).
 set -euo pipefail
 TS_IP="$(tailscale ip -4)"
 docker rm -f spark-comfy 2>/dev/null || true
 docker run -d --name spark-comfy \
   --gpus all \
-  --memory 72g \
   --shm-size 8g \
   -p "${TS_IP}:8188:8188" \
   -v /home/spark2/comfy-models:/models/comfy:ro \

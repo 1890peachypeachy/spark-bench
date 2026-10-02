@@ -86,8 +86,14 @@ Reachable at `http://<tailscale-ip>:8188` (spark2 = `100.71.248.116`).
 2. **`--disable-pinned-memory`.** ComfyUI page-locks up to 90% of system RAM; pinned pages
    can't swap so the kernel can only SIGKILL. Tony's measured 3090 fix: host RAM
    29,866 MB -> 7,508 MB from this flag alone.
-3. **`--memory 72g` as a blast-radius limit, not a tuning knob.** On GB10 a cgroup cap turns a
-   node-wedge (NVRM OOM taking the box off the tailnet) into a clean in-container failure.
+3. **No container memory cap** (removed 2026-10-01 at Victor's direction -- he runs one model at
+   a time). Earlier builds used `--memory 72g` as a blast-radius limit. Context: the two legacy
+   labs still carry caps that Victor explicitly asked for on 2026-09-27 after a co-tenancy OOM
+   wedged the node (`notes/spark2-lab-memory-caps-2026-09-27`, "do not remove the caps") -- those
+   are a *different* decision about two programs sharing the GPU and still stand.
+   The residual risk while spark2 also hosts a GLM/TP rank: an oversized job can starve the node
+   and take down the whole multi-node lane, not just this container. Verified uncapped:
+   `docker inspect` -> `Memory=0`, and `ram_total` now reports the full 121.7 GiB.
 4. **Published to the tailnet IP only** (`-p ${TS_IP}:8188:8188`), never `0.0.0.0`.
 5. **Weights mounted read-only** from their staging dirs via `extra_model_paths.yaml` — no
    duplicate copies of 86 GB.
