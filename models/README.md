@@ -1,11 +1,12 @@
 # Model lanes — start here
 
 One shared four-DGX-Spark cluster. **These deployments are mutually exclusive.**
-Status below is dated 2026-09-05, not a live health signal.
+Status below is dated 2026-10-02, not a live health signal.
 
 | Model | Status | Entry point |
 |---|---|---|
-| Qwen 3.8 Flash Next | Serving; stability testing in progress | [Qwen guide](qwen-3.8-flash-next/README.md) |
+| DeepSeek V4.1 Flash | Serving on SGLang TP4/EP2; SSD-backed Engram | [V4.1 guide](deepseek-v4.1-flash/README.md) |
+| Qwen 3.8 Flash Next | Stopped; archived recipe | [Qwen guide](qwen-3.8-flash-next/README.md) |
 | GLM 5.3 Flash | Stopped; archived recipes | [GLM guide](glm-5.3-flash/README.md) |
 | DeepSeek V4 Flash | Not serving; archived recipe | [DeepSeek guide](deepseek-v4-flash/README.md) |
 

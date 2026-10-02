@@ -1,16 +1,28 @@
 # spark-bench
 
 > ### 4 DGX Sparks. One shared TP4 world. Now serving: DeepSeek V4.1 Flash, **uncensored**, on SGLang.
-> **What's live (2026-09-16):** the abliterated checkpoint
+> **What's live (2026-10-02):** the abliterated checkpoint on **TP4 / EP2**, with bounded rank-sliced loading
+
+**2026-10-02 — TP4/EP2 selected after a 1k–160k depth sweep and an EP4 reboot control.** Same checkpoint, image, precision, DSPARK k=3 and SSD-backed Engram. Prose generation improved **5–12%**; code was mixed (**−2% at 20k**, near parity at 40k, **+15–19% at 80k–160k**). Cold time to first token was largely unchanged (~49s at 160k). Median of three 512-token completions per cell; 72 measured requests including the restored-control checks. This is a **SGLang configuration improvement, not TensorFold inference**. [Full results and raw trials](artifacts/tensorfold-v41-depth-20261001/REPORT.md) · [Current settings and rollback](models/deepseek-v4.1-flash/README.md).
+
+| Prompt depth | Prose tok/s: EP4 → EP2 | Code tok/s: EP4 → EP2 |
+| ---: | ---: | ---: |
+| 1k | 35.9 → **37.7** | 55.7 → **62.2** |
+| 20k | 35.5 → **38.0** | **58.1** → 56.9 |
+| 40k | 34.5 → **38.1** | 52.9 → **53.8** |
+| 80k | 34.6 → **37.1** | 50.3 → **59.9** |
+| 160k | 34.1 → **38.3** | 47.5 → **54.6** |
+
+EP2 needs the loader changes documented in the guide: full-expert staging nearly exhausted unified memory before rank-sliced reads were enabled. Final boot: **7/7 smoke gates**, external completion verified, 7,179,008 effective cache tokens. The 1M window remains configured; this EP2 campaign tested through 160k, not a new 1M needle run. Forced `tool_choice=required` returned unparsed DSML on both EP4 and EP2; automatic tool calls and continuations passed. This is not an across-the-board or multi-boot qualification of every workload.
 
 **2026-09-25 — Mia kit `cad252b` production-line update adopted (weights unchanged: abliterated checkpoint, k=3).** Pinned base image by digest; fast loader — weight load 285s → 73s+8s, full boot ~10min → **3.5min**; indexer-chunked prefill unlocks CHUNKED_PREFILL_SIZE 4096. Measured: cold prefill **3664 tok/s @32k** (was ~2200) and **2638 tok/s @400k, TTFT 151s** (was 1534 tok/s / 259s — +72%); decode unchanged (35.1 single / 68.6 agg@4). Adapters adopted: fast_load, engram_prefetch, wo_a_w8(+mid/drop), draft_head_fp8(tp4), block_verify, folded_fence, autotune_keep, replicated_split, draft_main_proj_split, shared_pad_k, sleep-on-idle, MoE fused finalize OFF (determinism). Not adopted (canary-roce images only): RoCEnante, prefill-SP, EP1+routed-MoE, draft_tau. Two k=5-only adapters dropped after real boot failures: router_live (engine source drift), verify_cap (confidence tensor expects k=5 layout — our k=3). All gates green post-swap: G0, G1 30/30, G2 3/3, G3, G4 needle 32k+400k; abliteration probe intact. Kit artifacts: `artifacts/dsv41-sglang-20260914/kit/start.sh.cad252b-local.patch` (our env-forwarding re-patch), `kit/env.tp4.cad252b.redacted`.
 
 **k=5 vs k=3 re-benched on the new line (2026-09-25, Jun's call, winner serves):** k=5 → 32.7 single / 62.1 agg@4; k=3 → **35.1 / 68.6**. k=3 kept (+7%/+10%) — consistent with the pre-cad252b result, so the ordering survives the recipe change. k=5's code-category runs spiked to ~70 tok/s but prose and aggregate sagged. This also means verify_cap/router_live (k=5-only adapters) stay dropped.
 > [`dealignai/DeepSeek-V4.1-Flash-UNCENSORED-FP8`](https://huggingface.co/dealignai/DeepSeek-V4.1-Flash-UNCENSORED-FP8)
-> under [Mia's SGLang kit](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks) — **1M context, needle-verified**,
+> under [Mia's SGLang kit](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks) — **1M configured context** (earlier EP4 needle validation; EP2 depth sweep through 160k),
 > DSpark **k=3** (+14% over k=5, stream-measured), ~33–43 tok/s single stream depending on workload, prefill ~1.5× our vLLM champion, tools + thinking on,
-> **every gate green** (30/30 structured across temp 0/0.7/1.0, tool round-trip 3/3, reasoning engages, no DSML corruption).
-> The refusals are gone; nothing else changed.
+> Earlier EP4 gates: 30/30 structured, tool round-trip 3/3, reasoning engaged. Current EP2 smoke checks: 7/7; see the forced-tool limitation above.
+> The checkpoint remains the same uncensored variant.
 > **Skip the Engram pack:** our pre-packed shards are on Hugging Face —
 > [neko-legends/DeepSeek-V4.1-Flash-uncensored-engram-4x-spark](https://huggingface.co/neko-legends/DeepSeek-V4.1-Flash-uncensored-engram-4x-spark) (192 GB, TP=4).
 > **Want the standard (censored) checkpoint?** Use [Mia's recipe](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks) as-is — it is the same world; only the checkpoint and the Engram pack differ.
@@ -26,7 +38,7 @@ prerequisites, reproduction limits and operator/agent handoff instructions:
 
 | Lane | Stack | Status | Headline (this cluster) |
 |---|---|---|---|
-| **[DeepSeek V4.1 Flash — uncensored](#dsv41-sglang-2026-09-14)** | **SGLang (Mia kit)** · abliterated FP8 checkpoint · TP4+EP4 · DSpark k=3 · Engram on NVMe (pre-packed on HF) · **1M ctx** · session-radix KV | **serving** (`forge:8000`) since 2026-09-15 | k=3: 33 tok/s prose / 54 code single · **68.6 tok/s agg@4** · prefill 2.2k tok/s · 8 seats · all gates green |
+| **[DeepSeek V4.1 Flash — uncensored](models/deepseek-v4.1-flash/README.md)** | **SGLang (Mia kit)** · FP8/MXFP4 · **TP4+EP2** · DSPARK k=3 · Engram on NVMe · 1M configured context | **serving** (`forge:8000`); EP2 selected 2026-10-02 | 37–38 tok/s prose / 54–62 code across 1k–160k · short-prompt C4 pilot 75.7 tok/s · [qualification limits](artifacts/tensorfold-v41-depth-20261001/REPORT.md) |
 | [DeepSeek V4.1 Flash — vLLM champion](#deepseek-v4-1-flash) | vLLM · native FP4 experts / FP8 dense · TP4+EP · DSpark k=5 greedy draft · Engram on NVMe · 420k ctx | staged fallback; recipe and results retained | 51.1 tok/s C1 mean (code 61–71, math 73) · ~105 tok/s aggregate @4 · cold prefill ~1.5k tok/s |
 | **[Qwen 3.8 Flash Next](#qwen-3-8-flash)** | vLLM · official NVIDIA NVFP4 · TP4+EP · MTP k=4 + GEMV · 262k ctx | **stopped 2026-09-10** (world moved to DeepSeek V4.1 Flash); recipe and results retained | 91.3 tok/s C1 code · 600.5 tok/s aggregate @16; C1 prose −7.9% vs fresh k2 baseline |
 | **[GLM 5.3 Flash](#glm-5-3-flash)** | vLLM · EXL3 4bpw · DFlash2 · 1M ctx | stopped; recipe and results retained | 128.9 tok/s 4-stream agg · 1560 tok/s cold prefill @100k · 96 tok/s structured C1 |

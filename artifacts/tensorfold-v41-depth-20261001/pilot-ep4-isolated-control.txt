@@ -1,0 +1,1 @@
+[ep4-isolated-control] single-stream median 36.0 tok/s (runs [36.0, 56.3, 54.5, 34.4, 34.7]) | 4-stream aggregate 68.8 tok/s (5186 tok / 75s)
