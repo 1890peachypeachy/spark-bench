@@ -23,7 +23,8 @@
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8000/v1
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8000/v1 (Mia's fast line)
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (Mia's recipe)
-#   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (knapcio recipe, align-fix)
+#   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (knapcio recipe)
+#   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
 #
 # POLICY (do not change these constants casually)
 #   * The OpenAI endpoint + served model name stay IDENTICAL across TP3/TP4 swaps:
@@ -71,6 +72,15 @@ GLM53_IMAGE="ghcr.io/miaai-lab/glm-5.3-flash-2x-dgx-sparks:exl3-instanttensor"
 #     (cold-vs-warm logprob drift 0.039 vs 0.25-0.36 when broken, 0/48 degenerate).
 GLM53_TP4_KIT="/var/tmp/glm53-recipe-tp4"
 GLM53_TP4_CLI="./start.sh"
+# GLM-5.3-Flash EXL3 TP2 — TensorFold engine (MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-
+# TensorFold). 2 nodes: spark3 head (rank 0, serves :8888) + spark4 worker (rank 1) over
+# RoCE. Worker weights come over NFS from the shared dsv41-nfs export on spark3
+# (/var/tmp/models, hardlink farm under huggingface/) — dsv41-nfs MUST be up or the
+# worker's hard mount hangs in 10-min timeouts instead of failing fast (2026-10-02
+# post-mortem). SAME endpoint + served name as glm53-tp3/tp4 — mutually exclusive
+# (owns :8888); swap with rotate, never with parallel ups.
+GLM53_TF2_HEAD="spark3"
+GLM53_TF2_KIT="/home/spark3/GLM53-TF"
 GLM53_TP4_ENV=".env"
 #
 # NAME WARNING (restored 2026-09-29 — it applies to this recipe too): the served name
@@ -170,6 +180,7 @@ lane_container_names() {
     dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
     glm53-tp3)           echo "glm53-exl3-head glm53-exl3-worker" ;;
     glm53-tp4)           echo "${GLM53_TP4_CTN}-r0 ${GLM53_TP4_CTN}-r1 ${GLM53_TP4_CTN}-r2 ${GLM53_TP4_CTN}-r3" ;;
+    glm53-tf2)           echo "glm53-flash-tf" ;;
     comfy-engine)        echo "spark-comfy" ;;
     *) return 1 ;;
   esac
@@ -228,13 +239,15 @@ timeout_run() {
 # NOTHING serving. Order matters: the first entry is what node_occupant reports.
 node_occupants() {
   local node="$1" out lanes=""
-  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|^glm53[|]' || true)"
+  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|^glm53[|]' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
   echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
   # glm family stays mutually exclusive (an image string can match both arms).
   if   echo "$out" | grep -qiE 'glm53-alignfix|glm53-lvkp|glm53-roce' || echo "$out" | grep -qE '^glm53[|]'; then
     lanes="$lanes glm53-tp4"
+  elif echo "$out" | grep -qiE 'glm53-flash-tf'; then
+    lanes="$lanes glm53-tf2"
   elif echo "$out" | grep -qiE 'glm53-exl3|glm-5'; then
     lanes="$lanes glm53-tp3"
   fi
@@ -272,6 +285,38 @@ print("TEXT[%s] tok=%s" % (c.strip()[:40], u.get("completion_tokens","?")))
     bad "chat canary: $out"
     note_fail "canary" "the OpenAI endpoint answered but not with a completion: $out"
     NEXT_CMD="spark-lane down ${LANE:-dsv41-tp3} && spark-lane up ${LANE:-dsv41-tp3}   # clean restart, then re-verify"
+    return 1
+  fi
+  ok "chat canary: $out"
+  return 0
+}
+
+# TensorFold's GLM template emits reasoning BEFORE content, and it ignores
+# chat_template_kwargs.thinking (only enable_thinking:false is honored, verified on the
+# live lane 2026-10-02). The generic 8-token canary therefore returns content=None and
+# proves nothing on this engine — this variant disables thinking so the content check
+# is real. Same failure contract as canary().
+canary_tf2() {
+  local url="$1" model="$2" body out
+  body="$(curl -s -m 120 "$url/chat/completions" -H 'Content-Type: application/json' -d @- <<JSON
+{"model":"$model","messages":[{"role":"user","content":"Reply with the single word: ready"}],"max_tokens":16,"temperature":0,"chat_template_kwargs":{"enable_thinking":false}}
+JSON
+)"
+  out="$(printf '%s' "$body" | python3 -c '
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: print("BADJSON"); raise SystemExit(3)
+if "choices" not in d: print("APIERR:"+str(d)[:160]); raise SystemExit(4)
+c=d["choices"][0]["message"].get("content") or ""
+u=d.get("usage",{})
+if not c.strip(): print("EMPTY_CONTENT"); raise SystemExit(5)
+print("TEXT[%s] tok=%s" % (c.strip()[:40], u.get("completion_tokens","?")))
+' 2>&1)"
+  local rc=$?
+  if [[ $rc -ne 0 || "$out" == BADJSON* || "$out" == APIERR* || "$out" == EMPTY_CONTENT* ]]; then
+    bad "chat canary: $out"
+    note_fail "canary" "the OpenAI endpoint answered but not with a completion: $out"
+    NEXT_CMD="spark-lane down ${LANE:-glm53-tf2} && spark-lane up ${LANE:-glm53-tf2}   # clean restart, then re-verify"
     return 1
   fi
   ok "chat canary: $out"
@@ -321,15 +366,16 @@ lane_nodes() {
     dsv41-tp4)       echo "spark1 spark2 spark3 spark4" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
     glm53-tp4)       echo "spark1 spark2 spark3 spark4" ;;
+    glm53-tf2)       echo "spark3 spark4" ;;
     *) return 1 ;;
   esac
 }
 
-lane_endpoint() { case "$1" in comfy-engine) echo "$COMFY_URL" ;; glm53-tp3|glm53-tp4) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; glm53-tp3|glm53-tp4) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in comfy-engine) echo "$COMFY_URL" ;; glm53-tp3|glm53-tp4|glm53-tf2) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; glm53-tp3|glm53-tp4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
-ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4"
+ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tf2"
 
 # Minimal JSON string escape (values here are ids/hosts/models — no control chars).
 json_str() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"; }
@@ -877,6 +923,148 @@ glm53_down() {
   return 0
 }
 
+# ── GLM-5.3-Flash TensorFold TP2 lane ───────────────────────────────────────
+# MiaAI-Lab TensorFold engine. Kit is the recipe repo itself: ./start.sh does
+# prepare (image + checkpoint + NFS worker check) then serve; ./stop.sh tears down.
+# Up flow mirrors glm53_up, plus one extra preflight the TP3 lane doesn't need:
+# dsv41-nfs must be RUNNING on the head — the worker reads its weights through it,
+# and with the export down the worker's hard,timeo=600 mount hangs 10 min/op instead
+# of failing (the exact failure that cost the 2026-10-02 bring-up two hours).
+glm53_tf2_up() {
+  local lane="glm53-tf2"
+  STEPS=8; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "occupancy" "$(lane_nodes "$lane")"
+  local conflict
+  conflict="$(occupancy_conflict "$lane")"
+  if [[ -n "$conflict" ]]; then
+    note_fail "occupancy" "nodes already taken:$conflict"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "all required nodes free"
+
+  step "cleanup" "removing any dead containers left from a prior crash"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
+
+  step "kit" "$GLM53_TF2_KIT/start.sh exists on $GLM53_TF2_HEAD"
+  if ! sshx "$GLM53_TF2_HEAD" "test -f $GLM53_TF2_KIT/start.sh"; then
+    note_fail "kit" "$GLM53_TF2_KIT/start.sh missing on $GLM53_TF2_HEAD"
+    NEXT_CMD="spark-lane status"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "kit present"
+
+  step "nfs" "dsv41-nfs export alive on $GLM53_TF2_HEAD (worker reads weights through it)"
+  if ! sshx "$GLM53_TF2_HEAD" "docker ps --format '{{.Names}}' | grep -q '^dsv41-nfs$'" 2>/dev/null; then
+    note_fail "nfs" "dsv41-nfs is NOT running on $GLM53_TF2_HEAD — the worker's NFS volume would hard-hang instead of failing fast"
+    NEXT_CMD="ssh $GLM53_TF2_HEAD 'docker start dsv41-nfs'   # then re-run: spark-lane up $lane"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "dsv41-nfs up"
+
+  step "already up?" "is $GLM53_ENDPOINT already serving completions?"
+  if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)" == "200" ]]; then
+    if canary_tf2 "$GLM53_ENDPOINT" "$GLM53_MODEL" >/dev/null 2>&1; then
+      ok "already serving — no change made (and no restart)"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(already up, unchanged)"
+      NEXT_CMD="nothing"
+      return 0
+    fi
+    warn "endpoint answers but the chat canary failed — doing a full bring-up"
+  fi
+  ok "not serving yet"
+
+  step "start" "./start.sh on $GLM53_TF2_HEAD (detached, survives this session)"
+  local log="$GLM53_TF2_KIT/lane-up-$(date +%Y%m%d-%H%M%S).log"
+  launch_detached "$GLM53_TF2_HEAD" "cd $GLM53_TF2_KIT && setsid nohup bash ./start.sh >> $log 2>&1 < /dev/null"
+  ok "launched detached; log: $log"
+  info "TensorFold TP2 boot: ~5-8 min warm (kernel compile on first boot adds ~10+ min); worker loads its rank over NFS"
+
+  local ok_wait=0 t=0 code="" alive="" last=""
+  step "wait healthy" "endpoint up, or start exited (ceiling ${ENGINE_MAX_WAIT}s)"
+  while [[ $t -lt $ENGINE_MAX_WAIT ]]; do
+    code="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)"
+    [[ "$code" == "200" ]] && { ok "endpoint up after ${t}s"; ok_wait=1; break; }
+    alive="$(sshx "$GLM53_TF2_HEAD" "pgrep -f 'bash ./start.sh' >/dev/null 2>&1 && echo 1 || echo 0" 2>/dev/null || echo 0)"
+    if [[ "$alive" != "1" ]]; then
+      last="$(sshx "$GLM53_TF2_HEAD" "grep -E '^!!!|FAILED|Error|error:' $log 2>/dev/null | tail -3" || true)"
+      note_fail "start" "the start command exited before the endpoint came up"
+      info "log: ${last:-<no error line found — read the log>}"
+      NEXT_CMD="ssh $GLM53_TF2_HEAD 'tail -60 $log'"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+      return 1
+    fi
+    if [[ $t -gt 0 && $((t % 120)) -eq 0 ]]; then
+      last="$(sshx "$GLM53_TF2_HEAD" "tail -1 $log 2>/dev/null | cut -c1-110" || true)"
+      info "+${t}s still working: ${last:-<no log line yet>}"
+    fi
+    sleep 15; t=$((t + 15))
+  done
+  if [[ $ok_wait -eq 0 ]]; then
+    note_fail "wait-healthy" "no 200 from $GLM53_ENDPOINT/models within ${ENGINE_MAX_WAIT}s (last: $code)"
+    NEXT_CMD="spark-lane logs $lane   # then re-run: spark-lane up $lane"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+
+  step "identity" "served model name must be $GLM53_MODEL"
+  local ids
+  ids="$(curl -s -m 10 "$GLM53_ENDPOINT/models" | python3 -c 'import json,sys
+try: print(" ".join(m.get("id","") for m in json.load(sys.stdin).get("data",[])))
+except Exception: print("")' 2>/dev/null)"
+  if [[ "$ids" != *"$GLM53_MODEL"* ]]; then
+    note_fail "identity" "endpoint serves [$ids], expected $GLM53_MODEL"
+    NEXT_CMD="ssh $GLM53_TF2_HEAD 'grep -n SERVED_NAME $GLM53_TF2_KIT/scripts/local.sh'"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "serving $ids"
+
+  step "canary" "real chat completion (port-open is not proof)"
+  canary_tf2 "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
+
+  result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified)"
+  NEXT_CMD="nothing — lane is serving."
+  return 0
+}
+
+glm53_tf2_down() {
+  local lane="glm53-tf2"
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "stop" "./stop.sh on $GLM53_TF2_HEAD (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
+  if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_TF2_HEAD" "cd $GLM53_TF2_KIT && ./stop.sh" >/dev/null 2>&1; then
+    note_fail "stop" "./stop.sh returned non-zero OR timed out after ${DSV41_STOP_TIMEOUT:-180}s — verify with 'ssh $GLM53_TF2_HEAD uptime' before retrying"
+    NEXT_CMD="ssh $GLM53_TF2_HEAD 'cd $GLM53_TF2_KIT && ./stop.sh'   # run in the foreground to see whether it hangs or fails cleanly"
+    result "$lane" "down" "-" "-"
+    return 1
+  fi
+  ok "stop issued"
+
+  step "verify torn down" "no lane containers left on $(lane_nodes "$lane")"
+  local n left="" c
+  for n in $(lane_nodes "$lane"); do
+    c="$(docker_names "$n" | grep -E 'glm53-flash-tf|tensorfold' || true)"
+    [[ -n "$c" ]] && left="$left $n:$c"
+  done
+  if [[ -n "$left" ]]; then
+    note_fail "torn-down" "containers still present:$left"
+    NEXT_CMD="spark-lane status   # inspect, then re-run down"
+    result "$lane" "down" "-" "-"
+    return 1
+  fi
+  ok "all required nodes released"
+
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — nodes released. Weights and images were NOT deleted."
+  return 0
+}
+
 # ── GLM-5.3-Flash TP4 lane (knapcio recipe) ─────────────────────────────────
 # Shares :8888 + the GLM-5.3-Flash-EXL3 served name with glm53-tp3 — the two can
 # never run together, and `rotate` is the correct way to swap between them.
@@ -1370,7 +1558,9 @@ print(" ".join(k if v in files else k.upper()+"-MISSING" for k,v in want.items()
     warn "http $code — falling through to a timed canary anyway (list-models is not proof)"
   else ok "200"; fi
   step "canary" "real chat completion"
-  canary "$ep" "$model"
+  # glm53-tf2: the generic canary's 8-token budget returns content=None on TensorFold
+  # (reasoning-first template) — use the enable_thinking:false variant for real proof.
+  if [[ "$lane" == "glm53-tf2" ]]; then canary_tf2 "$ep" "$model"; else canary "$ep" "$model"; fi
   result "$lane" "verify" "$ep" "$model"
   return $FAILED
 }
@@ -1394,6 +1584,7 @@ lanes:
   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4 -> $DSV41_ENDPOINT  (fast line)
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
   glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (knapcio recipe)
+  glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
 
 The DeepSeek endpoint and model name are stable across TP3/TP4: $DSV41_ENDPOINT / $DSV41_MODEL
 The GLM lane serves a distinct identity: $GLM53_ENDPOINT / $GLM53_MODEL
@@ -1417,11 +1608,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_up ;; glm53-tp4) glm53_tp4_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tf2) glm53_tf2_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_down ;; glm53-tp4) glm53_tp4_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tf2) glm53_tf2_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -1435,7 +1626,7 @@ case "$ACT" in
       o="$(node_occupants "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4; do
+    for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tf2; do
       [[ "$other" == "$LANE" ]] && continue
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done
@@ -1453,8 +1644,9 @@ case "$ACT" in
     case "${LANE:-}" in
       glm53-tp3) kit="$GLM53_KIT"; host="$GLM53_HEAD_HOST" ;;
       glm53-tp4) kit="$GLM53_TP4_KIT"; host="$GLM53_HEAD_HOST" ;;
+      glm53-tf2) kit="$GLM53_TF2_KIT"; host="$GLM53_TF2_HEAD" ;;
       dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
-      *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4>" >&2; exit 2 ;;
+      *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4|glm53-tf2>" >&2; exit 2 ;;
     esac
     echo "${B}newest bring-up log on $host${N} (tail ${TAIL:-40})"
     sshx "$host" "f=\$(ls -1t $kit/lane-up-*.log 2>/dev/null | head -1); if [[ -n \"\$f\" ]]; then echo \"--- \$f\"; tail -${TAIL:-40} \"\$f\"; else echo 'no lane-up log yet'; fi" ;;
