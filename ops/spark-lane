@@ -91,7 +91,6 @@ GLM53_TP4_UTIL_DEFAULT="0.78"
 # ComfyUI creative engine (spark2). Replaced the two-lab creative-engine lane:
 # one GPU allocator for music/image/design/video instead of two labs with hard reservations.
 COMFY_HOST="spark2"
-COMFY_TIP="100.71.248.116"
 COMFY_URL="${COMFY_URL:-http://100.71.248.116:8188}"
 COMFY_CTN="spark-comfy"
 COMFY_DIR="/home/spark2/comfy-build"
@@ -222,55 +221,35 @@ timeout_run() {
 
 # Occupants of a node, one per line, empty = free.
 # Matches the container names/images our lanes actually use.
-node_occupant() {
-  local node="$1" out img lane
-  # NOTE: this pre-filter gates everything below it. A lane whose container name
-  # is missing HERE reports as `down` even while it is serving, and — far worse —
-  # occupancy_conflict() then sees its nodes as FREE, so `up`/`rotate` will happily
-  # launch a second lane on top of a live one. Add every new lane's container name
-  # to this grep AND to the detection chain below. (glm53-lvkp/glm53-roce = the TP4
-  # lane; omitted from this list on 2026-09-27 and it reported down while serving.)
-  # docker_names emits "NAME|IMAGE" per line, so a lane whose container name is a
-  # PREFIX of nothing else still needs anchoring: the mentat TP4 container is named
-  # exactly `glm53`, which a bare substring match would also find inside
-  # `glm53-exl3` (the TP3 lane) and inside the image `spark-glm53:v9`. `^glm53[|]`
-  # pins it to the name field, whole.
-  # glm53-alignfix = the CURRENT knapcio TP4 ranks (${CTN}-r0..r3). It is listed here by
-  # CONTAINER NAME on purpose: when the lane first went live, the only reason detection
-  # worked at all was that its IMAGE is glm53-roce:v11-*, so the `glm53-roce` pattern below
-  # matched the image half of "name|image". That is luck, not design — retag the image and
-  # the live lane would report `down` while occupancy_conflict() called all 4 nodes FREE,
-  # letting another `up` launch straight on top of live inference.
+# Returns EVERY lane present on a node, LLM lanes first. spark2 genuinely hosts two
+# tenants (spark-comfy + a glm rank); a single-valued answer made one of them invisible —
+# comfy-engine reported `down` while serving, and rotate's park loop could not see it to
+# park it, so `rotate dsv41-tp4` would tear down glm53-tp4, then refuse on comfy, leaving
+# NOTHING serving. Order matters: the first entry is what node_occupant reports.
+node_occupants() {
+  local node="$1" out lanes=""
   out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|^glm53[|]' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
-  # Detect which lane by container NAME (the grep above already matched a lane
-  # container). We key off the container name, NOT the image path: GLM's image is
-  # ghcr.io/miaai-lab/glm-5.3-flash... which does NOT contain "glm53", so matching
-  # the image string alone would misclassify GLM nodes as llm-lane-unknown (which
-  # broke rotate — the conflicting lane wasn't recognized and wasn't parked).
-  # FIXED 2026-09-25.
-  if    echo "$out" | grep -qiE 'dsv41-3x|sglang.*3'; then lane="dsv41-tp3"
-  elif  echo "$out" | grep -qiE 'dsv41-4x';               then lane="dsv41-tp4"
-  # Anchored, and BEFORE the exl3/glm-5 arm. `glm53-alignfix` is the CURRENT registered
-  # TP4 recipe's rank prefix. Bare `^glm53[|]` is the DEREGISTERED mentat container: kept
-  # only so a leftover from that kit still registers as an occupant and blocks an `up`
-  # rather than reading as a free node — it is no longer what `glm53-tp4` launches.
-  elif  echo "$out" | grep -qiE 'glm53-alignfix';         then lane="glm53-tp4"
-  elif  echo "$out" | grep -qE  '^glm53[|]';              then lane="glm53-tp4"
-  elif  echo "$out" | grep -qiE 'glm53-lvkp|glm53-roce';  then lane="glm53-tp4"
-  elif  echo "$out" | grep -qiE 'glm53-exl3|glm-5';       then lane="glm53-tp3"
-  # Creative detections sit LAST on purpose. spark2 can hold spark-comfy AND a live
-  # glm53 rank simultaneously (ComfyUI is a single-node sidecar, the rank is production).
-  # If comfy won precedence, spark2 would report comfy-engine, glm53-tp4 would read
-  # `partial 3/4` while all four ranks served, and the census would be lying about a
-  # production lane. LLM lanes win; comfy-engine then correctly reads `blocked by glm53-tp4`.
-  elif  echo "$out" | grep -qE  '^spark-comfy[|]';        then lane="comfy-engine"
-  # Retired two-lab kit: kept ONLY so a leftover container still registers as an occupant
-  # and blocks an `up` instead of reading as a free node. No lane launches these anymore.
-  elif  echo "$out" | grep -qiE 'ming-layer-web|spark-image-lab'; then lane="creative-engine-retired"
-  else  lane="llm-lane-unknown"; fi
-  echo "$lane"
+  echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
+  echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
+  # glm family stays mutually exclusive (an image string can match both arms).
+  if   echo "$out" | grep -qiE 'glm53-alignfix|glm53-lvkp|glm53-roce' || echo "$out" | grep -qE '^glm53[|]'; then
+    lanes="$lanes glm53-tp4"
+  elif echo "$out" | grep -qiE 'glm53-exl3|glm-5'; then
+    lanes="$lanes glm53-tp3"
+  fi
+  # Single-node sidecar and the retired kit come last: they must never outrank a
+  # production rank (that is what made glm53-tp4 read `partial 3/4` while serving).
+  echo "$out" | grep -qE  '^spark-comfy[|]'                 && lanes="$lanes comfy-engine"
+  echo "$out" | grep -qiE 'ming-layer-web|spark-image-lab'  && lanes="$lanes creative-engine-retired"
+  [[ -z "$lanes" ]] && lanes=" llm-lane-unknown"
+  echo "${lanes# }"
 }
+
+# Highest-precedence single occupant (first entry above). Kept for callers that want one
+# name; anything deciding whether a node is SAFE must use node_occupants.
+node_occupant() { local a; a="$(node_occupants "$1")"; echo "${a%% *}"; }
+
 
 # ── canary: a REAL chat completion, because /v1/models can stay green while chat hangs
 canary() {
@@ -364,8 +343,9 @@ lane_up_state() {
   local lane="$1" n occ total=0 mine=0
   for n in $(lane_nodes "$lane"); do
     total=$((total + 1))
-    occ="$(node_occupant "$n")"
-    [[ "$occ" == "$lane" ]] && mine=$((mine + 1))
+    occ="$(node_occupants "$n")"
+    # membership, not equality: a co-tenanted node still counts as held by this lane
+    case " $occ " in *" $lane "*) mine=$((mine + 1)) ;; esac
   done
   if   [[ $mine -eq $total ]]; then echo up
   elif [[ $mine -gt 0 ]];      then echo partial
@@ -375,22 +355,47 @@ lane_up_state() {
 
 # JSON object for one lane: {id,nodes[],endpoint,model,status,holders{node:lane}}
 lane_json_obj() {
-  local l="$1" nodes="[" n f=1 holders="{" hf=1 occ
+  local l="$1" nodes="[" n f=1 holders="{" hf=1 occ rest
   for n in $(lane_nodes "$l"); do
     [[ $f -eq 1 ]] || nodes="$nodes,"
     f=0; nodes="$nodes$(json_str "$n")"
   done
   nodes="$nodes]"
+  # CONTRACT (sparkDash LaneManager + its test fixture): `holders` is "the lanes blocking
+  # me, excluding my own claim" — an UP lane reports {}, and every VALUE must be a single
+  # parkable lane id. Do not comma-join co-tenants here: LaneManager does
+  # `downSet.has(holder)` to decide which nodes a requested `down` frees, so a joined
+  # string never matches a lane id and a legitimate rotation gets wrongly blocked.
+  # Co-tenancy is reported separately, below.
+  local other cot="{" cf=1 mine
   for n in $(lane_nodes "$l"); do
-    occ="$(node_occupant "$n")"
-    [[ -z "$occ" || "$occ" == "$l" ]] && continue
+    occ="$(node_occupants "$n")"
+    mine=0
+    case " $occ " in *" $l "*) mine=1 ;; esac
+    if [[ $mine -eq 1 ]]; then
+      # I hold this node. Anyone else on it is a co-tenant, not a blocker.
+      rest=""
+      for other in $occ; do
+        [[ "$other" == "$l" ]] && continue
+        rest="${rest:+$rest,}$other"
+      done
+      if [[ -n "$rest" ]]; then
+        [[ $cf -eq 1 ]] || cot="$cot,"
+        cf=0; cot="$cot$(json_str "$n"):$(json_str "$rest")"
+      fi
+      continue
+    fi
+    # I do not hold it: report the top-precedence occupant as a single lane id.
+    occ="${occ%% *}"
+    [[ -z "$occ" ]] && continue
     [[ $hf -eq 1 ]] || holders="$holders,"
     hf=0; holders="$holders$(json_str "$n"):$(json_str "$occ")"
   done
+  cot="$cot}"
   holders="$holders}"
-  printf '{"id":%s,"nodes":%s,"endpoint":%s,"model":%s,"status":%s,"holders":%s}' \
+  printf '{"id":%s,"nodes":%s,"endpoint":%s,"model":%s,"status":%s,"holders":%s,"co_tenants":%s}' \
     "$(json_str "$l")" "$nodes" "$(json_str "$(lane_endpoint "$l")")" \
-    "$(json_str "$(lane_model_id "$l")")" "$(json_str "$(lane_up_state "$l")")" "$holders"
+    "$(json_str "$(lane_model_id "$l")")" "$(json_str "$(lane_up_state "$l")")" "$holders" "$cot"
 }
 
 lanes_json() {
@@ -428,9 +433,15 @@ status_json() {
 occupancy_conflict() {
   local lane="$1" n occ conflict=""
   for n in $(lane_nodes "$lane"); do
-    occ="$(node_occupant "$n")"
-    if [[ -n "$occ" && "$occ" != "$lane" ]]; then
-      conflict="$conflict $n($occ)"
+    occ="$(node_occupants "$n")"
+    # Report every OTHER tenant on the node, not just the top-precedence one.
+    local other rest=""
+    for other in $occ; do
+      [[ "$other" == "$lane" ]] && continue
+      rest="${rest:+$rest,}$other"
+    done
+    if [[ -n "$rest" ]]; then
+      conflict="$conflict $n($rest)"
     fi
   done
   echo "$conflict"
@@ -450,11 +461,24 @@ occupancy_conflict() {
 # BRING-UP IS DELEGATED to the recipe's own up.sh. The recipe repo is the source of truth
 # for docker flags (--gpus all, --disable-pinned-memory, model mounts, no --restart);
 # reconstructing them here would let the two drift.
+# Turn an occupancy marker into a command that actually runs. `creative-engine-retired`
+# and `llm-lane-unknown` are detection markers, NOT lane ids: `spark-lane down <marker>`
+# exits 2 with "unknown lane", so emitting it as NEXT: breaks the machine-readable
+# contract a follower model depends on.
+comfy_park_hint() {
+  local first="${1%% *}"
+  case "$first" in
+    creative-engine-retired) echo "ssh $COMFY_HOST 'docker stop ming-layer-web spark-image-lab'   # retired kit leftovers" ;;
+    llm-lane-unknown)        echo "ssh $COMFY_HOST 'docker ps'   # unrecognised container holding the node" ;;
+    *)                       echo "spark-lane down $first   # then: spark-lane up comfy-engine" ;;
+  esac
+}
+
 comfy_wait() {
   local t=0 st code
   step "wait healthy" "container running + /system_stats 200 (budget ${COMFY_WAIT}s)"
   while [[ $t -lt $COMFY_WAIT ]]; do
-    st="$(sshx spark2 "docker inspect --format '{{.State.Status}}' $COMFY_CTN 2>/dev/null" || true)"
+    st="$(sshx "$COMFY_HOST" "docker inspect --format '{{.State.Status}}' $COMFY_CTN 2>/dev/null" || true)"
     if [[ "$st" == "running" ]]; then
       code="$(curl -s -o /dev/null -w '%{http_code}' -m 5 "$COMFY_URL/system_stats")"
       if [[ "$code" == "200" ]]; then ok "running + http 200 after ${t}s"; return 0; fi
@@ -467,37 +491,60 @@ comfy_wait() {
 }
 
 comfy_engine_up() {
-  STEPS=4; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  # FIRST, and before anything that could mutate: the recipe's up.sh opens with
+  #   docker rm -f spark-comfy
+  # so an ungated `up` on a live lane force-removes the container mid-render. Every
+  # other lane gates this the same way ("already serving — no change made").
+  step "already up?" "is $COMFY_URL already serving?"
+  local pre; pre="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$COMFY_URL/system_stats")"
+  if [[ "$pre" == "200" ]]; then
+    ok "already serving — no change made (and no restart)"
+    NEXT_CMD="nothing"
+    result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)" "(already up, unchanged)"
+    return 0
+  fi
+  ok "not serving — safe to start"
 
   step "occupancy" "spark2 must be free (ComfyUI wants the whole GB10 pool, uncapped)"
-  local occ; occ="$(node_occupant spark2)"
-  if [[ -n "$occ" && "$occ" != "comfy-engine" ]]; then
-    note_fail "occupancy" "spark2 is held by $occ"
-    NEXT_CMD="spark-lane down $occ   # then: spark-lane up comfy-engine"
+  local occ; occ="$(node_occupants "$COMFY_HOST")"
+  local blockers="" o
+  for o in $occ; do
+    [[ "$o" == "comfy-engine" ]] && continue
+    blockers="${blockers:+$blockers }$o"
+  done
+  if [[ -n "$blockers" ]]; then
+    note_fail "occupancy" "$COMFY_HOST is held by: $blockers"
+    NEXT_CMD="$(comfy_park_hint "$blockers")"
     result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
     return 1
   fi
-  ok "spark2 free (or already comfy-engine)"
+  ok "$COMFY_HOST free"
 
-  step "recipe" "$COMFY_DIR/up.sh present on spark2 (source of truth for flags)"
-  if ! sshx spark2 "test -x $COMFY_DIR/up.sh"; then
+  step "recipe" "$COMFY_DIR/up.sh present on $COMFY_HOST (source of truth for flags)"
+  if ! sshx "$COMFY_HOST" "test -x $COMFY_DIR/up.sh"; then
     note_fail "recipe" "$COMFY_DIR/up.sh missing or not executable"
-    NEXT_CMD="ssh spark2 'ls -l $COMFY_DIR'"
+    NEXT_CMD="ssh $COMFY_HOST 'ls -l $COMFY_DIR'"
     result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
     return 1
   fi
   ok "up.sh present"
 
   step "start" "running the recipe up.sh"
-  if ! sshx spark2 "$COMFY_DIR/up.sh" >/dev/null 2>&1; then
+  if ! sshx "$COMFY_HOST" "$COMFY_DIR/up.sh" >/dev/null 2>&1; then
     warn "up.sh returned non-zero — still judging by health below"
   fi
   ok "up.sh invoked"
 
-  comfy_wait || { result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"; return 1; }
+  if ! comfy_wait; then
+    result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
+    return 1
+  fi
 
-  result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
+  # NEXT_CMD must be set BEFORE result(): result() is what prints the NEXT line.
   [[ $FAILED -eq 0 ]] && NEXT_CMD="spark-lane verify comfy-engine"
+  result "comfy-engine" "up" "$COMFY_URL" "$(lane_model_id comfy-engine)"
   return $FAILED
 }
 
@@ -512,13 +559,13 @@ comfy_engine_down() {
   if [[ "$fc" == "200" ]]; then ok "weights + cache evicted"; else warn "free returned ${fc:-000} (container may already be down)"; fi
 
   step "stop" "stopping $COMFY_CTN (weights on disk are never deleted)"
-  sshx spark2 "docker stop $COMFY_CTN >/dev/null 2>&1 || true"
+  sshx "$COMFY_HOST" "docker stop $COMFY_CTN >/dev/null 2>&1 || true"
   ok "stop issued"
 
   step "confirm" "no creative container left on spark2"
   sleep 3
   local left
-  left="$(sshx spark2 "docker ps --format '{{.Names}}' | grep -E 'spark-comfy|ming-layer-web|spark-image-lab' || true")"
+  left="$(sshx "$COMFY_HOST" "docker ps --format '{{.Names}}' | grep -E 'spark-comfy|ming-layer-web|spark-image-lab' || true")"
   if [[ -n "$left" ]]; then
     note_fail "confirm" "still running: $(echo "$left" | paste -sd' ' -)"
     NEXT_CMD="ssh spark2 'docker stop $COMFY_CTN'"
@@ -887,7 +934,7 @@ mem_blame() {
   local n names
   for n in "$@"; do
     names="$(sshx "$n" "docker ps --format '{{.Names}}|{{.Label \"x\"}}' 2>/dev/null | cut -d'|' -f1 \
-      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tp3|dsv41|qwen3|spark-comfy' \
+      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tp3|dsv41|qwen3' \
       | head -8 | paste -sd, -" 2>/dev/null)"
     if [[ -n "$names" ]]; then
       info "  $n co-tenants holding memory: $names"
@@ -1292,14 +1339,20 @@ except Exception:
              NEXT_CMD="ssh spark2 'docker logs --tail 60 $COMFY_CTN'" ;;
     esac
 
-    step "loaders" "the four creative families are visible to their loaders"
-    local fam; fam="$(curl -s -m 20 "$COMFY_URL/object_info" | python3 -c 'import json,sys
+    step "loaders" "weight FILES for the four families are visible to their loaders"
+    # Must match weight FILENAMES, never the raw blob. ComfyUI v0.38.1 ships node classes
+    # (MiniMaxH3ImageToVideo, YuE2GenerateMusic, ...) whether or not weights are mounted:
+    # bare 'h3' still occurs 103x and 'yue2' 20x after every filename is stripped, so the
+    # music and video checks passed with the mounts EMPTY. Only strings ending in a weight
+    # extension count, which is what the loader dropdowns actually offer.
+    local fam; fam="$(curl -s -m 25 "$COMFY_URL/object_info" | python3 -c 'import json,sys,re
 try:
     blob = json.dumps(json.load(sys.stdin))
 except Exception:
     print("unreadable"); raise SystemExit
-want = {"music":"yue2", "image":"qwen_image", "design":"ming_image", "video":"h3"}
-print(" ".join(k if v in blob.lower() else k.upper()+"-MISSING" for k,v in want.items()))' 2>/dev/null)"
+files = " ".join(re.findall(r"[A-Za-z0-9_.\-]+\.(?:safetensors|gguf|sft|pt|pth|bin|ckpt)", blob)).lower()
+want = {"music":"yue2_", "image":"qwen_image", "design":"ming_image", "video":"minimax_h3"}
+print(" ".join(k if v in files else k.upper()+"-MISSING" for k,v in want.items()))' 2>/dev/null)"
     case "$fam" in
       *MISSING*|unreadable|"") note_fail "loaders" "families: ${fam:-unreadable}"
                                NEXT_CMD="ssh spark2 'ls /home/spark2/comfy-models'" ;;
@@ -1379,7 +1432,7 @@ case "$ACT" in
     echo "${B}── rotate: park everything that $LANE needs, then bring it up ──${N}"
     occ_list=""
     for n in $(lane_nodes "$LANE"); do
-      o="$(node_occupant "$n")"
+      o="$(node_occupants "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
     for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4; do
