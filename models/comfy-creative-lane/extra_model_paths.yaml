@@ -4,6 +4,8 @@ comfy_models:
     text_encoders: text_encoders
     vae: vae
     model_patches: model_patches
+    loras: loras
+    checkpoints: checkpoints
 
 minimax_h3:
     base_path: /models/h3

@@ -24,9 +24,59 @@ pre-committed whether busy or not). Dynamic VRAM gives one pool with priority-ba
 
 ```bash
 docker build --build-arg COMFY_REF=v0.38.1 -t spark-comfy:v0.38.1 .
-./fetch-comfy-models.sh     # ~86 GB, Comfy-Org repacks
-./up.sh                     # binds to tailnet IP only
+./fetch-comfy-models.sh      # ~86 GB, the four base model families
+./fetch-template-gaps.sh     # ~88 GB more, what the official templates actually reference
+./up.sh                      # binds to tailnet IP only
+# then, to install the curated workflow folder + audit every model reference:
+scp load_templates.py spark2:/home/spark2/comfy-data/user/load_templates.py
+ssh spark2 'docker exec spark-comfy python3 /opt/ComfyUI/user/load_templates.py'
 ```
+
+Total staged weights: **168 GB**.
+
+## Lesson: a foreign recipe's weight list != the template's weight list
+
+Tony's `MiniMax-H3-Local` list covers his **fl2v** lane only. The official ComfyUI templates
+reference a materially broader set. Staging from the recipe alone left 14 of 15 templates
+unrunnable. **Always audit template model references against the live server inventory
+(`load_templates.py`) instead of trusting any upstream download list.**
+
+Gaps the audit caught (88.4 GB), none of which Tony's recipe mentions:
+
+| File | Size | Needed by |
+|---|---|---|
+| `minimax_h3_video_vae_int8_convrot` | 2.81 GB | **every** H3 template (recipe ships fp16, templates want int8) |
+| `fastvideo_fasth3_8step_v2_pruned_int8_convrot` | 22.13 GB | both FastH3 turbo templates (the fast lane) |
+| `minimax_h3_ref2va_pruned_int8_convrot` | 20.97 GB | r2v / multiframe / controlnet (distinct model from fl2va) |
+| `minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16` | 1.96 GB | same three |
+| `minimax_h3_fun_controlnet_union_pruned_int8_convrot` | 2.30 GB | H3 Fun ControlNet Union |
+| `qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot` | 9.47 GB | Qwen-Image 2.1 t2i (prompt-enhancer encoder) |
+| `qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot` | 9.47 GB | Qwen-Image 2.1 image edit |
+| `qwen3.8_27b_w4a8` (repo `Comfy-Org/Qwen3.8-27B`) | 17.29 GB | **Ming t2i** — uses Qwen3.8-27B, *not* ling_mini |
+| `sdpose_wholebody_fp16` + `rt_detr_v4-x-hgnet_fp16` | 2.04 GB | H3 controlnet pose detection |
+
+Note `extra_model_paths.yaml` must map `loras:` and `checkpoints:` on the `comfy_models` root
+too, or the ref2v LoRA and SDPose checkpoint stay invisible.
+
+## Curated workflow folder (15 local templates, all verified runnable)
+
+`load_templates.py` copies them to `user/default/workflows/Creation Lane/` so they appear in the
+UI's own Workflows sidebar, and audits every `.safetensors` reference against the live
+`/object_info` inventory:
+
+```
+Creation Lane/1 - Music (YuE2)/            YuE2 - Text to Music | Music Cover
+Creation Lane/2 - Image (Qwen-Image 2.1)/  Text to Image | Image Edit | Background Removal
+Creation Lane/3 - Design (Ming)/           Ming Design - Text to Image | Image Edit
+Creation Lane/4 - Video (MiniMax H3)/      FastH3 Turbo t2v/i2v | H3 t2v/i2v/r2v |
+                                           I2V Continuation | Multiframe Reference |
+                                           Fun ControlNet Union
+```
+
+**Audit gotcha:** ComfyUI now returns two COMBO shapes from `/object_info` —
+classic `[[opt, ...], {...}]` and new `["COMBO", {"options": [...]}]`. Parsing only the first
+yields false "missing model" reports (it wrongly flagged `sheetsage2_bf16`). `load_templates.py`
+handles both.
 
 Reachable at `http://<tailscale-ip>:8188` (spark2 = `100.71.248.116`).
 
