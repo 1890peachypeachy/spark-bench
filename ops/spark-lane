@@ -22,7 +22,7 @@
 #   comfy-engine      spark2        ComfyUI (music/image/design/video) -> :8188 (no LLM lane)
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8000/v1
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8000/v1 (Mia's fast line)
-#   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.4, CONTAINER glm53-tf3)
+#   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.5, CONTAINER glm53-tf3)
 #   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (knapcio recipe)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
 #
