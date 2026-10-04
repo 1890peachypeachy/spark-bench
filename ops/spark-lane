@@ -25,6 +25,14 @@
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.5, CONTAINER glm53-tf3)
 #   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (knapcio recipe)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
+#   jspark3           spark1,3,4    GLM-5.3-Flash EXL3 (jspark3 v2.0.1 TensorFold fork, MLX 4-bit
+#                                   weights, disk session-chain) -> :8888/v1; containers
+#                                   jspark3-rank{0,1,2}, kit spark3:/var/tmp/jspark3/jspark3.
+#                                   Registered 2026-10-04 after the live cutover — jspark3-rank*
+#                                   matched NEITHER stage of node_occupant before, so `up` on any
+#                                   other lane cleared the occupancy check against a live lane
+#                                   (demonstrated 2026-10-04: `up glm53-tp3` reported nodes free
+#                                   and began a bring-up on top of the serving lane).
 #
 # POLICY (do not change these constants casually)
 #   * The OpenAI endpoint + served model name stay IDENTICAL across TP3/TP4 swaps:
@@ -184,6 +192,7 @@ lane_container_names() {
   case "$1" in
     dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
     glm53-tp3)           echo "glm53-tf3" ;;
+    jspark3)             echo "jspark3-rank0 jspark3-rank1 jspark3-rank2" ;;
     glm53-tp4)           echo "${GLM53_TP4_CTN}-r0 ${GLM53_TP4_CTN}-r1 ${GLM53_TP4_CTN}-r2 ${GLM53_TP4_CTN}-r3" ;;
     glm53-tf2)           echo "glm53-flash-tf" ;;
     comfy-engine)        echo "spark-comfy" ;;
@@ -244,13 +253,15 @@ timeout_run() {
 # NOTHING serving. Order matters: the first entry is what node_occupant reports.
 node_occupants() {
   local node="$1" out lanes=""
-  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|^glm53[|]' || true)"
+  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|jspark3-rank|^glm53[|]' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
   echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
   # glm family stays mutually exclusive (an image string can match both arms).
   if   echo "$out" | grep -qiE 'glm53-alignfix|glm53-lvkp|glm53-roce' || echo "$out" | grep -qE '^glm53[|]'; then
     lanes="$lanes glm53-tp4"
+  elif echo "$out" | grep -qiE 'jspark3-rank'; then
+    lanes="$lanes jspark3"
   elif echo "$out" | grep -qiE 'glm53-tf3'; then
     lanes="$lanes glm53-tp3"
   elif echo "$out" | grep -qiE 'glm53-flash-tf'; then
@@ -372,17 +383,18 @@ lane_nodes() {
     dsv41-tp3)       echo "spark1 spark3 spark4" ;;
     dsv41-tp4)       echo "spark1 spark2 spark3 spark4" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
+    jspark3)         echo "spark1 spark3 spark4" ;;
     glm53-tp4)       echo "spark1 spark2 spark3 spark4" ;;
     glm53-tf2)       echo "spark3 spark4" ;;
     *) return 1 ;;
   esac
 }
 
-lane_endpoint() { case "$1" in comfy-engine) echo "$COMFY_URL" ;; glm53-tp3|glm53-tp4|glm53-tf2) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; glm53-tp3|glm53-tp4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in comfy-engine) echo "$COMFY_URL" ;; glm53-tp3|glm53-tp4|glm53-tf2|jspark3) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; glm53-tp3|glm53-tp4|glm53-tf2|jspark3) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
-ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tf2"
+ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tf2 jspark3"
 
 # Minimal JSON string escape (values here are ids/hosts/models — no control chars).
 json_str() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"; }
@@ -1225,7 +1237,137 @@ glm53_tf3_down() {
   return 0
 }
 
-# ── GLM-5.3-Flash TP4 lane (knapcio recipe) ─────────────────────────────────
+# ── jspark3 lane (github.com/jakejharris/jspark3 v2.0.1, cutover 2026-10-04) ─
+# jspark3's own serve.sh/stop.sh on each node are the source of truth for flags and
+# container naming (jspark3-rank{0,1,2}); this harness only orders the bring-up
+# (rank2 -> rank1 -> rank0/head), waits for the endpoint + real chat canary, and
+# parks it. The kit lives at spark3:/var/tmp/jspark3/jspark3 (same tree on all three
+# nodes). SERVE_NAME is overridden to $GLM53_MODEL in config/serve.conf so the
+# identity check below holds; see the cutover runbook for the full deviation list.
+JSPARK3_KIT="/var/tmp/jspark3/jspark3"
+jspark3_up() {
+  local lane="jspark3"
+  STEPS=7; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "occupancy" "$(lane_nodes "$lane")"
+  local conflict
+  conflict="$(occupancy_conflict "$lane")"
+  if [[ -n "$conflict" ]]; then
+    note_fail "occupancy" "nodes already taken:$conflict"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "all required nodes free"
+
+  step "cleanup" "removing any dead jspark3 containers left from a prior crash"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
+
+  step "kit" "$JSPARK3_KIT/scripts/serve.sh exists on all three nodes"
+  local n
+  for n in $(lane_nodes "$lane"); do
+    if ! sshx "$n" "test -f $JSPARK3_KIT/scripts/serve.sh"; then
+      note_fail "kit" "$JSPARK3_KIT missing on $n — the recipe tree must be reconciled to every node (see cutover runbook)"
+      NEXT_CMD="ssh $n 'ls $JSPARK3_KIT'   # inspect what is missing, then reconcile the tree"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+      return 1
+    fi
+  done
+  ok "kit present on spark1, spark3, spark4"
+
+  step "already up?" "is $GLM53_ENDPOINT already serving completions?"
+  if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)" == "200" ]]; then
+    if canary_tf2 "$GLM53_ENDPOINT" "$GLM53_MODEL" >/dev/null 2>&1; then
+      ok "already serving — no change made (and no restart)"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(already up, unchanged)"
+      NEXT_CMD="nothing"
+      return 0
+    fi
+    warn "endpoint answers but the chat canary failed — doing a full bring-up"
+  fi
+  ok "not serving yet"
+
+  step "start" "serve.sh rank2 (spark4) -> rank1 (spark1) -> rank0 (spark3 head), detached"
+  launch_detached spark4 "cd $JSPARK3_KIT && sg docker -c 'setsid ./scripts/serve.sh > /var/tmp/jspark3/serve-rank2.log 2>&1 < /dev/null &'"
+  sleep 5
+  launch_detached spark1 "cd $JSPARK3_KIT && sg docker -c 'setsid ./scripts/serve.sh > /var/tmp/jspark3/serve-rank1.log 2>&1 < /dev/null &'"
+  sleep 5
+  launch_detached spark3 "cd $JSPARK3_KIT && sg docker -c 'setsid ./scripts/serve.sh > /var/tmp/jspark3/serve-rank0.log 2>&1 < /dev/null &'"
+  ok "launched detached; logs: /var/tmp/jspark3/serve-rank{0,1,2}.log"
+  info "first boot compiles kernels; the head's wait-ready.sh tolerates up to 40 min"
+
+  local ok_wait=0 t=0 code=""
+  step "wait healthy" "endpoint up (ceiling ${ENGINE_MAX_WAIT}s)"
+  while [[ $t -lt $ENGINE_MAX_WAIT ]]; do
+    code="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)"
+    [[ "$code" == "200" ]] && { ok "endpoint up after ${t}s"; ok_wait=1; break; }
+    sleep 15; t=$((t + 15))
+  done
+  if [[ $ok_wait -eq 0 ]]; then
+    note_fail "wait-healthy" "no 200 from $GLM53_ENDPOINT/models within ${ENGINE_MAX_WAIT}s (last: $code)"
+    NEXT_CMD="ssh spark3 'tail -30 /var/tmp/jspark3/serve-rank0.log'   # then re-run: spark-lane up $lane"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+
+  step "identity" "served model name must be $GLM53_MODEL"
+  local ids
+  ids="$(curl -s -m 10 "$GLM53_ENDPOINT/models" | python3 -c 'import json,sys
+try: print(" ".join(m.get("id","") for m in json.load(sys.stdin).get("data",[])))
+except Exception: print("")' 2>/dev/null)"
+  if [[ "$ids" != *"$GLM53_MODEL"* ]]; then
+    note_fail "identity" "endpoint serves [$ids], expected $GLM53_MODEL"
+    NEXT_CMD="ssh spark3 'grep -n SERVE_NAME $JSPARK3_KIT/config/serve.conf'"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "serving $ids"
+
+  step "canary" "real chat completion (port-open is not proof)"
+  canary_tf2 "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
+
+  result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified)"
+  NEXT_CMD="nothing — lane is serving."
+  return 0
+}
+
+jspark3_down() {
+  local lane="jspark3"
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "stop" "stop.sh per node (recipe's own teardown, bounded 180s each)"
+  local n
+  for n in $(lane_nodes "$lane"); do
+    if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" sshx "$n" "cd $JSPARK3_KIT && sg docker -c './scripts/stop.sh'" >/dev/null 2>&1; then
+      note_fail "stop" "stop.sh failed or timed out on $n — verify with 'ssh $n uptime' before retrying"
+      NEXT_CMD="ssh $n 'cd $JSPARK3_KIT && sg docker -c ./scripts/stop.sh'   # run in the foreground to see the failure"
+      result "$lane" "down" "-" "-"
+      return 1
+    fi
+  done
+  ok "stop issued on all three nodes"
+
+  step "verify torn down" "no jspark3 containers left on $(lane_nodes "$lane")"
+  local left="" c
+  for n in $(lane_nodes "$lane"); do
+    c="$(docker_names "$n" | grep -E 'jspark3-rank' || true)"
+    [[ -n "$c" ]] && left="$left $n:$c"
+  done
+  if [[ -n "$left" ]]; then
+    note_fail "torn-down" "containers still present:$left"
+    NEXT_CMD="spark-lane status   # inspect, then re-run down"
+    result "$lane" "down" "-" "-"
+    return 1
+  fi
+  ok "all required nodes released"
+
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — nodes released. Weights and images were NOT deleted."
+  return 0
+}
+
+
 # Shares :8888 + the GLM-5.3-Flash-EXL3 served name with glm53-tp3 — the two can
 # never run together, and `rotate` is the correct way to swap between them.
 #
@@ -1745,6 +1887,7 @@ lanes:
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
   glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (knapcio recipe)
   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
+  jspark3           spark1,3,4    GLM-5.3-Flash EXL3 (jspark3) -> $GLM53_ENDPOINT
 
 The DeepSeek endpoint and model name are stable across TP3/TP4: $DSV41_ENDPOINT / $DSV41_MODEL
 The GLM lane serves a distinct identity: $GLM53_ENDPOINT / $GLM53_MODEL
@@ -1768,11 +1911,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tf2) glm53_tf2_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tf2) glm53_tf2_up ;; jspark3) jspark3_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tf2) glm53_tf2_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tf2) glm53_tf2_down ;; jspark3) jspark3_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -1786,7 +1929,7 @@ case "$ACT" in
       o="$(node_occupants "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tf2; do
+    for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tf2 jspark3; do
       [[ "$other" == "$LANE" ]] && continue
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done

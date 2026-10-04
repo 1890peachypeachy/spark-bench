@@ -1,0 +1,31 @@
+{
+  "ts": "2026-10-02",
+  "lane": "glm53-tp3",
+  "config": {
+    "engine": "TensorFold (Mia recipe v1.4)",
+    "image": "tensorfold-glm53:v0.6.0 (446a23697c7e)",
+    "checkpoint": "Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold @ 078455ffe (164G)",
+    "topology": "TP=3 spark3(head)+spark1+spark4, COMM=nccl, CRS504 RoCE",
+    "kv": "fp8 KV, KV_POOL_GIB=27",
+    "draft": "DFlash2",
+    "context": "1M"
+  },
+  "protocol": "Idle-gated streaming decode: gate on requests_running==0 and requests_waiting==0 (verified before AND after each run), streaming decode, temp 0, thinking off, 400 completion tokens, nonce'd prompts, median of 3. decode tok/s = tokens / (last delta - first delta), excluding prefill/TTFT — matches Mia's sparkDash methodology. Script: cache/scratch/tp3_stream_bench.py (since pruned; protocol recorded in GBrain spark-worklog-2026-10-02).",
+  "results": {
+    "prose": {"median_tok_s": 71.9, "spread": 0.8, "mia_spec_tok_s": 77.6, "pct_of_spec": 92},
+    "code": {"median_tok_s": 104.1, "spread": 1.4, "mia_spec_tok_s": 104.3, "pct_of_spec": 100},
+    "ttft_s": 0.23
+  },
+  "note": "Transcribed 2026-10-04 from GBrain page spark-worklog-2026-10-02 (raw run artifacts were in self-pruning scratch). Lane was subsequently updated to recipe v1.5 (2026-10-03, same checkpoint family, PARALLEL=8); this bench predates that cutover.",
+  "external_reference": {
+    "jspark3_v2.0.1_rigmark_3x_dgx_spark": {
+      "decode_per_stream_short_code_tok_s": 80.9,
+      "decode_per_stream_short_prose_tok_s": 59.6,
+      "one_stream_after_32k_prompt_tok_s": 83.6,
+      "c1_ttft_s": 0.405,
+      "cold_prefill_64k_tok_s": 2124,
+      "c4_aggregate_tok_s": 113.4,
+      "caveat": "Different weights (4-bit MLX, Vontra), different prompt mix, reasoning effort low (counts reasoning tokens in rate). Not a controlled A/B."
+    }
+  }
+}
