@@ -1,13 +1,21 @@
+import contextlib
+import io
 import json
 import os
+import select
+import socket
 import tempfile
 import threading
 import time
 import unittest
+import unittest.mock
+from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
+from urllib.request import urlopen
 
-from catchup.service import CatchupService, WarmupAborted
+from catchup.__main__ import build_handler
+from catchup.service import CONNECT_TIMEOUT_S, CatchupService, WarmupAborted
 from catchup.switch import CatchupSwitch, http_fetcher, resolve_config
 
 
@@ -310,6 +318,227 @@ class HttpWarmupAbortTests(unittest.TestCase):
         service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "hi"}]})
         self.assertTrue(wait_until(lambda: service.get("eva-dm")["state"] == "warm"))
         self.assertEqual(service.get("eva-dm")["prompt_tokens"], 7)
+
+
+class HangupDetectingVllm:
+    """Fake engine that, like uvicorn under vLLM, watches the client socket while
+    'prefilling' and records the moment it sees the client hang up."""
+
+    def __init__(self, prefill_s=5.0):
+        self.received = threading.Event()
+        self.disconnected = threading.Event()
+        self.headers = {}
+        self.requests = 0
+        outer = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                return
+
+            def do_POST(self):  # noqa: N802
+                self.rfile.read(int(self.headers.get("content-length") or 0))
+                outer.requests += 1
+                outer.headers = {k.lower(): v for k, v in self.headers.items()}
+                outer.received.set()
+                deadline = time.time() + prefill_s
+                while time.time() < deadline:
+                    ready, _, _ = select.select([self.connection], [], [], 0.02)
+                    if ready and self.connection.recv(1, socket.MSG_PEEK) == b"":
+                        outer.disconnected.set()  # EOF: what triggers vLLM's abort
+                        return
+                body = b'{"usage":{"prompt_tokens":7}}'
+                self.send_response(200)
+                self.send_header("content-length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_address[1]}/v1"
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+def on_switch():
+    fake = FakeHealth({"switchedOn": True, "disabledAgents": []})
+    switch, logs = make_switch(fake)
+    switch.poll_once()
+    return fake, switch, logs
+
+
+class AbortSemanticsTests(unittest.TestCase):
+    """Fix pass defect 1: prove the cancellation actually reaches the engine side."""
+
+    def test_engine_sees_hangup_mid_prefill_with_request_id(self):
+        vllm = HangupDetectingVllm()
+        self.addCleanup(vllm.close)
+        fake, switch, _ = on_switch()
+        service = CatchupService(vllm_url=vllm.url, model="m", max_context=10000, timeout_s=30, switch=switch)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "prefill me"}]})
+            self.assertTrue(vllm.received.wait(3))
+            t0 = time.time()
+            fake.body = {"switchedOn": False, "disabledAgents": []}
+            switch.poll_once()
+            self.assertTrue(vllm.disconnected.wait(2), "engine never saw the client hang up")
+            self.assertLess(time.time() - t0, 1.0)
+            self.assertTrue(wait_until(lambda: service.stats()["inflight"] == 0))
+        rid = vllm.headers.get("x-request-id", "")
+        self.assertTrue(rid.startswith("kvwarm-"), vllm.headers)
+        self.assertIn(f"warm {rid} for eva-dm aborted: engine connection closed", out.getvalue())
+        self.assertNotIn("WARNING abort", out.getvalue())
+
+    def test_abort_landing_during_connect_never_sends_the_prefill(self):
+        vllm = HangupDetectingVllm()
+        self.addCleanup(vllm.close)
+        service = CatchupService(vllm_url=vllm.url, model="m", max_context=10000, timeout_s=30)
+        cancel = threading.Event()
+        cancel.set()  # abort() ran while conn.sock was still None
+        work = {"model": "m", "messages": [{"role": "user", "content": "x"}], "cancel": cancel}
+        with self.assertRaises(WarmupAborted):
+            service._http_warmup(work)
+        time.sleep(0.1)
+        self.assertEqual(vllm.requests, 0)
+
+    def test_read_timeout_restored_after_short_connect_timeout(self):
+        vllm = HangupDetectingVllm(prefill_s=0.0)
+        self.addCleanup(vllm.close)
+        seen = []
+        real_request = HTTPConnection.request
+
+        def spy(conn, *args, **kwargs):
+            seen.append((conn.timeout, conn.sock.gettimeout()))
+            return real_request(conn, *args, **kwargs)
+
+        service = CatchupService(vllm_url=vllm.url, model="m", max_context=10000, timeout_s=1800)
+        with unittest.mock.patch.object(HTTPConnection, "request", spy):
+            service._http_warmup({"model": "m", "messages": [{"role": "user", "content": "x"}]})
+        self.assertEqual(seen, [(CONNECT_TIMEOUT_S, 1800)])
+
+    def test_watchdog_flags_a_warm_that_ignores_the_abort(self):
+        release = threading.Event()
+
+        def stubborn(work):
+            release.wait(2)  # ignores work["cancel"]
+            return {}
+
+        fake, switch, _ = on_switch()
+        service = CatchupService(warmup_fn=stubborn, max_context=10000, switch=switch)
+        service.abort_confirm_s = 0.1
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "x"}]})
+            fake.body = {"switchedOn": False, "disabledAgents": []}
+            switch.poll_once()
+            self.assertTrue(wait_until(lambda: "WARNING abort of warm" in out.getvalue(), timeout=2))
+            release.set()
+            self.assertTrue(wait_until(lambda: service.stats()["inflight"] == 0))
+        self.assertEqual(service.get("eva-dm")["state"], "off")
+
+
+class OffNeverGreenTests(unittest.TestCase):
+    """Fix pass defect 2: status/health must not read green/warm while off."""
+
+    def warm_service(self, *sessions):
+        fake, switch, _ = on_switch()
+        service = CatchupService(warmup_fn=lambda w: {}, max_context=10000, switch=switch)
+        for sid in sessions:
+            service.submit({"session_id": sid, "messages": [{"role": "user", "content": sid}]})
+        self.assertTrue(wait_until(lambda: all(service.get(s)["color"] == "green" for s in sessions)))
+        return fake, switch, service
+
+    def test_warm_session_reads_off_while_switched_off_and_warm_again_after(self):
+        fake, switch, service = self.warm_service("eva-dm")
+        self.assertEqual((service.stats()["state"], service.stats()["color"]), ("on", "green"))
+        fake.body = {"switchedOn": False, "disabledAgents": []}
+        switch.poll_once()
+        self.assertEqual((service.get("eva-dm")["state"], service.get("eva-dm")["color"]), ("off", "off"))
+        self.assertEqual([s["color"] for s in service.get()], ["off"])
+        self.assertEqual((service.get("never-seen")["state"], service.get("never-seen")["color"]), ("off", "off"))
+        self.assertEqual((service.stats()["state"], service.stats()["color"]), ("off", "off"))
+        # Re-posting the already-warm snapshot must not short-circuit to green.
+        again = service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "eva-dm"}]})
+        self.assertEqual((again["state"], again["color"]), ("off", "off"))
+        fake.body = {"switchedOn": True, "disabledAgents": []}
+        switch.poll_once()
+        self.assertEqual(service.get("eva-dm")["color"], "grey")  # parked off -> idle until next snapshot
+        service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "eva-dm"}]})
+        self.assertTrue(wait_until(lambda: service.get("eva-dm")["color"] == "green"))
+
+    def test_disabled_agent_reads_off_others_stay_green(self):
+        fake, switch, service = self.warm_service("kai:background", "eva-dm")
+        fake.body = {"switchedOn": True, "disabledAgents": ["kai"]}
+        switch.poll_once()
+        self.assertEqual(service.get("kai:background")["color"], "off")
+        self.assertEqual(service.get("eva-dm")["color"], "green")
+
+    def test_sidecar_http_status_and_health_report_off(self):
+        fake, switch, service = self.warm_service("eva-dm")
+        fake.body = {"switchedOn": False, "disabledAgents": []}
+        switch.poll_once()
+        server = ThreadingHTTPServer(("127.0.0.1", 0), build_handler(service))
+        Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        base = f"http://127.0.0.1:{server.server_address[1]}"
+        with urlopen(f"{base}/v1/status?session_id=eva-dm", timeout=3) as resp:
+            status = json.loads(resp.read())
+        with urlopen(f"{base}/v1/health", timeout=3) as resp:
+            health = json.loads(resp.read())
+        self.assertEqual((status["state"], status["color"]), ("off", "off"))
+        self.assertEqual((health["state"], health["color"]), ("off", "off"))
+
+
+class MalformedAgentPolicyTests(unittest.TestCase):
+    """Fix pass defect 3: a malformed disabledAgents fails CLOSED, never open."""
+
+    def test_malformed_shapes_fail_closed_even_when_never_known(self):
+        for bad in ("kai", {"kai": True}, ["kai", None], ["", "kai"], [42], None):
+            body = {"switchedOn": True, "updatedAt": 1}
+            if bad is not None:
+                body["disabledAgents"] = bad
+            switch, logs = make_switch(FakeHealth(body))
+            self.assertFalse(switch.poll_once(), bad)
+            self.assertFalse(switch.allows("eva-dm"), bad)
+            self.assertFalse(switch.allows("kai"), bad)
+            self.assertTrue(switch.snapshot()["policy_error"], bad)
+            self.assertTrue(any("failing CLOSED" in line for line in logs), (bad, logs))
+
+    def test_malformed_after_kai_disabled_does_not_reenable_kai_and_recovers(self):
+        fake = FakeHealth({"switchedOn": True, "disabledAgents": ["kai"]})
+        switch, logs = make_switch(fake)
+        switch.poll_once()
+        fake.body = {"switchedOn": True, "disabledAgents": "kai"}
+        switch.poll_once()
+        self.assertFalse(switch.allows("kai"))
+        self.assertFalse(switch.allows("eva-dm"))
+        self.assertEqual(sum("failing CLOSED" in line for line in logs), 1)
+        switch.poll_once()  # same error again: no repeat line
+        self.assertEqual(sum("failing CLOSED" in line for line in logs), 1)
+        fake.body = {"switchedOn": True, "disabledAgents": ["kai"]}
+        switch.poll_once()
+        self.assertFalse(switch.allows("kai"))
+        self.assertTrue(switch.allows("eva-dm"))
+        self.assertIn("agent policy well-formed again", " ".join(logs))
+
+    def test_malformed_policy_aborts_inflight_warm(self):
+        def warmup(work):
+            if work["cancel"].wait(5):
+                raise WarmupAborted()
+            return {}
+
+        fake, switch, _ = on_switch()
+        service = CatchupService(warmup_fn=warmup, max_context=10000, switch=switch)
+        service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "x"}]})
+        self.assertTrue(wait_until(lambda: service.stats()["inflight"] == 1))
+        fake.body = {"switchedOn": True, "disabledAgents": {"oops": 1}}
+        switch.poll_once()
+        self.assertTrue(wait_until(lambda: service.stats()["inflight"] == 0))
+        self.assertEqual(service.get("eva-dm")["color"], "off")
+        self.assertEqual(service.stats()["state"], "off")
 
 
 if __name__ == "__main__":

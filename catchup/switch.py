@@ -8,6 +8,10 @@ background thread and caches the last-known state:
   silently stop warming)
 - fetch fails/times out -> keep the last-known state, log the failure streak
 - switchedOn false   -> CatchupService stops dispatching and aborts in-flight warms
+- disabledAgents malformed (missing, not a list, or any entry that is not a
+  non-empty string) -> fail CLOSED: no session is allowed until a well-formed
+  body arrives. An unreadable per-agent policy must never re-enable an agent
+  the admin turned off.
 """
 
 from __future__ import annotations
@@ -41,6 +45,16 @@ def _log(line: str) -> None:
 def agent_of(session_id: str) -> str:
     # Same mapping as eva-core's settings view: "kai:background" -> "kai".
     return str(session_id or "").split(":")[0]
+
+
+def parse_disabled_agents(value: Any) -> tuple[frozenset[str], str | None]:
+    """(agents, error). error is set when the policy is malformed; callers fail closed."""
+    if not isinstance(value, list):
+        return frozenset(), f"disabledAgents is {type(value).__name__}, expected a list of agent names"
+    bad = [item for item in value if not isinstance(item, str) or not item.strip()]
+    if bad:
+        return frozenset(), f"disabledAgents has non-name entries {json.dumps(bad, default=str)[:120]}"
+    return frozenset(item.strip() for item in value), None
 
 
 def read_env_file(path: str | os.PathLike) -> dict[str, str]:
@@ -125,6 +139,7 @@ class CatchupSwitch:
         self._lock = threading.Lock()
         self._switched_on: bool | None = None  # None = never known
         self._disabled_agents: frozenset[str] = frozenset()
+        self._policy_error: str | None = None  # set = malformed disabledAgents, fail closed
         self._updated_at: Any = None
         self._last_ok_at: float | None = None
         self._failures = 0
@@ -137,21 +152,27 @@ class CatchupSwitch:
         """fn() is called whenever the effective policy changes (master on/off or disabledAgents)."""
         self._listeners.append(fn)
 
+    def _on_locked(self) -> bool:
+        return self._switched_on is not False and self._policy_error is None
+
     def is_on(self) -> bool:
+        """Effective master state: False when switched off or the agent policy is malformed."""
         with self._lock:
-            return self._switched_on is not False
+            return self._on_locked()
 
     def allows(self, session_id: str) -> bool:
         with self._lock:
-            if self._switched_on is False:
+            if not self._on_locked():
                 return False
             return agent_of(session_id) not in self._disabled_agents
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             return {
-                "switched_on": self._switched_on is not False,
+                "switched_on": self._on_locked(),
+                "reported_switched_on": self._switched_on,
                 "known": self._switched_on is not None,
+                "policy_error": self._policy_error,
                 "disabled_agents": sorted(self._disabled_agents),
                 "updated_at": self._updated_at,
                 "last_ok_at": self._last_ok_at,
@@ -171,31 +192,40 @@ class CatchupSwitch:
         except Exception as exc:  # noqa: BLE001 — any failure keeps last-known state
             self._on_failure(str(exc) or exc.__class__.__name__)
             return self.is_on()
-        agents = body.get("disabledAgents") or []
-        disabled = frozenset(str(a) for a in agents if isinstance(a, str) and a) if isinstance(agents, list) else frozenset()
+        disabled, policy_error = parse_disabled_agents(body.get("disabledAgents"))
         with self._lock:
-            previous = self._switched_on is not False
+            previous_reported = self._switched_on is not False
+            previous_effective = self._on_locked()
             previous_agents = self._disabled_agents
+            previous_policy_error = self._policy_error
             recovered = self._failures
             self._switched_on = body["switchedOn"]
             self._disabled_agents = disabled
+            self._policy_error = policy_error
             self._updated_at = body.get("updatedAt")
             self._last_ok_at = self._now()
             self._failures = 0
             self._last_error = None
-            current = self._switched_on
+            reported = self._switched_on
+            current = self._on_locked()
         if recovered:
             self._log(f"[kv-catchup] switch health endpoint reachable again after {recovered} failed poll(s)")
-        if current != previous:
-            word = "on" if current else "off"
+        if reported != previous_reported:
+            word = "on" if reported else "off"
             self._log(
                 f"[kv-catchup] switch {word} seen (state source: health endpoint, updatedAt={body.get('updatedAt')})"
             )
-        if disabled != previous_agents:
+        if policy_error and policy_error != previous_policy_error:
+            self._log(
+                f"[kv-catchup] malformed agent policy from health endpoint: {policy_error}; failing CLOSED (no warms)"
+            )
+        elif previous_policy_error and not policy_error:
+            self._log("[kv-catchup] agent policy well-formed again (state source: health endpoint)")
+        if disabled != previous_agents and not policy_error:
             self._log(
                 f"[kv-catchup] disabled agents now {sorted(disabled) or 'none'} (state source: health endpoint)"
             )
-        if current != previous or disabled != previous_agents:
+        if current != previous_effective or disabled != previous_agents:
             for fn in list(self._listeners):
                 try:
                     fn()

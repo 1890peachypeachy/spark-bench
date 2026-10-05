@@ -46,10 +46,22 @@ stop (an old post, another caller) also goes quiet. It polls
 `x-service-token`. With `switchedOn: false` (or the session's agent in
 `disabledAgents`, where agent = session id before the first `:`) it starts
 no warms, drops queued ones, and cuts in-flight warms by closing the vLLM
-socket. Those sessions report `state: off`. Turning the switch back on
+socket. While a session is switched off, `/v1/status` reports it as
+`state`/`color` `off`, never green, even if its KV was warm before.
+`/v1/health` reports `state`/`color` `off` while the master switch is off. Turning the switch back on
 replays nothing: catch-up resumes with the next snapshot. If the poll fails,
 the sidecar keeps the last-known state and logs the failure. If the switch
-has never been read, it defaults to ON.
+has never been read, it defaults to ON. A malformed `disabledAgents` (not a
+list of names) fails closed: no warms run until a well-formed body arrives.
+
+How an abort reaches the engine: the sidecar shuts down its TCP connection,
+and the engine aborts the request when it sees the disconnect. Each warm
+carries `X-Request-Id: kvwarm-…`. The sidecar logs `warm kvwarm-… aborted`,
+so the engine's `Aborted request …kvwarm-…` line can be matched to it. vLLM
+has no HTTP abort endpoint, and killing the shared engine is not acceptable,
+so escalation stays inside the sidecar. Connects time out after 10 s.
+`WARNING abort … not confirmed` is logged if a warm thread is still blocked
+5 s after its abort.
 
 Eva often chats on Venice and only sometimes on `sparks/auto`. The watcher
 is the point: Sparks plays catch-up in the background.

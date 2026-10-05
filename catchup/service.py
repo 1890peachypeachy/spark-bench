@@ -7,6 +7,7 @@ import json
 import socket
 import threading
 import time
+import uuid
 from dataclasses import asdict, dataclass, field
 from http.client import HTTPConnection, HTTPException, HTTPSConnection
 from typing import Any, Callable, Mapping
@@ -175,6 +176,20 @@ def _shutdown_socket(conn: HTTPConnection) -> None:
         pass
 
 
+# Abort semantics (2026-10-05 fix pass). What the sidecar can do is close its
+# TCP connection; the engine aborts the request when it sees the disconnect
+# (vLLM's OpenAI server wraps chat completions in with_cancellation and logs
+# "Aborted request <X-Request-Id>"; the scheduler drops it at the next step, so
+# at most the current chunked-prefill chunk still runs). There is no HTTP abort
+# endpoint in vLLM to escalate to, and killing the shared engine is not an option,
+# so escalation stops at the client: shutdown() unblocks the warm thread, the
+# connect phase is bounded by CONNECT_TIMEOUT_S (shutdown cannot interrupt a
+# connect() in progress), and a watchdog logs loudly if a warm thread is still
+# alive ABORT_CONFIRM_S after its abort.
+CONNECT_TIMEOUT_S = 10.0
+ABORT_CONFIRM_S = 5.0
+
+
 # Dispatch order for queued warms. Lower sorts first. Someone typing ("turn")
 # beats a lane that just booted, which beats housekeeping touches; and a lane's
 # interactive session always beats its ":background" sibling.
@@ -215,6 +230,7 @@ class CatchupService:
         # allows(session_id) / add_listener(fn)). None = always on.
         self._switch = switch
         self._running: dict[int, dict[str, Any]] = {}
+        self.abort_confirm_s = ABORT_CONFIRM_S
         if switch is not None and hasattr(switch, "add_listener"):
             switch.add_listener(self.apply_switch)
 
@@ -244,10 +260,14 @@ class CatchupService:
                 if self._allows(work["session_id"]) or work["cancel"].is_set():
                     continue
                 work["cancel"].set()
+                work["aborted_at"] = time.monotonic()
                 aborter = work.get("abort")
                 if aborter is not None:
                     aborter()
                 aborted.append(work["session_id"])
+                watchdog = threading.Timer(self.abort_confirm_s, self._confirm_abort, args=(work,))
+                watchdog.daemon = True
+                watchdog.start()
             self._dispatch_locked()
         if dropped or aborted:
             print(
@@ -256,9 +276,36 @@ class CatchupService:
             )
         return {"dropped": dropped, "aborted": aborted}
 
+    def _confirm_abort(self, work: dict[str, Any]) -> None:
+        with self._lock:
+            stuck = id(work) in self._running
+        if stuck:
+            print(
+                f"[kv-catchup] WARNING abort of warm {work.get('request_id') or '?'} for {work['session_id']} "
+                f"not confirmed after {self.abort_confirm_s:g}s: warm thread still blocked",
+                flush=True,
+            )
+
+    def _allowed_public_locked(self, session: SessionState) -> dict[str, Any]:
+        """Never report warm/green while the switch is off for this session (eva-core's
+        offStatus shape: state/color "off"). Once allowed again, a session parked
+        "off" reads idle/grey until its next snapshot."""
+        payload = session.public()
+        if not self._allows(session.session_id):
+            payload["state"] = "off"
+            payload["color"] = color_for("off")
+        elif payload["state"] == "off":
+            payload["state"] = "idle"
+            payload["color"] = color_for("idle")
+        return payload
+
     def stats(self) -> dict[str, Any]:
+        switched_on = self._switch is None or bool(getattr(self._switch, "is_on", lambda: True)())
         with self._lock:
             return {
+                # Master switch as the sidecar applies it; /v1/health shows "off", never green, while off.
+                "state": "on" if switched_on else "off",
+                "color": "green" if switched_on else color_for("off"),
                 "max_inflight": self.max_inflight,
                 "inflight": self._inflight,
                 "pending": len(self._pending),
@@ -287,11 +334,9 @@ class CatchupService:
     def get(self, session_id: str = "") -> dict[str, Any] | list[dict[str, Any]]:
         with self._lock:
             if session_id:
-                session = self._sessions.get(session_id)
-                if not session:
-                    return SessionState(session_id=session_id, updated_at=self._now()).public()
-                return session.public()
-            return [session.public() for session in self._sessions.values()]
+                session = self._sessions.get(session_id) or SessionState(session_id=session_id, updated_at=self._now())
+                return self._allowed_public_locked(session)
+            return [self._allowed_public_locked(session) for session in self._sessions.values()]
 
     def submit(self, body: Mapping[str, Any]) -> dict[str, Any]:
         snapshot = normalize_snapshot(body)
@@ -310,14 +355,15 @@ class CatchupService:
             session.reason = snapshot["reason"]
             session.updated_at = self._now()
             session.error = None
-            if session.warmed_hash == digest and session.state == "warm":
-                return session.public()
             if not self._allows(snapshot["session_id"]):
                 # Switched off: record the snapshot, start nothing. The generation
-                # bump also discards any still-running warm's result.
+                # bump also discards any still-running warm's result. Checked before
+                # the already-warm shortcut so an off session never answers green.
                 session.generation += 1
                 self._pending.pop(snapshot["session_id"], None)
                 session.state = "off"
+                return session.public()
+            if session.warmed_hash == digest and session.state == "warm":
                 return session.public()
             session.state = "warming"
             session.generation += 1
@@ -371,6 +417,13 @@ class CatchupService:
             aborted = True
         except Exception as exc:  # noqa: BLE001 — surface any engine failure as red
             error_text = str(exc) or exc.__class__.__name__
+        if aborted:
+            took = time.monotonic() - work.get("aborted_at", time.monotonic())
+            print(
+                f"[kv-catchup] warm {work.get('request_id') or '?'} for {work['session_id']} aborted: "
+                f"engine connection closed {took:.2f}s after switch-off",
+                flush=True,
+            )
         with self._lock:
             session = self._sessions.get(work["session_id"])
             if not session or session.generation != work["generation"]:
@@ -408,20 +461,27 @@ class CatchupService:
             payload["chat_template_kwargs"] = work["chat_template_kwargs"]
         target = urlsplit(f"{self.vllm_url}/chat/completions")
         conn_cls = HTTPSConnection if target.scheme == "https" else HTTPConnection
-        conn = conn_cls(target.hostname, target.port, timeout=self.timeout_s)
+        # Short connect timeout: shutdown() cannot interrupt a connect() in
+        # progress, so a dead engine must not pin an aborted warm for timeout_s.
+        conn = conn_cls(target.hostname, target.port, timeout=min(CONNECT_TIMEOUT_S, self.timeout_s))
         cancel = work.get("cancel") or threading.Event()
+        # Engine-side request id, so "Aborted request kvwarm-..." in the engine
+        # log can be matched to the abort the sidecar logged.
+        request_id = work.setdefault("request_id", f"kvwarm-{uuid.uuid4().hex[:16]}")
         # http.client rather than urlopen so the switch can cut the socket
         # mid-prefill: shutdown() wakes the blocked read with a disconnect.
         work["abort"] = lambda: _shutdown_socket(conn)
         try:
             conn.connect()
+            conn.sock.settimeout(self.timeout_s)
+            # An abort that landed while connect() ran found no socket to shut down.
             if cancel.is_set():
                 raise WarmupAborted()
             conn.request(
                 "POST",
                 target.path,
                 body=json.dumps(payload).encode("utf-8"),
-                headers={"content-type": "application/json"},
+                headers={"content-type": "application/json", "x-request-id": request_id},
             )
             response = conn.getresponse()
             raw = response.read()
