@@ -120,7 +120,9 @@ were warmed at boot.
 | nucleus, nucleus + min_p, `top_k` 40,000 and 32,000, `top_k` 20, JSON nucleus | 6 / 6 (the 0004 build: down at `top_k` 40,000) |
 | `top_k` 40,000 as the first request after a boot | answers |
 
-Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifacts/tensorfold-v41-fixes-20261005/REPORT.md).
+Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifacts/tensorfold-v41-fixes-20261005/REPORT.md). How the recipe was tested (the patches rebuild the engine file for file; 327 CPU tests pass on that tree, 2 older
+failures unrelated to four Sparks; the image built from a fresh clone; the Spark test windows):
+[the fork's README](https://github.com/neko-legends/deepseek-v41-tensorfold-spark#how-it-was-tested-2026-10-05).
 
 ## Our installation (forge, anvil, ember, flame)
 
