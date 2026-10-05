@@ -1,4 +1,8 @@
-# DeepSeek V4.1 Flash — current four-Spark profile
+# DeepSeek V4.1 Flash — four-Spark profiles
+
+> **2026-10-04: serving moved to TensorFold on four Sparks** (jayleaton's engine, our TP=4 port, the 2.9-bit EXL3 uncensored pack): 1.68× prose and 1.75× code decode over this SGLang profile across 1k–160k prompts, slower cold prompt reading. **[Current profile: tensorfold-4x/](tensorfold-4x/README.md)**. The SGLang TP4/EP2 profile below is stopped and kept as the rollback.
+
+## SGLang TP4/EP2 (served 2026-10-02 → 2026-10-04)
 
 As of 2026-10-02: SGLang on forge/anvil/ember/flame, **TP4 / EP2**, native FP8/MXFP4 uncensored checkpoint, DSPARK block 3, Engram on local SSDs. All four Sparks participate. EP2 partitions experts into two groups with two-way tensor sharding inside each group; TP remains four for the model.
 

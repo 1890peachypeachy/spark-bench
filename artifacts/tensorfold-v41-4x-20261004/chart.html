@@ -1,0 +1,166 @@
+<title>TensorFold on Four Sparks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a bench log. One headline, four results tiles, then small-multiple charts, each with its numbers beside it. */
+:root {
+  --bg: #f7f8f9; --panel: #ffffff; --ink: #121417; --ink-2: #4a5059; --ink-3: #7a808a;
+  --rule: #dfe3e8; --grid: #eceff2;
+  --tf: #2a78d6;           /* TensorFold: categorical slot 1 */
+  --sg: #eb6834;           /* SGLang: categorical slot 2 */
+  --warn-bg: #fff4e5; --warn-ink: #8a4b00;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121417; --panel: #1a1d21; --ink: #f3f4f6; --ink-2: #c0c5cc; --ink-3: #8d939c;
+  --rule: #2c3138; --grid: #24282e; --tf: #3987e5; --sg: #d95926; --warn-bg: #2b2014; --warn-ink: #f0b267;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121417; --panel: #1a1d21; --ink: #f3f4f6; --ink-2: #c0c5cc; --ink-3: #8d939c;
+  --rule: #2c3138; --grid: #24282e; --tf: #3987e5; --sg: #d95926; --warn-bg: #2b2014; --warn-ink: #f0b267;
+  color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 64px; display: grid; gap: 40px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(30px, 5vw, 48px); line-height: 1.05; margin: 8px 0 12px; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 21px; margin: 0 0 4px; text-wrap: balance; }
+.lede { max-width: 66ch; color: var(--ink-2); margin: 0; }
+.sub { color: var(--ink-2); margin: 0; max-width: 66ch; font-size: 15px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 820px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+.tile .k { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.tile .v { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
+.tile .v small { font-size: 15px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
+.tile .c { font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tile.slow .v { color: var(--warn-ink); }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+section { display: grid; gap: 14px; }
+.panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .panels { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 16px 10px; min-width: 0; display: grid; gap: 6px; }
+.panel h3 { font-family: var(--display); font-size: 15px; font-weight: 700; margin: 0; }
+.panel .note { font-size: 13px; color: var(--ink-3); margin: 0; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { font-family: var(--mono); font-size: 11px; fill: var(--ink-3); }
+svg .val { fill: var(--ink-2); font-size: 10.5px; }
+.tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 12px; padding: 7px 9px; border-radius: 4px; line-height: 1.45; z-index: 10; max-width: 260px; }
+.callout { background: var(--warn-bg); color: var(--warn-ink); border-radius: 6px; padding: 14px 16px; font-size: 15px; max-width: 80ch; }
+.callout b { font-family: var(--display); }
+.notes { font-size: 14.5px; color: var(--ink-2); max-width: 78ch; margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 560px; }
+th, td { padding: 6px 12px; text-align: right; border-bottom: 1px solid var(--rule); }
+th:first-child, td:first-child { text-align: left; }
+thead th { color: var(--ink-3); font-weight: 400; }
+details summary { cursor: pointer; font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+details summary:focus-visible { outline: 2px solid var(--tf); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">DeepSeek V4.1 Flash · uncensored · 4× DGX Spark · 2026-10-04</div>
+    <h1>TensorFold writes 1.7× faster than SGLang on the same four Sparks</h1>
+    <p class="lede">jayleaton's TensorFold engine, ported to four Sparks and running dealignai's 2.9-bit uncensored pack, against the SGLang TP4/EP2 deployment of the 8-bit uncensored checkpoint that served this cluster until today. Same prompts, same clients, same isolation. Generation wins at every prompt length; reading a long new prompt is still about twice as slow.</p>
+  </header>
+
+  <div class="tiles">
+    <div class="tile"><div class="k">Prose, 1k–160k</div><div class="v">63.4<small>tok/s</small></div><div class="c">SGLang 37.8 · 1.68×</div></div>
+    <div class="tile"><div class="k">Code, 1k–160k</div><div class="v">100.2<small>tok/s</small></div><div class="c">SGLang 57.4 · 1.75×</div></div>
+    <div class="tile"><div class="k">4 users at once</div><div class="v">119.2<small>tok/s</small></div><div class="c">SGLang 75.7 · 1.57×</div></div>
+    <div class="tile slow"><div class="k">Cold read, 160k prompt</div><div class="v">99<small>s</small></div><div class="c">SGLang 48 s · 2.1× slower</div></div>
+  </div>
+
+  <section>
+    <div>
+      <h2>Generation speed by prompt length</h2>
+      <p class="sub">Median of three 512-token replies per cell, thinking off, greedy. spark-bench's published depth fixtures.</p>
+    </div>
+    <div class="legend"><span><i class="sw" style="background:var(--tf)"></i>TensorFold, 4 Sparks</span><span><i class="sw" style="background:var(--sg)"></i>SGLang TP4/EP2</span></div>
+    <div class="panels">
+      <div class="panel"><h3>Prose (tok/s, higher is faster)</h3><svg id="c-prose" viewBox="0 0 480 250" role="img" aria-label="Prose decode speed by prompt length"></svg></div>
+      <div class="panel"><h3>Code (tok/s, higher is faster)</h3><svg id="c-code" viewBox="0 0 480 250" role="img" aria-label="Code decode speed by prompt length"></svg></div>
+    </div>
+  </section>
+
+  <section>
+    <div>
+      <h2>Reading a new prompt</h2>
+      <p class="sub">Seconds to the first token on a cold prompt, the slower of the prose and code prompts (lower is better). Repeats of the same prompt reuse the cache: 0.3–0.6 s on TensorFold at every length.</p>
+    </div>
+    <div class="panels">
+      <div class="panel"><h3>Cold time to first token (s)</h3><svg id="c-ttft" viewBox="0 0 480 250" role="img" aria-label="Cold time to first token by prompt length"></svg></div>
+      <div class="panel"><h3>Short prompts (tok/s)</h3><svg id="c-short" viewBox="0 0 480 250" role="img" aria-label="Short prompt decode speed"></svg><p class="note">Same prompt token IDs on both servers, 256 tokens. Copy-edit gains most: TensorFold also drafts from text it can copy.</p></div>
+    </div>
+    <p class="callout"><b>Where prompt reading goes.</b> Each 2,048-token chunk takes about 1.2 s: 0.73 s of compute and 0.40 s of exchanges between the four Sparks, run back to back. Overlapping the two is the next change; it would put prompt reading near SGLang's.</p>
+  </section>
+
+  <section>
+    <h2>The fine print</h2>
+    <ul class="notes">
+      <li>Different weight files. TensorFold runs the 2.9-bit EXL3 copy of the uncensored model (about 200 GB); SGLang runs the 8-bit FP8/FP4 copy. Fewer bytes per token is most of the speed. Same uncensoring team and method.</li>
+      <li>TensorFold's expert pruning is on (production default, slightly lossy: top-1 agreement 0.9944 vs 0.9961 unpruned in jayleaton's gates). Turning it off costs about 5%.</li>
+      <li>Speculative decoding is exact on TensorFold: drafted replies equal one-token decoding. All gates passed on the live server, including the forced tool call SGLang failed.</li>
+      <li>One TensorFold boot; SGLang rows are its published EP2 sweep from 2026-10-02.</li>
+    </ul>
+    <details>
+      <summary>All numbers</summary>
+      <div class="tablewrap"><table id="t-all"><thead><tr><th>Prompt</th><th>TF prose</th><th>SGL prose</th><th>TF code</th><th>SGL code</th><th>TF cold s</th><th>SGL cold s</th></tr></thead><tbody></tbody></table></div>
+    </details>
+  </section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const D = [
+  {d:"1k",  tp:63.6, sp:37.7, tc:104.9, sc:62.2, tt:0.8,  st:0.5},
+  {d:"20k", tp:65.7, sp:38.0, tc:97.0,  sc:56.9, tt:14.2, st:5.5},
+  {d:"40k", tp:64.0, sp:38.1, tc:96.4,  sc:53.8, tt:24.7, st:10.8},
+  {d:"80k", tp:62.8, sp:37.1, tc:103.1, sc:59.9, tt:46.8, st:22.0},
+  {d:"160k",tp:61.0, sp:38.3, tc:99.8,  sc:54.6, tt:99.8, st:52.1},
+];
+const SHORT = [
+  {d:"Story", t:57.5, s:36.9}, {d:"Code", t:101.5, s:63.9}, {d:"Copy-edit", t:208, s:70.1}, {d:"Retrieval", t:100, s:51.4},
+];
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; }
+function niceMax(v) { const mag = Math.pow(10, Math.floor(Math.log10(v))); for (const s of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) { if (s * mag >= v) return s * mag; } return 10 * mag; }
+function bars(id, rows, keyA, keyB, unit, labelA, labelB) {
+  const svg = document.getElementById(id);
+  const W = 480, H = 250, L = 40, R = 8, T = 18, B = 26;
+  const max = niceMax(Math.max(...rows.map(r => Math.max(r[keyA], r[keyB]))) * 1.08);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  for (let i = 0; i <= 5; i++) {
+    const v = max * i / 5, yy = y(v);
+    el("line", {x1: L, x2: W - R, y1: yy, y2: yy, stroke: "var(--grid)", "stroke-width": 1}, svg);
+    const t = el("text", {x: L - 6, y: yy + 3.5, "text-anchor": "end"}, svg); t.textContent = +v.toFixed(v < 10 ? 1 : 0);
+  }
+  const band = (W - L - R) / rows.length, bw = Math.min(26, band * 0.32), gap = 2;
+  rows.forEach((r, i) => {
+    const cx = L + band * (i + 0.5);
+    [[keyA, "var(--tf)", -1, labelA], [keyB, "var(--sg)", 1, labelB]].forEach(([k, c, side, lab]) => {
+      const v = r[k], x = side < 0 ? cx - gap / 2 - bw : cx + gap / 2, h = y(0) - y(v);
+      if (h >= 8) el("path", {d: `M${x},${y(0)} v${-(h - 4)} q0,-4 4,-4 h${bw - 8} q4,0 4,4 v${h - 4} z`, fill: c}, svg);
+      else el("rect", {x, y: y(0) - Math.max(h, 1.5), width: bw, height: Math.max(h, 1.5), fill: c}, svg);
+      const val = el("text", {x: x + bw / 2, y: y(v) - 5, "text-anchor": "middle", class: "val"}, svg); val.textContent = v >= 100 ? Math.round(v) : v;
+      const hit = el("rect", {x: x - 3, y: T, width: bw + 6, height: y(0) - T, fill: "transparent", tabindex: 0}, svg);
+      const show = ev => { tip.hidden = false; tip.innerHTML = `<b>${r.d}</b><br>${lab}: ${v} ${unit}<br>${labelA === lab ? labelB : labelA}: ${r[k === keyA ? keyB : keyA]} ${unit}`; const b = (ev.clientX ? ev : hit.getBoundingClientRect()); const cxp = ev.clientX ?? (b.left + b.width / 2), cyp = ev.clientY ?? b.top; tip.style.left = Math.min(cxp + 12, innerWidth - 270) + "px"; tip.style.top = (cyp - 50) + "px"; };
+      hit.addEventListener("pointermove", show); hit.addEventListener("focus", show);
+      hit.addEventListener("pointerleave", () => tip.hidden = true); hit.addEventListener("blur", () => tip.hidden = true);
+    });
+    const t = el("text", {x: cx, y: H - 8, "text-anchor": "middle"}, svg); t.textContent = r.d;
+  });
+  el("line", {x1: L, x2: W - R, y1: y(0), y2: y(0), stroke: "var(--ink-3)", "stroke-width": 1}, svg);
+}
+bars("c-prose", D, "tp", "sp", "tok/s", "TensorFold", "SGLang");
+bars("c-code", D, "tc", "sc", "tok/s", "TensorFold", "SGLang");
+bars("c-ttft", D, "tt", "st", "s", "TensorFold", "SGLang");
+bars("c-short", SHORT, "t", "s", "tok/s", "TensorFold", "SGLang");
+const tb = document.querySelector("#t-all tbody");
+D.forEach(r => { const tr = document.createElement("tr"); tr.innerHTML = `<td>${r.d}</td><td>${r.tp}</td><td>${r.sp}</td><td>${r.tc}</td><td>${r.sc}</td><td>${r.tt}</td><td>${r.st}</td>`; tb.appendChild(tr); });
+</script>
