@@ -83,6 +83,8 @@ bash scripts/serve4.sh start
 
 ## Faster prompt reading (2026-10-05)
 
+![Cold time to first token on four DGX Sparks, 2026-10-05: 160k prompt 97.4–99.8 s (2026-10-04) → 74.6–75.2 s (split + overlap) → 38.8–39.6 s (pipelined), SGLang 48.1–52.1 s; 20k prompt 12.9–14.2 → 9.4–9.5 → 5.8–6.8 s, SGLang 5.3–5.5 s](../../../docs/images/dsv41-prefill-2026-10-05.webp)
+
 Patch `0004` (on our fork's `prefill-speed` branch, after `four-sparks`) adds three opt-in switches; we run all three:
 
 ```bash
