@@ -35,21 +35,20 @@ Read these with the differences in mind:
 
 ## Getting it
 
-**The four-Spark support is not in jayleaton's repository yet.** A pull request is pending (patch `0003` + a
-four-Spark launcher + docs). Until it merges, apply [`four-sparks-recipe.patch`](four-sparks-recipe.patch) from this
-folder to his repository; it adds exactly what the PR adds:
+**The four-Spark support is not in jayleaton's repository yet.** A [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) is pending (patch `0003`,
+a four-Spark launcher and docs). Until it merges, clone our fork's `four-sparks` branch: his repository with exactly
+what the PR adds.
 
 ```bash
-git clone --recurse-submodules https://github.com/jayleaton/deepseek-v41-tensorfold-spark
+git clone --recurse-submodules -b four-sparks https://github.com/neko-legends/deepseek-v41-tensorfold-spark
 cd deepseek-v41-tensorfold-spark
-git checkout 0c055b1                                     # the commit the patch was made against
-git apply /path/to/spark-bench/models/deepseek-v4.1-flash/tensorfold-4x/four-sparks-recipe.patch
 ```
 
-It adds `patches/0003-four-sparks.patch` (the engine changes, applied at image build after 0001 and 0002),
-`scripts/serve4.sh`, `scripts/keeper4.sh`, `config/tp4.env.example` and `docs/FOUR_SPARKS.md`, and fixes two things in
-the recipe (the Dockerfile's xgrammar version print, and `pack_engram.py` reading the pack's nested `text_config`).
-Once the PR merges, use his repository directly.
+It adds `patches/0003-four-sparks.patch` (the engine changes; the Dockerfile applies every `patches/*.patch` in order
+when it builds the image, so there is nothing to apply by hand), `scripts/serve4.sh`, `scripts/keeper4.sh`,
+`config/tp4.env.example` and `docs/FOUR_SPARKS.md`, and fixes two things in the recipe (the Dockerfile's xgrammar
+version print, and `pack_engram.py` reading the pack's nested `text_config`). Once the PR merges, use his repository
+directly.
 
 ## Setup on four Sparks
 
@@ -68,11 +67,11 @@ python3 scripts/pack_engram.py --src <deepseek-ai/DeepSeek-V4.1-Flash> --config 
 # 3. image, config, copy to the workers, CUDA extensions
 docker build -f docker/Dockerfile -t dsv41-tensorfold:tp4 .
 cp config/prod.env.example config/prod.env && cp config/tp4.env.example config/tp4.env    # fill in both
-scripts/serve4.sh ship
-scripts/serve4.sh prebuild
+bash scripts/serve4.sh ship
+bash scripts/serve4.sh prebuild
 
 # 4. serve; the first start writes ~50 GB of prepared weights a node (~5 min), later starts take ~35 s
-scripts/serve4.sh start
+bash scripts/serve4.sh start
 ```
 
 `docs/FOUR_SPARKS.md` (in the patched repository) explains each setting. What bit us on the first boot:
