@@ -31,7 +31,7 @@ THEMES = {
 def style(t):
     plt.rcParams.update({
         "font.family": ["Inter", "DejaVu Sans"], "font.size": 12,
-        "svg.fonttype": "path", "axes.edgecolor": t["grid"],
+        "svg.fonttype": "path", "svg.hashsalt": "spark-bench", "axes.edgecolor": t["grid"],
         "axes.labelcolor": t["ink2"], "xtick.color": t["ink2"], "ytick.color": t["ink2"],
         "text.color": t["ink"],
     })
@@ -83,7 +83,7 @@ def legend(fig, t, items, y=0.075):
 
 
 def save(fig, name, theme):
-    fig.savefig(OUT / f"lane-{name}-{theme}.svg", facecolor=fig.get_facecolor())
+    fig.savefig(OUT / f"lane-{name}-{theme}.svg", facecolor=fig.get_facecolor(), metadata={"Date": None})
     plt.close(fig)
 
 
@@ -98,17 +98,17 @@ def two_panel(t):
 def tensorfold(t, theme):
     fig, a, b = two_panel(t)
     frame(fig, t, "DeepSeek V4.1 Flash · TensorFold · 4× Spark",
-          "Uncensored 2.9-bit EXL3 · serving since 2026-10-04 · prompt pipeline 2026-10-05")
+          "Uncensored 2.9-bit EXL3 · serving since 2026-10-04 · prompt pipeline 2026-10-05 · G19 engine in test")
     axclean(a, t, "Writing speed  (tok/s, higher is better)")
     hbars(a, t, ["Prose", "Code", "4 users"],
           [("TensorFold", [63.4, 100.2, 119.2], "new", None),
            ("SGLang TP4/EP2", [37.8, 57.4, 75.7], "old", None)], xmax=145)
     axclean(b, t, "Cold 160k-token prompt  (s, lower is better)")
-    hbars(b, t, ["2026-10-04", "2026-10-05\npipelined", "SGLang"],
-          [("", [98.6, 39.2, 50.1], "new", ["97–100 s", "39 s", "48–52 s"])], xmax=125)
-    b.patches[0].set_color(t["old"]); b.patches[2].set_color(t["old"])
-    b.texts[0].set_color(t["ink2"]); b.texts[2].set_color(t["ink2"])
-    b.texts[0].set_fontweight("normal"); b.texts[2].set_fontweight("normal")
+    hbars(b, t, ["2026-10-04", "10-05 pipelined", "10-05 G19 (test)", "SGLang"],
+          [("", [98.6, 39.1, 36.4, 50.1], "new", ["97–100 s", "39 s", "36–37 s", "48–52 s"])], xmax=125)
+    for i in (0, 3):
+        b.patches[i].set_color(t["old"]); b.texts[i].set_color(t["ink2"]); b.texts[i].set_fontweight("normal")
+    b.patches[2].set_alpha(0.55)
     legend(fig, t, [("TensorFold (ours, 4 Sparks)", "new"), ("SGLang TP4/EP2 · earlier build", "old")])
     fig.text(0.97, 0.075, "decode: geometric mean over 1k–160k prompts", fontsize=10.5,
              color=t["muted"], ha="right", va="center")

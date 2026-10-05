@@ -126,6 +126,10 @@ Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifa
 failures unrelated to four Sparks; the image built from a fresh clone; the Spark test windows):
 [the fork's README](https://github.com/neko-legends/deepseek-v41-tensorfold-spark#how-it-was-tested-2026-10-05).
 
+## In test 2026-10-05: Jay's G19 engine
+
+Our four-Spark port of his newer engine is on the fork's [`g19` branch](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/tree/g19). First numbers, one boot each: cold 160k prompt **36.0–36.9 s** (live 39.0–39.3 s), 20k 5.3–6.0 s, decode within noise. It goes live only after the full checks (needles to ~405k, gates, wide sampling, images, 420k context). [Report](../../../artifacts/tensorfold-v41-g19-20261005/REPORT.md).
+
 ## Our installation (forge, anvil, ember, flame)
 
 | | |

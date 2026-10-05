@@ -67,6 +67,7 @@ That history is the point. When a new model comes out, the next engineer (or the
 - ⚡ **1.7× SGLang's decode** at every prompt length from 1k to 160k: jayleaton's engine, ported by us to four Sparks.
 - 🏭 **Long prompts run as a pipeline** across the Sparks: a cold 160k-token prompt takes 39 s (was 100 s).
 - 🛠️ **The bugs from Jay's review are fixed** (crash at `top_k` above 32,256): same replies byte for byte, same speed.
+- 🧪 **In test: Jay's newer engine (G19) on four Sparks** reads a cold 160k prompt in 36–37 s (~7% faster); writing speed within noise. [First numbers](artifacts/tensorfold-v41-g19-20261005/REPORT.md).
 
 📦 [Recipe: our four-Spark fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [decode](artifacts/tensorfold-v41-4x-20261004/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
 
