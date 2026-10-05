@@ -35,7 +35,7 @@ Read these with the differences in mind:
 
 ## Getting it
 
-**The four-Spark support is not in jayleaton's repository yet.** A [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) is pending (patch `0003`,
+**The four-Spark support is not in jayleaton's repository yet.** Jay reviewed our [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) on 2026-10-05 and requested changes (patch `0003`,
 a four-Spark launcher and docs). Until it merges, clone our fork's `four-sparks` branch: his repository with exactly
 what the PR adds.
 

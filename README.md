@@ -16,7 +16,7 @@ Checks on the pipelined server: a code word hidden at 30 / 60 / 85% of 20k / 80k
 
 ![TensorFold on four DGX Sparks vs SGLang TP4/EP2, 2026-10-04](docs/images/dsv41-tensorfold-4x-2026-10-04.webp)
 
-> **Four-Spark support is not in jayleaton's repository yet.** A [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) is pending. Until it merges, use our fork's [`four-sparks` branch](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/tree/four-sparks): it is his repository plus the engine patch, the four-Spark launcher and the docs ([steps](models/deepseek-v4.1-flash/tensorfold-4x/README.md#getting-it)). After the merge, use his repository directly.
+> **Four-Spark support is not in jayleaton's repository yet.** Jay reviewed our [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) on 2026-10-05 (changes requested: his engine has moved on and he prefers four-Spark support opt-in or in our fork). Use our fork's [`four-sparks` branch](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/tree/four-sparks): it is his repository plus the engine patch, the four-Spark launcher and the docs ([steps](models/deepseek-v4.1-flash/tensorfold-4x/README.md#getting-it)). After the merge, use his repository directly.
 
 ---
 
