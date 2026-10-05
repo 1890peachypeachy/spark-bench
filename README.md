@@ -1,7 +1,7 @@
 # spark-bench
 
 > ### 4 DGX Sparks. One shared TP4 world. Now serving: DeepSeek V4.1 Flash, **uncensored**, on **TensorFold** (since 2026-10-04).
-> **What's live (2026-10-05):** [jayleaton's TensorFold DeepSeek V4.1 engine](https://github.com/jayleaton/deepseek-v41-tensorfold-spark), ported by us to **four Sparks (TP=4)**, on dealignai's 2.9-bit uncensored EXL3 pack. **1.7× the decode speed** of the SGLang TP4/EP2 profile it replaced, at every prompt length from 1k to 160k. **[Setup, numbers and limits →](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** **New 2026-10-05:** long prompts are read as a pipeline across the four Sparks: a cold 160k-token prompt in **~39 s** (was ~100 s on 2026-10-04; SGLang 52 s).
+> **What's live (2026-10-05):** [jayleaton's TensorFold DeepSeek V4.1 engine](https://github.com/jayleaton/deepseek-v41-tensorfold-spark), ported by us to **four Sparks (TP=4)**, on dealignai's 2.9-bit uncensored EXL3 pack. **1.7× the decode speed** of the SGLang TP4/EP2 profile it replaced, at every prompt length from 1k to 160k. **Recipe: [neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)** (our four-Spark fork of Jay's repository) · **[Setup, numbers and limits →](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** **New 2026-10-05:** long prompts are read as a pipeline across the four Sparks: a cold 160k-token prompt in **~39 s** (was ~100 s on 2026-10-04; SGLang 52 s).
 
 Running big MoE models across **four NVIDIA DGX Sparks** (GB10) as one TP=4
 world over a switched CX-7 RoCE fabric — the recipes, the launchers, the
@@ -13,7 +13,7 @@ prerequisites, reproduction limits and operator/agent handoff instructions:
 
 | Lane | Stack | Status | Headline (this cluster) |
 |---|---|---|---|
-| **[DeepSeek V4.1 Flash — uncensored, TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | **TensorFold (jayleaton's engine, our TP=4 port)** · EXL3 2.9 bpw · pipelined prompt reading · exact DSpark · Engram on NVMe · 4 × 300k context | **serving** (`forge:8000`) since 2026-10-04; pipelined prompt reading since 2026-10-05 | 63 tok/s prose / 100 code across 1k–160k · 119 tok/s at 4 streams · cold 160k prompt **39 s** (was 100 s; SGLang 52 s) · cold 20k prompt 6 s · reports: [decode](artifacts/tensorfold-v41-4x-20261004/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md) |
+| **[DeepSeek V4.1 Flash — uncensored, TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | **TensorFold (jayleaton's engine, [our TP=4 fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark))** · EXL3 2.9 bpw · pipelined prompt reading · exact DSpark · Engram on NVMe · 4 × 300k context | **serving** (`forge:8000`) since 2026-10-04; pipelined prompt reading since 2026-10-05 | 63 tok/s prose / 100 code across 1k–160k · 119 tok/s at 4 streams · cold 160k prompt **39 s** (was 100 s; SGLang 52 s) · cold 20k prompt 6 s · reports: [decode](artifacts/tensorfold-v41-4x-20261004/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md) |
 | [DeepSeek V4.1 Flash — uncensored, SGLang](models/deepseek-v4.1-flash/README.md) | SGLang (Mia kit) · FP8/MXFP4 · TP4+EP2 · DSPARK k=3 · Engram on NVMe · 1M configured context | stopped 2026-10-04 (rollback); EP2 selected 2026-10-02 | 37–38 tok/s prose / 54–62 code across 1k–160k · short-prompt C4 pilot 75.7 tok/s · [qualification limits](artifacts/tensorfold-v41-depth-20261001/REPORT.md) |
 | [DeepSeek V4.1 Flash — vLLM champion](#deepseek-v4-1-flash) | vLLM · native FP4 experts / FP8 dense · TP4+EP · DSpark k=5 greedy draft · Engram on NVMe · 420k ctx | staged fallback; recipe and results retained | 51.1 tok/s C1 mean (code 61–71, math 73) · ~105 tok/s aggregate @4 · cold prefill ~1.5k tok/s |
 | **[Qwen 3.8 Flash Next](#qwen-3-8-flash)** | vLLM · official NVIDIA NVFP4 · TP4+EP · MTP k=4 + GEMV · 262k ctx | **stopped 2026-09-10** (world moved to DeepSeek V4.1 Flash); recipe and results retained | 91.3 tok/s C1 code · 600.5 tok/s aggregate @16; C1 prose −7.9% vs fresh k2 baseline |
@@ -30,6 +30,8 @@ chronological order. Every number carries its date, its ruler, and its config.
 
 ---
 
+**2026-10-05 (11:30) — four-Spark recipe forked off; the bugs Jay's review found are fixed and live.** Our four-Spark support now lives in **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)** (Jay's repository plus three engine patches). Patch `0005` fixes the uneven-slice bugs from his review; the worst bit our own server: a sampled request with more candidates than the narrow vocabulary slices hold (`top_k` above 32,256, or a JSON request with nucleus sampling) crashed ranks 2 and 3. Now the same replies byte for byte, the same speed, and every wide request answers. [Report](artifacts/tensorfold-v41-fixes-20261005/REPORT.md) · [what changed](models/deepseek-v4.1-flash/tensorfold-4x/README.md#fixed-2026-10-05-the-bugs-jays-review-found).
+
 **2026-10-05 — prompt reading 2.5× faster: the four Sparks read long prompts as an assembly line.** Each Spark now also holds a quarter of the model's prompt-reading layers at full width (~27 GB more memory a node) and a prompt's 2,048-token chunks flow Spark 1 → 4, instead of every Spark computing a quarter of every layer. Decode speed is unchanged; the reading arithmetic rounds like one Spark instead of four (as different as the engine's own fast vs exact kernels), and the replies pass the same checks. Cold time to first token, each build with an empty cache:
 
 | Prompt | 2026-10-04 (as published) | 2026-10-05 split + overlap | **2026-10-05 pipelined** | SGLang TP4/EP2 |
@@ -45,7 +47,7 @@ Checks on the pipelined server: a code word hidden at 30 / 60 / 85% of 20k / 80k
 
 ![TensorFold on four DGX Sparks vs SGLang TP4/EP2, 2026-10-04](docs/images/dsv41-tensorfold-4x-2026-10-04.webp)
 
-> **Four-Spark support is not in jayleaton's repository yet.** Jay reviewed our [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) on 2026-10-05 (changes requested: his engine has moved on and he prefers four-Spark support opt-in or in our fork). Use our fork's [`four-sparks` branch](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/tree/four-sparks): it is his repository plus the engine patch, the four-Spark launcher and the docs ([steps](models/deepseek-v4.1-flash/tensorfold-4x/README.md#getting-it)). After the merge, use his repository directly.
+> **Four-Spark recipe: [neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)** (2026-10-05). Jay reviewed our [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6): his engine has moved on (G14–G19, built around two ranks) and he preferred four-Spark support outside his default image, so it lives in our fork, his repository plus three engine patches (four Sparks, pipelined prompt reading, and fixes for the uneven-slice bugs his review found). Two Sparks: use [his repository](https://github.com/jayleaton/deepseek-v41-tensorfold-spark).
 
 ---
 

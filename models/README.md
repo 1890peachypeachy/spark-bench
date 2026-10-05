@@ -5,7 +5,7 @@ Status below is dated 2026-10-02, not a live health signal.
 
 | Model | Status | Entry point |
 |---|---|---|
-| DeepSeek V4.1 Flash | Serving on TensorFold, four Sparks (TP=4), 2.9-bit EXL3, since 2026-10-04 (pipelined prompt reading since 2026-10-05: cold 160k prompt 39 s); SGLang TP4/EP2 kept as rollback | [TensorFold guide](deepseek-v4.1-flash/tensorfold-4x/README.md) · [V4.1 guide](deepseek-v4.1-flash/README.md) |
+| DeepSeek V4.1 Flash | Serving on TensorFold, four Sparks (TP=4), 2.9-bit EXL3, since 2026-10-04 (pipelined prompt reading since 2026-10-05: cold 160k prompt 39 s); SGLang TP4/EP2 kept as rollback | [TensorFold guide](deepseek-v4.1-flash/tensorfold-4x/README.md) · [recipe (our fork)](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · [V4.1 guide](deepseek-v4.1-flash/README.md) |
 | Qwen 3.8 Flash Next | Stopped; archived recipe | [Qwen guide](qwen-3.8-flash-next/README.md) |
 | GLM 5.3 Flash | Stopped; archived recipes | [GLM guide](glm-5.3-flash/README.md) |
 | DeepSeek V4 Flash | Not serving; archived recipe | [DeepSeek guide](deepseek-v4-flash/README.md) |

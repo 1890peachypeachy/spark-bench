@@ -1,11 +1,12 @@
 # DeepSeek V4.1 Flash on TensorFold, 4× DGX Spark
 
-**Status (2026-10-05): serving on `forge:8000`, with pipelined prompt reading ([below](#faster-prompt-reading-2026-10-05)).** This replaced the SGLang TP4/EP2 deployment the same day; that
+**Status (2026-10-05): serving on `forge:8000`, with pipelined prompt reading ([below](#faster-prompt-reading-2026-10-05)) and the review fixes ([below](#fixed-2026-10-05-the-bugs-jays-review-found)).** This replaced the SGLang TP4/EP2 deployment the same day; that
 deployment is stopped, not removed, and is the rollback (below).
 
 The engine is [jayleaton/deepseek-v41-tensorfold-spark](https://github.com/jayleaton/deepseek-v41-tensorfold-spark):
 TensorFold 0.6.0 plus his two-Spark DeepSeek V4.1 family, with exact DSpark speculative decoding, CED prompt replay,
-Engram rows read from NVMe, sessions, structured output and DSML tool calls. We ported it to four Sparks. Weights:
+Engram rows read from NVMe, sessions, structured output and DSML tool calls. We ported it to four Sparks; the recipe is
+our fork, **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)**. Weights:
 [`dealignai/DeepSeek-V4.1-Flash-UNCENSORED-EXL3-2.9bpw`](https://huggingface.co/dealignai/DeepSeek-V4.1-Flash-UNCENSORED-EXL3-2.9bpw)
 (~197 GiB, the same uncensoring team and method as the FP8 checkpoint SGLang served).
 
@@ -35,20 +36,22 @@ Read these with the differences in mind:
 
 ## Getting it
 
-**The four-Spark support is not in jayleaton's repository yet.** Jay reviewed our [pull request](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6) on 2026-10-05 and requested changes (patch `0003`,
-a four-Spark launcher and docs). Until it merges, clone our fork's `four-sparks` branch: his repository with exactly
-what the PR adds.
+**Recipe: [neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)**,
+our four-Spark fork of jayleaton's two-Spark repository. Jay reviewed our pull request
+([#6](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6)) on 2026-10-05; his engine has moved on (G14-G19,
+built around two ranks) and he preferred four-Spark support to live outside his default image, so we keep it in the
+fork (decided 2026-10-05). Two Sparks: use [his repository](https://github.com/jayleaton/deepseek-v41-tensorfold-spark).
 
 ```bash
-git clone --recurse-submodules -b four-sparks https://github.com/neko-legends/deepseek-v41-tensorfold-spark
+git clone --recurse-submodules https://github.com/neko-legends/deepseek-v41-tensorfold-spark
 cd deepseek-v41-tensorfold-spark
 ```
 
-It adds `patches/0003-four-sparks.patch` (the engine changes; the Dockerfile applies every `patches/*.patch` in order
-when it builds the image, so there is nothing to apply by hand), `scripts/serve4.sh`, `scripts/keeper4.sh`,
-`config/tp4.env.example` and `docs/FOUR_SPARKS.md`, and fixes two things in the recipe (the Dockerfile's xgrammar
-version print, and `pack_engram.py` reading the pack's nested `text_config`). Once the PR merges, use his repository
-directly.
+The fork is his repository (engine G13) plus three engine patches the Dockerfile applies in order, so there is
+nothing to apply by hand: `0003` four Sparks (TP=4), `0004` pipelined prompt reading, `0005` the uneven-slice bugs his
+review found (2026-10-05, [below](#fixed-2026-10-05-the-bugs-jays-review-found)); plus `scripts/serve4.sh`,
+`scripts/keeper4.sh`, `config/tp4.env.example` (the three prompt-reading switches on), `docs/FOUR_SPARKS.md` and
+`docs/PREFILL_SPEED.md`. His two-Spark README is kept as `docs/TWO_SPARKS.md`.
 
 ## Setup on four Sparks
 
@@ -74,8 +77,8 @@ bash scripts/serve4.sh prebuild
 bash scripts/serve4.sh start
 ```
 
-`docs/FOUR_SPARKS.md` (in the patched repository) explains each setting. What bit us on the first boot:
-- `TF_DSV41_PREFILL_ATTN_BMQ=16`: 16 heads a rank at TP=4, and 32 does not divide.
+[`docs/FOUR_SPARKS.md`](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/blob/main/docs/FOUR_SPARKS.md) explains each setting. What bit us on the first boot:
+- `TF_DSV41_PREFILL_ATTN_BMQ=16`: 16 heads a rank at TP=4, and 32 does not divide (since `0005` a 32 is clamped to 16).
 - List both CX7 functions in `NCCL_IB_HCA`: a 2,048-row prompt exchange drops from 5.6 ms to 2.9 ms.
 - A node with an unplugged port holding an address on the link subnet can drop TCP to that node (Linux keeps
   link-down routes): use the other subnet for ssh and NCCL sockets.
@@ -85,7 +88,7 @@ bash scripts/serve4.sh start
 
 ![Cold time to first token on four DGX Sparks, 2026-10-05: 160k prompt 97.4–99.8 s (2026-10-04) → 74.6–75.2 s (split + overlap) → 38.8–39.6 s (pipelined), SGLang 48.1–52.1 s; 20k prompt 12.9–14.2 → 9.4–9.5 → 5.8–6.8 s, SGLang 5.3–5.5 s](../../../docs/images/dsv41-prefill-2026-10-05.webp)
 
-Patch `0004` (on our fork's `prefill-speed` branch, after `four-sparks`) adds three opt-in switches; we run all three:
+Patch `0004` adds three opt-in switches; we run all three (they are on in the fork's `config/tp4.env.example`):
 
 ```bash
 TF_DSV41_PREFILL_PIPE=1024      # long prompts through the four Sparks as a pipeline (+~27 GB GPU memory a node)
@@ -95,14 +98,35 @@ TF_DSV41_PREFILL_OVERLAP=1024   # short prompts: exchanges behind compute (same 
 
 Put them in `config/tp4.env` and restart (`bash scripts/serve4.sh stop && bash scripts/serve4.sh start`). A cold 160k-token
 prompt: ~83 s → ~39 s; 20k: ~10.5 s → ~6 s. Memory: `MemAvailable` drops from ~50 to ~26 GB a node. How it works, the
-numbers and the checks: `docs/PREFILL_SPEED.md` in the patched repository, and
+numbers and the checks: [`docs/PREFILL_SPEED.md`](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/blob/main/docs/PREFILL_SPEED.md), and
 [artifacts/tensorfold-v41-prefill-20261005](../../../artifacts/tensorfold-v41-prefill-20261005/REPORT.md).
+
+## Fixed 2026-10-05: the bugs Jay's review found
+
+Patch `0005` in the fork, serving since 2026-10-05 11:30. Jay's review of our pull request found bugs that only
+uneven slices or four ranks expose; the worst one bit our own server. A sampled request asking for more candidates
+than the narrow vocabulary slices hold (`top_k` above 32,256, or a JSON request with nucleus sampling, which asks for
+the whole vocabulary) made the four Sparks exchange unequal sizes: the old build answered `top_k` 40,000 with an
+illegal memory access on ranks 2 and 3 and the server went down. Fixed, together with the trimmed draft head, the plan
+link's rank handshake, `--tp 4` scope, the BMQ clamp and the session tier's world size. Testing it on the Sparks
+found one more: the first very wide request after a boot still timed out the followers until the candidate kernels
+were warmed at boot.
+
+| check on the 0005 build | result |
+| --- | --- |
+| 20k / 160k replies vs the 0004 build | byte-identical; cold first token 5.8-6.8 s / 38.8-39.0 s, as before |
+| decode, A/B in one window (two boots each, alternating) | the same within run-to-run noise |
+| hidden code word at 30 / 60 / 85% of 20k / 80k / 158k prompts; short gates | 3 / 3; 7 / 7 |
+| nucleus, nucleus + min_p, `top_k` 40,000 and 32,000, `top_k` 20, JSON nucleus | 6 / 6 (the 0004 build: down at `top_k` 40,000) |
+| `top_k` 40,000 as the first request after a boot | answers |
+
+Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifacts/tensorfold-v41-fixes-20261005/REPORT.md).
 
 ## Our installation (forge, anvil, ember, flame)
 
 | | |
 | --- | --- |
-| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4pipe` with the three switches above since 2026-10-05 05:07 (rollback: `/home/jun/tf4/pf/tp4.env.before-pipeline`) |
+| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4fix4` (the fork's `main`: patches 0001-0005, the three switches above) since 2026-10-05 11:30 (rollback: `/home/jun/tf4/pf/tp4.env.before-fix` for the 0004 build, `/home/jun/tf4/pf/tp4.env.before-pipeline` for 0003) |
 | keeper | `/home/jun/tf4/keeper.sh` from cron: starts 4 min after a reboot, restarts after 3 failed health checks; pauses while `/home/jun/tf4/maintenance` is newer than an hour or an SGLang head container runs |
 | model names | `deepseek-v4.1-flash` (alias) and `DeepSeek-V4.1-Flash-TF`; thinking on by default (effort 75), `chat_template_kwargs.thinking=false` turns it off |
 | rollback to SGLang | `touch /home/jun/tf4/maintenance && /home/jun/tf4/serve4.sh stop && python3 /home/jun/tensorfold-native-20261002/restore_ep2.py` (the keeper stands down while SGLang runs) |
