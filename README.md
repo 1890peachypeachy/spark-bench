@@ -3,6 +3,33 @@
 > ### 4 DGX Sparks. One shared TP4 world. Now serving: DeepSeek V4.1 Flash, **uncensored**, on **TensorFold** (since 2026-10-04).
 > **What's live (2026-10-05):** [jayleaton's TensorFold DeepSeek V4.1 engine](https://github.com/jayleaton/deepseek-v41-tensorfold-spark), ported by us to **four Sparks (TP=4)**, on dealignai's 2.9-bit uncensored EXL3 pack. **1.7× the decode speed** of the SGLang TP4/EP2 profile it replaced, at every prompt length from 1k to 160k. **[Setup, numbers and limits →](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** **New 2026-10-05:** long prompts are read as a pipeline across the four Sparks: a cold 160k-token prompt in **~39 s** (was ~100 s on 2026-10-04; SGLang 52 s).
 
+Running big MoE models across **four NVIDIA DGX Sparks** (GB10) as one TP=4
+world over a switched CX-7 RoCE fabric — the recipes, the launchers, the
+fabric runbook, and every benchmark we measured along the way, dated.
+
+Every model and stack we have run here, newest first. They share the same four Sparks, so only one serves at a time.
+**[Model directory: start here](models/README.md)** — per-model entry points,
+prerequisites, reproduction limits and operator/agent handoff instructions:
+
+| Lane | Stack | Status | Headline (this cluster) |
+|---|---|---|---|
+| **[DeepSeek V4.1 Flash — uncensored, TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | **TensorFold (jayleaton's engine, our TP=4 port)** · EXL3 2.9 bpw · pipelined prompt reading · exact DSpark · Engram on NVMe · 4 × 300k context | **serving** (`forge:8000`) since 2026-10-04; pipelined prompt reading since 2026-10-05 | 63 tok/s prose / 100 code across 1k–160k · 119 tok/s at 4 streams · cold 160k prompt **39 s** (was 100 s; SGLang 52 s) · cold 20k prompt 6 s · reports: [decode](artifacts/tensorfold-v41-4x-20261004/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md) |
+| [DeepSeek V4.1 Flash — uncensored, SGLang](models/deepseek-v4.1-flash/README.md) | SGLang (Mia kit) · FP8/MXFP4 · TP4+EP2 · DSPARK k=3 · Engram on NVMe · 1M configured context | stopped 2026-10-04 (rollback); EP2 selected 2026-10-02 | 37–38 tok/s prose / 54–62 code across 1k–160k · short-prompt C4 pilot 75.7 tok/s · [qualification limits](artifacts/tensorfold-v41-depth-20261001/REPORT.md) |
+| [DeepSeek V4.1 Flash — vLLM champion](#deepseek-v4-1-flash) | vLLM · native FP4 experts / FP8 dense · TP4+EP · DSpark k=5 greedy draft · Engram on NVMe · 420k ctx | staged fallback; recipe and results retained | 51.1 tok/s C1 mean (code 61–71, math 73) · ~105 tok/s aggregate @4 · cold prefill ~1.5k tok/s |
+| **[Qwen 3.8 Flash Next](#qwen-3-8-flash)** | vLLM · official NVIDIA NVFP4 · TP4+EP · MTP k=4 + GEMV · 262k ctx | **stopped 2026-09-10** (world moved to DeepSeek V4.1 Flash); recipe and results retained | 91.3 tok/s C1 code · 600.5 tok/s aggregate @16; C1 prose −7.9% vs fresh k2 baseline |
+| **[GLM 5.3 Flash](#glm-5-3-flash)** | vLLM · EXL3 4bpw · DFlash2 · 1M ctx | stopped; recipe and results retained | 128.9 tok/s 4-stream agg · 1560 tok/s cold prefill @100k · 96 tok/s structured C1 |
+| **[DeepSeek V4 Flash](#deepseek-v4-flash)** | vLLM · abliterated NVFP4 · MTP | recipe kept, not serving | 136 tok/s C1 median (145.5 peak) · 290.3 engine record · 182 tok/s C4 |
+
+Also here: an optional **[catch-up sidecar](#catch-up-sidecar-optional)** that
+keeps a long chat warm in the local model's prefix cache, and the
+**[fabric runbook](docs/FABRIC.md)** — most "TP4 is slow" reports are fabric
+configuration, not the model.
+
+Newest results are at the top of each lane; older ones follow in reverse
+chronological order. Every number carries its date, its ruler, and its config.
+
+---
+
 **2026-10-05 — prompt reading 2.5× faster: the four Sparks read long prompts as an assembly line.** Each Spark now also holds a quarter of the model's prompt-reading layers at full width (~27 GB more memory a node) and a prompt's 2,048-token chunks flow Spark 1 → 4, instead of every Spark computing a quarter of every layer. Decode speed is unchanged; the reading arithmetic rounds like one Spark instead of four (as different as the engine's own fast vs exact kernels), and the replies pass the same checks. Cold time to first token, each build with an empty cache:
 
 | Prompt | 2026-10-04 (as published) | 2026-10-05 split + overlap | **2026-10-05 pipelined** | SGLang TP4/EP2 |
@@ -49,30 +76,6 @@ EP2 needs the loader changes documented in the guide: full-expert staging nearly
 > **Want the standard (censored) checkpoint?** Use [Mia's recipe](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks) as-is — it is the same world; only the checkpoint and the Engram pack differ.
 > **→ [How we run it, and the fixes it took](#dsv41-sglang-2026-09-14)** · [vLLM champion archive](#deepseek-v4-1-flash) · [Qwen](#qwen-3-8-flash) · [GLM archive](#glm-5-3-flash) · [DeepSeek V4 archive](#deepseek-v4-flash)
 
-Running big MoE models across **four NVIDIA DGX Sparks** (GB10) as one TP=4
-world over a switched CX-7 RoCE fabric — the recipes, the launchers, the
-fabric runbook, and every benchmark we measured along the way, dated.
-
-Three model lanes, kept separate (they share the hardware; they are not simultaneous deployments).
-**[Model directory: start here](models/README.md)** — per-model entry points,
-prerequisites, reproduction limits and operator/agent handoff instructions:
-
-| Lane | Stack | Status | Headline (this cluster) |
-|---|---|---|---|
-| **[DeepSeek V4.1 Flash — uncensored, TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | **TensorFold (jayleaton's engine, our TP=4 port)** · EXL3 2.9 bpw · exact DSpark · Engram on NVMe · 4 × 300k context | **serving** (`forge:8000`) since 2026-10-04 | 63 tok/s prose / 100 code across 1k–160k · 119 tok/s at 4 streams · cold 160k prompt 100 s · [report](artifacts/tensorfold-v41-4x-20261004/REPORT.md) |
-| [DeepSeek V4.1 Flash — uncensored, SGLang](models/deepseek-v4.1-flash/README.md) | SGLang (Mia kit) · FP8/MXFP4 · TP4+EP2 · DSPARK k=3 · Engram on NVMe · 1M configured context | stopped 2026-10-04 (rollback); EP2 selected 2026-10-02 | 37–38 tok/s prose / 54–62 code across 1k–160k · short-prompt C4 pilot 75.7 tok/s · [qualification limits](artifacts/tensorfold-v41-depth-20261001/REPORT.md) |
-| [DeepSeek V4.1 Flash — vLLM champion](#deepseek-v4-1-flash) | vLLM · native FP4 experts / FP8 dense · TP4+EP · DSpark k=5 greedy draft · Engram on NVMe · 420k ctx | staged fallback; recipe and results retained | 51.1 tok/s C1 mean (code 61–71, math 73) · ~105 tok/s aggregate @4 · cold prefill ~1.5k tok/s |
-| **[Qwen 3.8 Flash Next](#qwen-3-8-flash)** | vLLM · official NVIDIA NVFP4 · TP4+EP · MTP k=4 + GEMV · 262k ctx | **stopped 2026-09-10** (world moved to DeepSeek V4.1 Flash); recipe and results retained | 91.3 tok/s C1 code · 600.5 tok/s aggregate @16; C1 prose −7.9% vs fresh k2 baseline |
-| **[GLM 5.3 Flash](#glm-5-3-flash)** | vLLM · EXL3 4bpw · DFlash2 · 1M ctx | stopped; recipe and results retained | 128.9 tok/s 4-stream agg · 1560 tok/s cold prefill @100k · 96 tok/s structured C1 |
-| **[DeepSeek V4 Flash](#deepseek-v4-flash)** | vLLM · abliterated NVFP4 · MTP | recipe kept, not serving | 136 tok/s C1 median (145.5 peak) · 290.3 engine record · 182 tok/s C4 |
-
-Also here: an optional **[catch-up sidecar](#catch-up-sidecar-optional)** that
-keeps a long chat warm in the local model's prefix cache, and the
-**[fabric runbook](docs/FABRIC.md)** — most "TP4 is slow" reports are fabric
-configuration, not the model.
-
-Newest results are at the top of each lane; older ones follow in reverse
-chronological order. Every number carries its date, its ruler, and its config.
 
 ---
 
