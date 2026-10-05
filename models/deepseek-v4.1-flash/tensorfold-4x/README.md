@@ -128,7 +128,7 @@ failures unrelated to four Sparks; the image built from a fresh clone; the Spark
 
 | | |
 | --- | --- |
-| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4fix4` (the fork's `main`: patches 0001-0005, the three switches above) since 2026-10-05 11:30 (rollback: `/home/jun/tf4/pf/tp4.env.before-fix` for the 0004 build, `/home/jun/tf4/pf/tp4.env.before-pipeline` for 0003) |
+| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4m6` (the fork's `main`: patches 0001-0006, the three switches above) since 2026-10-05 13:06 (rollback: `/home/jun/tf4/pf/tp4.env.before-m6` for 0005 alone, `pf/tp4.env.before-fix` for 0004, `pf/tp4.env.before-pipeline` for 0003). `/v1/model_info` and the `vllm:` series on `/metrics` report the 4 request slots; sparkDash (`dgx-dash.service` on eva-core, DGX-dash `4d27fd1`) shows 4, and Eva's router sizes its concurrency from it |
 | keeper | `/home/jun/tf4/keeper.sh` from cron: starts 4 min after a reboot, restarts after 3 failed health checks; pauses while `/home/jun/tf4/maintenance` is newer than an hour or an SGLang head container runs |
 | model names | `deepseek-v4.1-flash` (alias) and `DeepSeek-V4.1-Flash-TF`; thinking on by default (effort 75), `chat_template_kwargs.thinking=false` turns it off |
 | rollback to SGLang | `touch /home/jun/tf4/maintenance && /home/jun/tf4/serve4.sh stop && python3 /home/jun/tensorfold-native-20261002/restore_ep2.py` (the keeper stands down while SGLang runs) |
