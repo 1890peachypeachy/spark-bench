@@ -1,6 +1,6 @@
 # DeepSeek V4.1 Flash on TensorFold, 4× DGX Spark
 
-**Status (2026-10-04): serving on `forge:8000`.** This replaced the SGLang TP4/EP2 deployment the same day; that
+**Status (2026-10-05): serving on `forge:8000`, with pipelined prompt reading ([below](#faster-prompt-reading-2026-10-05)).** This replaced the SGLang TP4/EP2 deployment the same day; that
 deployment is stopped, not removed, and is the rollback (below).
 
 The engine is [jayleaton/deepseek-v41-tensorfold-spark](https://github.com/jayleaton/deepseek-v41-tensorfold-spark):
@@ -19,7 +19,7 @@ Engram rows read from NVMe, sessions, structured output and DSML tool calls. We 
 | Code decode, geometric mean over 1k–160k prompts | **100.2 tok/s** | 57.4 | 1.75× |
 | `dsbench` 4-stream aggregate | **119.2 tok/s** | 75.7 | 1.57× |
 | `dsbench` single-stream median | **62.6 tok/s** | 37.6 | 1.66× |
-| Cold time to first token, 20k / 160k prompt | 14.2 s / 99.8 s | **5.5 s / 52.1 s** | ~2.1× slower |
+| Cold time to first token, 20k / 160k prompt | 14.2 s / 99.8 s (2026-10-05 pipelined: **5.8 s / 38.8 s**) | 5.5 s / 52.1 s | 2026-10-05: ~1.3× faster at 160k |
 | Gates: arithmetic, forced tool call, tool continuation, strict JSON ×3 temperatures, reasoning | all pass | forced tool call fails | |
 
 Per-depth tables, method and raw files: [artifacts/tensorfold-v41-4x-20261004](../../../artifacts/tensorfold-v41-4x-20261004/REPORT.md).
@@ -81,11 +81,26 @@ bash scripts/serve4.sh start
   link-down routes): use the other subnet for ssh and NCCL sockets.
 - Drop the page cache before a start (`MEM_GATE_GIB=104`); on GB10 cached files are GPU memory.
 
+## Faster prompt reading (2026-10-05)
+
+Patch `0004` (on our fork's `prefill-speed` branch, after `four-sparks`) adds three opt-in switches; we run all three:
+
+```bash
+TF_DSV41_PREFILL_PIPE=1024      # long prompts through the four Sparks as a pipeline (+~27 GB GPU memory a node)
+TF_DSV41_INDEX_SPLIT=256        # short prompts: each Spark selects for a quarter of the rows (same bits)
+TF_DSV41_PREFILL_OVERLAP=1024   # short prompts: exchanges behind compute (same bits)
+```
+
+Put them in `config/tp4.env` and restart (`bash scripts/serve4.sh stop && bash scripts/serve4.sh start`). A cold 160k-token
+prompt: ~83 s → ~39 s; 20k: ~10.5 s → ~6 s. Memory: `MemAvailable` drops from ~50 to ~26 GB a node. How it works, the
+numbers and the checks: `docs/PREFILL_SPEED.md` in the patched repository, and
+[artifacts/tensorfold-v41-prefill-20261005](../../../artifacts/tensorfold-v41-prefill-20261005/REPORT.md).
+
 ## Our installation (forge, anvil, ember, flame)
 
 | | |
 | --- | --- |
-| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x) |
+| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4pipe` with the three switches above since 2026-10-05 05:07 (rollback: `/home/jun/tf4/pf/tp4.env.before-pipeline`) |
 | keeper | `/home/jun/tf4/keeper.sh` from cron: starts 4 min after a reboot, restarts after 3 failed health checks; pauses while `/home/jun/tf4/maintenance` is newer than an hour or an SGLang head container runs |
 | model names | `deepseek-v4.1-flash` (alias) and `DeepSeek-V4.1-Flash-TF`; thinking on by default (effort 75), `chat_template_kwargs.thinking=false` turns it off |
 | rollback to SGLang | `touch /home/jun/tf4/maintenance && /home/jun/tf4/serve4.sh stop && python3 /home/jun/tensorfold-native-20261002/restore_ep2.py` (the keeper stands down while SGLang runs) |

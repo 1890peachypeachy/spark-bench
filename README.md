@@ -1,7 +1,16 @@
 # spark-bench
 
 > ### 4 DGX Sparks. One shared TP4 world. Now serving: DeepSeek V4.1 Flash, **uncensored**, on **TensorFold** (since 2026-10-04).
-> **What's live (2026-10-04):** [jayleaton's TensorFold DeepSeek V4.1 engine](https://github.com/jayleaton/deepseek-v41-tensorfold-spark), ported by us to **four Sparks (TP=4)**, on dealignai's 2.9-bit uncensored EXL3 pack. **1.7× the decode speed** of the SGLang TP4/EP2 profile it replaced, at every prompt length from 1k to 160k. **[Setup, numbers and limits →](models/deepseek-v4.1-flash/tensorfold-4x/README.md)**
+> **What's live (2026-10-05):** [jayleaton's TensorFold DeepSeek V4.1 engine](https://github.com/jayleaton/deepseek-v41-tensorfold-spark), ported by us to **four Sparks (TP=4)**, on dealignai's 2.9-bit uncensored EXL3 pack. **1.7× the decode speed** of the SGLang TP4/EP2 profile it replaced, at every prompt length from 1k to 160k. **[Setup, numbers and limits →](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** **New 2026-10-05:** long prompts are read as a pipeline across the four Sparks: a cold 160k-token prompt in **~39 s** (was ~100 s on 2026-10-04; SGLang 52 s).
+
+**2026-10-05 — prompt reading 2.5× faster: the four Sparks read long prompts as an assembly line.** Each Spark now also holds a quarter of the model's prompt-reading layers at full width (~27 GB more memory a node) and a prompt's 2,048-token chunks flow Spark 1 → 4, instead of every Spark computing a quarter of every layer. Decode speed is unchanged; the reading arithmetic rounds like one Spark instead of four (as different as the engine's own fast vs exact kernels), and the replies pass the same checks. Cold time to first token, each build with an empty cache:
+
+| Prompt | 2026-10-04 (as published) | 2026-10-05 split + overlap | **2026-10-05 pipelined** | SGLang TP4/EP2 |
+| --- | ---: | ---: | ---: | ---: |
+| 20k | 12.9–14.2 s | 9.4–9.5 s | **5.8–6.8 s** | 5.3–5.5 s |
+| 160k | 97.4–99.8 s | 74.6–75.2 s | **38.8–39.6 s** | 48.1–52.1 s |
+
+Checks on the pipelined server: a code word hidden at 30 / 60 / 85% of 20k / 80k / 158k-token prompts found 3/3; the short gates 7/7. Method, the two smaller changes and what did not work: [report](artifacts/tensorfold-v41-prefill-20261005/REPORT.md) · [setup](models/deepseek-v4.1-flash/tensorfold-4x/README.md#faster-prompt-reading-2026-10-05).
 
 **2026-10-04 — TensorFold on four Sparks replaces SGLang.** Same four nodes, same prompts and clients, isolated runs: prose decode **63.4 vs 37.8 tok/s** (1.68×), code **100.2 vs 57.4** (1.75×) as geometric means over 1k–160k prompts; four users at once **119.2 vs 75.7 tok/s**; every gate passes, including the forced tool call SGLang failed. The weak spot is reading a long new prompt: **99.8 s vs 52.1 s at 160k** (the exchanges between the four Sparks are not yet overlapped with compute). The weights differ: 2.9-bit EXL3 against SGLang's FP8/FP4, and fewer bytes per token is most of the gain. One boot; expert pruning on (lossy, ~5%). [Full report and raw files](artifacts/tensorfold-v41-4x-20261004/REPORT.md).
 
