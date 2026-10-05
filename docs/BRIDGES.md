@@ -55,7 +55,9 @@ has never been read, it defaults to ON. A malformed `disabledAgents` (not a
 list of names) fails closed: no warms run until a well-formed body arrives.
 
 How an abort reaches the engine: the sidecar shuts down its TCP connection,
-and the engine aborts the request when it sees the disconnect. Each warm
+and the engine aborts the request when it sees the disconnect. The socket is
+held from connect onwards, so the abort also cuts a body read after the engine
+sent `Connection: close` (http.client drops `conn.sock` at that point). Each warm
 carries `X-Request-Id: kvwarm-…`. The sidecar logs `warm kvwarm-… aborted`,
 so the engine's `Aborted request …kvwarm-…` line can be matched to it. vLLM
 has no HTTP abort endpoint, and killing the shared engine is not acceptable,

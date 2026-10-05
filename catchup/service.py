@@ -166,8 +166,7 @@ class WarmupAborted(Exception):
     """The admin switch went off while this warm was in flight."""
 
 
-def _shutdown_socket(conn: HTTPConnection) -> None:
-    sock = getattr(conn, "sock", None)
+def _shutdown_socket(sock: socket.socket | None) -> None:
     if sock is None:
         return
     try:
@@ -470,11 +469,18 @@ class CatchupService:
         request_id = work.setdefault("request_id", f"kvwarm-{uuid.uuid4().hex[:16]}")
         # http.client rather than urlopen so the switch can cut the socket
         # mid-prefill: shutdown() wakes the blocked read with a disconnect.
-        work["abort"] = lambda: _shutdown_socket(conn)
+        # The socket is captured at connect time, not read from conn.sock at abort
+        # time: on a "Connection: close" response getresponse() sets conn.sock =
+        # None and the body read runs on the response's handle to the same socket
+        # (fix pass 2). shutdown() acts on the fd, so it cuts that read too.
+        held: list[socket.socket] = []
+        work["abort"] = lambda: _shutdown_socket(held[0] if held else None)
         try:
             conn.connect()
             conn.sock.settimeout(self.timeout_s)
-            # An abort that landed while connect() ran found no socket to shut down.
+            held.append(conn.sock)
+            # An abort that landed before the socket was held found nothing to
+            # shut down (apply_switch sets cancel before calling abort).
             if cancel.is_set():
                 raise WarmupAborted()
             conn.request(

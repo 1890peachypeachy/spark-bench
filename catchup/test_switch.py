@@ -361,6 +361,49 @@ class HangupDetectingVllm:
         self.server.server_close()
 
 
+class CloseHeaderBodyVllm:
+    """Fake engine for fix pass 2: sends headers with Connection: close plus part
+    of the body, then keeps 'generating' the rest while watching for the client to
+    hang up. http.client hands the socket to the response on Connection: close and
+    sets conn.sock = None, which is where the first abort lost its grip."""
+
+    def __init__(self, stream_s=5.0):
+        self.headers_sent = threading.Event()
+        self.disconnected = threading.Event()
+        self.headers = {}
+        outer = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                return
+
+            def do_POST(self):  # noqa: N802
+                self.rfile.read(int(self.headers.get("content-length") or 0))
+                outer.headers = {k.lower(): v for k, v in self.headers.items()}
+                self.send_response(200)
+                self.send_header("content-length", "1000")
+                self.send_header("connection", "close")
+                self.end_headers()
+                self.wfile.write(b'{"usage":')
+                self.wfile.flush()
+                outer.headers_sent.set()
+                deadline = time.time() + stream_s
+                while time.time() < deadline:
+                    ready, _, _ = select.select([self.connection], [], [], 0.02)
+                    if ready and self.connection.recv(1, socket.MSG_PEEK) == b"":
+                        outer.disconnected.set()
+                        return
+                self.close_connection = True
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        Thread(target=self.server.serve_forever, daemon=True).start()
+        self.url = f"http://127.0.0.1:{self.server.server_address[1]}/v1"
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
 def on_switch():
     fake = FakeHealth({"switchedOn": True, "disabledAgents": []})
     switch, logs = make_switch(fake)
@@ -390,6 +433,32 @@ class AbortSemanticsTests(unittest.TestCase):
         self.assertTrue(rid.startswith("kvwarm-"), vllm.headers)
         self.assertIn(f"warm {rid} for eva-dm aborted: engine connection closed", out.getvalue())
         self.assertNotIn("WARNING abort", out.getvalue())
+
+    def test_abort_cuts_body_read_after_connection_close_headers(self):
+        # Fix pass 2 reviewer scenario: headers (Connection: close) arrived, body
+        # still being read. conn.sock is None by then; the abort must still land.
+        vllm = CloseHeaderBodyVllm()
+        self.addCleanup(vllm.close)
+        fake, switch, _ = on_switch()
+        service = CatchupService(vllm_url=vllm.url, model="m", max_context=10000, timeout_s=30, switch=switch)
+        service.abort_confirm_s = 1.0
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            service.submit({"session_id": "eva-dm", "messages": [{"role": "user", "content": "prefill me"}]})
+            self.assertTrue(vllm.headers_sent.wait(3))
+            time.sleep(0.1)  # let the client get past getresponse() into the body read
+            t0 = time.time()
+            fake.body = {"switchedOn": False, "disabledAgents": []}
+            switch.poll_once()
+            self.assertTrue(vllm.disconnected.wait(2), "engine never saw the client hang up mid-body")
+            self.assertLess(time.time() - t0, 1.0)
+            self.assertTrue(wait_until(lambda: service.stats()["inflight"] == 0, timeout=2))
+            time.sleep(1.2)  # past abort_confirm_s: the watchdog must stay quiet
+        rid = vllm.headers.get("x-request-id", "")
+        self.assertTrue(rid.startswith("kvwarm-"), vllm.headers)
+        self.assertIn(f"warm {rid} for eva-dm aborted: engine connection closed", out.getvalue())
+        self.assertNotIn("WARNING abort", out.getvalue())
+        self.assertEqual(service.get("eva-dm")["state"], "off")
 
     def test_abort_landing_during_connect_never_sends_the_prefill(self):
         vllm = HangupDetectingVllm()
