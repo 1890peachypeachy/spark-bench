@@ -38,6 +38,18 @@ Eva-core is a Pi (or OMP) harness plus a chat UI.
 | compact hook | channel compact + auto-compact → `reason=compact` |
 | `GET /api/kv-catchup/status` | UI poll |
 | context pip | orange → green next to the context % |
+| `GET /api/kv-catchup/health` | admin on/off switch; the sidecar polls it |
+
+The sidecar honours the switch itself too, so one that eva-core did not
+stop (an old post, another caller) also goes quiet. It polls
+`/api/kv-catchup/health` every `CATCHUP_SWITCH_POLL_S` (10 s) with
+`x-service-token`. With `switchedOn: false` (or the session's agent in
+`disabledAgents`, where agent = session id before the first `:`) it starts
+no warms, drops queued ones, and cuts in-flight warms by closing the vLLM
+socket. Those sessions report `state: off`. Turning the switch back on
+replays nothing: catch-up resumes with the next snapshot. If the poll fails,
+the sidecar keeps the last-known state and logs the failure. If the switch
+has never been read, it defaults to ON.
 
 Eva often chats on Venice and only sometimes on `sparks/auto`. The watcher
 is the point: Sparks plays catch-up in the background.

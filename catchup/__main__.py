@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from .service import CatchupService
+from .switch import DEFAULT_POLL_S, CatchupSwitch, http_fetcher, resolve_config
 
 
 def _json(handler: BaseHTTPRequestHandler, status: int, payload: dict | list) -> None:
@@ -66,15 +67,39 @@ def main(argv: list[str] | None = None) -> int:
         default=int(os.environ.get("CATCHUP_MAX_INFLIGHT", "2")),
         help="max concurrent warm prefills sent to the engine (backpressure; default 2)",
     )
+    parser.add_argument(
+        "--switch-poll",
+        type=float,
+        default=float(os.environ.get("CATCHUP_SWITCH_POLL_S", str(DEFAULT_POLL_S))),
+        help="seconds between polls of eva-core's /api/kv-catchup/health (default 10)",
+    )
+    parser.add_argument(
+        "--no-switch",
+        action="store_true",
+        default=os.environ.get("CATCHUP_SWITCH", "1") == "0",
+        help="ignore eva-core's on/off switch (always on; pre-2026-10-05 behaviour)",
+    )
     args = parser.parse_args(argv)
     host, _, port = args.listen.partition(":")
+    switch = None
+    if not args.no_switch:
+        config = resolve_config()
+        switch = CatchupSwitch(http_fetcher(config["url"], config["token"]), poll_s=args.switch_poll)
+        print(
+            f"[kv-catchup] switch source: {config['url']} every {switch.poll_s:g}s "
+            f"(service token {'set' if config['token'] else 'MISSING'}; default ON until first read)",
+            flush=True,
+        )
     service = CatchupService(
         vllm_url=args.vllm,
         model=args.model,
         max_context=args.max_context,
         timeout_s=args.timeout,
         max_inflight=args.max_inflight,
+        switch=switch,
     )
+    if switch is not None:
+        switch.start()
     server = ThreadingHTTPServer((host or "127.0.0.1", int(port or 18900)), build_handler(service))
     print(f"catchup listening on {host or '127.0.0.1'}:{port or 18900} → {args.vllm} (max_inflight={args.max_inflight})", flush=True)
     try:
