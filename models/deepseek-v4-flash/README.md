@@ -3,7 +3,7 @@
 **2026-09-05: not serving; archived NVFP4/DSpark TP4 recipe.**
 
 - [Recipe entry points and deployment prerequisites](nvfp4-tp4/README.md)
-- [Dated benchmark history and original launch guide](../../README.md#deepseek-v4-flash)
+- [Dated benchmark history and original launch guide](JOURNAL.md)
 - [Shared fabric runbook](../../docs/FABRIC.md)
 
 This lane uses a different image, checkpoint, speculative-decoding implementation

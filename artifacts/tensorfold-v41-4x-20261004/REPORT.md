@@ -6,7 +6,7 @@ DeepSeek V4.1 Flash, uncensored. TensorFold: jayleaton's deepseek_v41 family por
 SGLang: the TP4/EP2 deployment of `dealignai/DeepSeek-V4.1-Flash-UNCENSORED-FP8`, its published depth sweep of
 2026-10-02 ([tensorfold-v41-depth-20261001](../tensorfold-v41-depth-20261001/REPORT.md)).
 
-![chart](../../docs/images/dsv41-tensorfold-4x-2026-10-04.webp)
+![chart](chart-2026-10-04.webp)
 
 ## Depth sweep (decode tok/s, median of 3; cold time to first token of trial 0)
 

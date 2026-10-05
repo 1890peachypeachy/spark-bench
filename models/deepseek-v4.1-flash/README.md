@@ -6,7 +6,7 @@
 
 As of 2026-10-02: SGLang on forge/anvil/ember/flame, **TP4 / EP2**, native FP8/MXFP4 uncensored checkpoint, DSPARK block 3, Engram on local SSDs. All four Sparks participate. EP2 partitions experts into two groups with two-way tensor sharding inside each group; TP remains four for the model.
 
-[Measured depth sweep and raw results](../../artifacts/tensorfold-v41-depth-20261001/REPORT.md) · [Historical serving work](../../README.md#dsv41-sglang-2026-09-14) · [Upstream kit](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks)
+[Measured depth sweep and raw results](../../artifacts/tensorfold-v41-depth-20261001/REPORT.md) · [Historical serving work](JOURNAL.md#dsv41-sglang-2026-09-14) · [Upstream kit](https://github.com/MiaAI-Lab/DeepSeek-v4.1-Flash-DGX-Sparks)
 
 ## Exact change from the EP4 profile
 

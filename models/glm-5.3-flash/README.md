@@ -3,7 +3,7 @@
 **2026-09-05: stopped for the Qwen campaign.** Archived recipes, not a live endpoint.
 
 - [Primary EXL3 TP4 recipe](exl3-tp4/README.md): vLLM, EXL3 4bpw, DFlash2.
-- [Dated benchmark history and operating notes](../../README.md#glm-5-3-flash).
+- [Dated benchmark history and operating notes](JOURNAL.md).
 - Earlier experiments: [SGLang findings](sglang-attempt/FINDINGS-2026-08-26.md)
   and [vLLM findings](vllm-attempt/FINDINGS-2026-08-26.md).
 

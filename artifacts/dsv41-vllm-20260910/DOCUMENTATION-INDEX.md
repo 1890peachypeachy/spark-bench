@@ -67,7 +67,7 @@ depth / 182 at C4; tonyd2wild's V4.1 boot-10 (same 4×GB10) did C1 code 73.8, me
 1. **Stage C combo verification** (A/B/A at 420k) and the final arm table → `phase4/RESULTS.md`.
 2. **Remaining arm verdicts**: B7 batched-tokens, B4 clock unlock, B5 MoE/prefill backend, B8 DeepSelect, B9 NCCL sweep, B10 engram threads.
 3. **LocalMaxxing Verified runs** (`code-v1`, `reasoning-v1`) — payloads + submission receipts.
-4. **The public README section** — "DeepSeek V4.1 Flash — 4× DGX Spark", same honest-map protocol as V4 Flash, with the dashboard screenshot (`docs/images/dsv41-vllm-tp4-dashboard-2026-09-10.webp`) and attribution.
+4. **The public README section** — "DeepSeek V4.1 Flash — 4× DGX Spark", same honest-map protocol as V4 Flash, with the dashboard screenshot (`artifacts/dsv41-vllm-20260910/images/dsv41-vllm-tp4-dashboard-2026-09-10.webp`) and attribution.
 
 ## Attribution (carry into the publish)
 
@@ -81,6 +81,6 @@ whatever the remaining arms land.
 
 | file | use |
 |---|---|
-| `docs/images/dsv41-vllm-tp4-dashboard-2026-09-10.webp` | live DGX-dash view: 81 tok/s single stream, 300 peak, all four nodes, model deepseek-v4.1-flash |
-| `docs/images/dsv41-vllm-tp4-champion-table-2026-09-10.webp` | the champion-stats table (config + throughput + per-category + speculation + prefill) — legible README "results" image |
-| `docs/images/dsv41-vllm-tp4-x-card-2026-09-10.png` | purpose-built 1600×900 result card (used in the README and the X post). Source SVG: `artifacts/dsv41-vllm-20260910/x-card.svg` |
+| `artifacts/dsv41-vllm-20260910/images/dsv41-vllm-tp4-dashboard-2026-09-10.webp` | live DGX-dash view: 81 tok/s single stream, 300 peak, all four nodes, model deepseek-v4.1-flash |
+| `artifacts/dsv41-vllm-20260910/images/dsv41-vllm-tp4-champion-table-2026-09-10.webp` | the champion-stats table (config + throughput + per-category + speculation + prefill) — legible README "results" image |
+| `artifacts/dsv41-vllm-20260910/images/dsv41-vllm-tp4-x-card-2026-09-10.png` | purpose-built 1600×900 result card (used in the README and the X post). Source SVG: `artifacts/dsv41-vllm-20260910/x-card.svg` |

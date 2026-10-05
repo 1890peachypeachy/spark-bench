@@ -1,14 +1,14 @@
 # Qwen 3.8 Flash Next
 
-**2026-09-05: serving; stability testing in progress.** This is the official
-NVIDIA NVFP4 checkpoint on four DGX Sparks, vLLM TP4+EP, MTP k=2.
-Endpoint in this lab: `http://forge:8000/v1`; model ID `qwen3.8-flash-next`.
+**Stopped 2026-09-10** (the cluster moved to DeepSeek V4.1 Flash); recipe and results kept.
+The official NVIDIA NVFP4 checkpoint on four DGX Sparks, vLLM TP4+EP, served with MTP k=4 + GEMV
+from 2026-09-06 (MTP k=2 on 2026-09-05). Model ID `qwen3.8-flash-next`.
 
 - [Current NVFP4 TP4 configuration, image identity and patch provenance](nvfp4-tp4/README.md)
 - [First-pass benchmark scripts and limitations](benchmarks/README.md)
 - [Dated measurement summary](../../results/qwen38-nvfp4-tp4-2026-09-05.json)
 - [Retrieval smoke records](../../results/qwen38-resident-niah-smoke-2026-09-05.jsonl)
-- [Overview and comparison table](../../README.md#qwen-3-8-flash)
+- [Dated journal: every measurement and decision](JOURNAL.md)
 
 ## Reproduction boundary — read before launching
 

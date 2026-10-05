@@ -10,7 +10,10 @@ our fork, **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko
 [`dealignai/DeepSeek-V4.1-Flash-UNCENSORED-EXL3-2.9bpw`](https://huggingface.co/dealignai/DeepSeek-V4.1-Flash-UNCENSORED-EXL3-2.9bpw)
 (~197 GiB, the same uncensoring team and method as the FP8 checkpoint SGLang served).
 
-![TensorFold on four Sparks vs SGLang TP4/EP2, 2026-10-04](../../../docs/images/dsv41-tensorfold-4x-2026-10-04.webp)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../../docs/images/lane-dsv41-tensorfold-dark.svg">
+  <img alt="DeepSeek V4.1 Flash on TensorFold, four Sparks: writing speed prose 63 vs 38 tok/s for SGLang, code 100 vs 57, four users 119 vs 76; cold 160k-token prompt 97-100 s on 2026-10-04, 39 s pipelined on 2026-10-05, SGLang 48-52 s" src="../../../docs/images/lane-dsv41-tensorfold-light.svg">
+</picture>
 
 ## Results (2026-10-04)
 
@@ -86,7 +89,6 @@ bash scripts/serve4.sh start
 
 ## Faster prompt reading (2026-10-05)
 
-![Cold time to first token on four DGX Sparks, 2026-10-05: 160k prompt 97.4–99.8 s (2026-10-04) → 74.6–75.2 s (split + overlap) → 38.8–39.6 s (pipelined), SGLang 48.1–52.1 s; 20k prompt 12.9–14.2 → 9.4–9.5 → 5.8–6.8 s, SGLang 5.3–5.5 s](../../../docs/images/dsv41-prefill-2026-10-05.webp)
 
 Patch `0004` adds three opt-in switches; we run all three (they are on in the fork's `config/tp4.env.example`):
 

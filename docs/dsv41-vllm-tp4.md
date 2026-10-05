@@ -28,18 +28,17 @@ The single biggest number, though, is not a speed: **the exact tool round-trip
 that corrupted deterministically under SGLang + DSpark is byte-clean under
 vLLM + DSpark.** That is why this lane ships.
 
-![Four-node DGX Spark dashboard: DeepSeek-V4.1-Flash TP4 live on forge:8000, 420k context, DSpark spec decode](docs/images/dsv41-vllm-tp4-dashboard-2026-09-10.webp)
-
-*The live TP4 world, 2026-09-10: forge head + anvil/ember/flame, served id
-`deepseek-v4.1-flash`, 430080-token window. Dashboards are modified
-[MiaAI-Lab sparkDash](https://github.com/MiaAI-Lab/sparkDash).*
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/lane-dsv41-vllm-dark.svg">
+  <img alt="DeepSeek V4.1 Flash, vLLM TP4 champion, one user by task (tok/s): coding 71.4, format 71.2, math 70.0, reasoning 58.6, JSON 45.3, prose 31.7, summary 27.9, narrative 27.7; 4 users 109 total, 6 users 137" src="images/lane-dsv41-vllm-light.svg">
+</picture>
 
 ## Current champion numbers (2026-09-10, 420k boot)
 
 All rows: temperature 0, thinking off, after warmup, on the accepted champion
 config (`DRAFT_METHOD=greedy`, DSpark k=5, 420k = `MAXLEN=430080`). Source:
-[`artifacts/dsv41-vllm-20260910/CHAMPION.env`](artifacts/dsv41-vllm-20260910/CHAMPION.env)
-and [`STATUS.md`](artifacts/dsv41-vllm-20260910/STATUS.md). The **Stage C
+[`artifacts/dsv41-vllm-20260910/CHAMPION.env`](../artifacts/dsv41-vllm-20260910/CHAMPION.env)
+and [`STATUS.md`](../artifacts/dsv41-vllm-20260910/STATUS.md). The **Stage C
 re-table** (the frozen publish table, A/B/A on the final champion) is still
 running — values here are the campaign snapshot, not the freeze.
 
@@ -57,9 +56,6 @@ running — values here are the campaign snapshot, not the freeze.
 | context | 430,080 tokens | reserved catch-up window |
 | served id | `deepseek-v4.1-flash` | `http://forge:8000/v1` |
 
-![Champion stats table: DeepSeek-V4.1-Flash on 4× DGX Spark, vLLM TP4 — config, throughput, per-category, speculation and prefill](docs/images/dsv41-vllm-tp4-champion-table-2026-09-10.webp)
-
-*The champion config and its measured numbers in one view (snapshot, 2026-09-10).*
 
 Anchor for context: our V4 Flash on the same fabric did 136 tok/s C1 best-case,
 66–93 at real chat depth, 182 at C4. **V4.1 Flash is slower than V4 Flash** on
@@ -90,7 +86,7 @@ code cell and a 50k agent turn are different measurements.
 **You need:**
 
 - 4× DGX Spark (GB10), one 200G cable each into the same RoCE switch, wired per
-  [`docs/FABRIC.md`](docs/FABRIC.md). This port runs **rail B**: interface
+  [`docs/FABRIC.md`](FABRIC.md). This port runs **rail B**: interface
   `enP2p1s0f1np1`, HCA `roceP2p1s0f1`, subnet `192.168.10.0/24`, MTU 9000.
 - The **model on all four nodes** at `/home/jun/models/deepseek-v4.1-flash`,
   mounted read-only as `/models/DeepSeek-V4.1-Flash`:
@@ -110,7 +106,7 @@ code cell and a 50k agent turn are different measurements.
     + sparse_mla rebuilt under runtime env           → overlay5 = local/vllm-dsv41:overlay5
   ```
   Full build record in
-  [`artifacts/dsv41-vllm-20260910/Dockerfile`](artifacts/dsv41-vllm-20260910/Dockerfile)
+  [`artifacts/dsv41-vllm-20260910/Dockerfile`](../artifacts/dsv41-vllm-20260910/Dockerfile)
   and `STATUS.md` §S2.
 - The **8 bind-mounted vLLM patch files** in `~/patches/dsv41-boot10/` on every
   node (7 patches + `mounts.txt`), md5-identical to tonyd2wild boot-10:
@@ -129,7 +125,7 @@ code cell and a 50k agent turn are different measurements.
 - **GPU clock lock** `spark-gpu-clock-lock` active on every node
   (`nvidia-smi -lgc 0,2200`) — the launcher does not check it, the recover
   script does. Same service and file as the V4 Flash recipe:
-  [`scripts/spark-gpu-clock-lock.service`](scripts/spark-gpu-clock-lock.service).
+  [`scripts/spark-gpu-clock-lock.service`](../scripts/spark-gpu-clock-lock.service).
 - Champion env (`/home/jun/dsv41-vllm/CHAMPION.env` on forge):
   ```text
   MAXLEN=430080 GMU=0.80 SEQS=8 SPEC_K=5
