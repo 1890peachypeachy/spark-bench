@@ -364,3 +364,51 @@ cancellation, optional gated Ablit weights (`ABLIT=1`), a system-prompt resume
 fix once the kept cap fills, an `NV_ERR_NO_MEMORY` fix on a fresh conversation
 after a long one, a picture cache (TTFT 0.45 s -> 0.17 s on 10-image chats),
 and 429 + Retry-After capacity refusals.
+
+
+---
+
+## APPLIED 2026-10-07 07:31-07:45 PDT: pool raised 360,448 -> 786,432 (3x context)
+
+Victor approved step 1 (explicitly NOT the max). Done on an idle lane.
+
+Change: `config/serve.env:42` `TF_GLM_POOL_TOKENS=360448` -> `786432` on ALL
+THREE ranks. That file is the only sanctioned source — `scripts/lib.sh:178-197`
+refuses engine settings from profiles ("every engine setting has one source,
+config/serve.env") and `serve.sh:109` passes it with `--env-file`. Backups kept
+at `backups/serve.env.pool360448.20261007-0731*` on each box. Verified
+byte-identical across ranks before restart (md5 `861b7b7e...`) because the engine
+hard-errors on a mismatch.
+
+Sequence: confirmed `inflight=0` -> stop ranks 2/1/0 -> MemAvailable recovered to
+~116 GiB/box -> start ranks 2, 1, 0 -> ready in 1 min.
+
+**Granted in full, no clamp:**
+```
+[tensorfold] GLM shared token pool: 786,432 usable tokens (requested 786,432);
+             per-request context 262,144
+```
+So the napkin math held at this step: `usable == requested` means
+`fit_shared_pool` did not have to reduce it.
+
+Post-change verification:
+- `/v1/models` -> `GLM-5.3-Flash-EXL3`, `context_window` 262144
+- smoke **5/6** — the single FAIL is the known `SERVE_NAME` deviation, unchanged
+- TTFT 0.234s on the streaming smoke case
+- concurrency factor 2.34x on 3 small streams (was 2.37x) — unchanged, as
+  expected: small prompts were never pool-limited
+
+**Caveat, stated plainly: the benefit is NOT yet demonstrated.** The measured
+numbers above are all from an idle, freshly started lane. The TTFT improvement
+(23.2s -> 0.2-0.5s) versus the earlier probe is explained by the lane being idle,
+NOT by the pool change. The pool only pays off when several large contexts are
+resident at once, which needs real fleet load to show. Expected effect by the
+arithmetic: concurrent ~156K sessions 2.3 -> ~5.0, concurrent 256K 1.4 -> ~3.0.
+
+Rollback: restore the backup on all three ranks and restart the ring.
+
+Watch item: the startup estimate line still reads `79.70 GiB within 102.42 GiB`
+because `admit()` prints it BEFORE `fit_shared_pool` runs, using the context
+window (262,144) rather than the pool size. It is therefore NOT a check on pool
+memory — the real post-pool figure lives in `serving_peak_bytes_estimate`, which
+is not logged. Do not read an unchanged 79.70 as "the pool change did nothing".
