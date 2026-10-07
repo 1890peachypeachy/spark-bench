@@ -32,6 +32,8 @@ RoCE's failure file `/cache/roce-failed` in forge's cache volume. While that fil
 Moving it aside gave +12% code and +19% prose on `m2bench`. The G13 vs G19 table [below](#live-2026-10-07-jays-g19-engine)
 was measured in that state, so both of its columns are lower than this table.
 
+Since 14:06 the drafter reads a 4-bit copy of the vocabulary head (`TF_DSV41_DRAFT_HEAD=q4`; exact, +1-2.5%). Where the rest of the time goes: [decode levers](../../../artifacts/tensorfold-v41-decode-levers-20261007/REPORT.md).
+
 After a start, check that rank 0's log says `all-gathers ... over RoCE` and `plan link: rdma`.
 [Report](../../../artifacts/tensorfold-v41-roce-20261007/REPORT.md).
 

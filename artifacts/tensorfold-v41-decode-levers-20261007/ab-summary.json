@@ -1,0 +1,98 @@
+[
+ {
+  "variant": "live",
+  "code_tok_s": [
+   119.4,
+   119.8,
+   121.7
+  ],
+  "prose_tok_s": [
+   65.9,
+   67.4,
+   67.1
+  ]
+ },
+ {
+  "variant": "GLM53_TF_ROCE_LEAN=1",
+  "code_tok_s": [
+   120.9
+  ],
+  "prose_tok_s": [
+   67.0
+  ]
+ },
+ {
+  "variant": "GLM53_TF_ROCE_STRIPE_KB=4096",
+  "code_tok_s": [
+   117.8
+  ],
+  "prose_tok_s": [
+   66.9
+  ]
+ },
+ {
+  "variant": "GLM53_TF_ROCE_POLLERS=3",
+  "code_tok_s": [
+   121.1
+  ],
+  "prose_tok_s": [
+   66.6
+  ]
+ },
+ {
+  "variant": "GLM53_TF_ROCE_LAZY_CQ=1",
+  "code_tok_s": [
+   118.7
+  ],
+  "prose_tok_s": [
+   67.0
+  ]
+ },
+ {
+  "variant": "GLM53_TF_ROCE_CPU=18",
+  "code_tok_s": [
+   119.1
+  ],
+  "prose_tok_s": [
+   66.7
+  ]
+ },
+ {
+  "variant": "TF_DSV41_L2PF=0",
+  "code_tok_s": [
+   119.0
+  ],
+  "prose_tok_s": [
+   67.7
+  ]
+ },
+ {
+  "variant": "TF_DSV41_L2PF_MB=6",
+  "code_tok_s": [
+   114.9
+  ],
+  "prose_tok_s": [
+   67.3
+  ]
+ },
+ {
+  "variant": "TF_DSV41_L2PF_MB=24",
+  "code_tok_s": [
+   120.0
+  ],
+  "prose_tok_s": [
+   66.7
+  ]
+ },
+ {
+  "variant": "TF_DSV41_DRAFT_HEAD=q4",
+  "code_tok_s": [
+   122.8,
+   123.9
+  ],
+  "prose_tok_s": [
+   68.2,
+   67.3
+  ]
+ }
+]
