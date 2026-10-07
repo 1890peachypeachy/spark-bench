@@ -412,3 +412,34 @@ because `admit()` prints it BEFORE `fit_shared_pool` runs, using the context
 window (262,144) rather than the pool size. It is therefore NOT a check on pool
 memory — the real post-pool figure lives in `serving_peak_bytes_estimate`, which
 is not logged. Do not read an unchanged 79.70 as "the pool change did nothing".
+
+
+### Functional proof the pool really is larger (2026-10-07, `checks/pool-proof.py`)
+
+The startup line is the engine's own self-report. Independent black-box proof:
+two CONCURRENT requests with DISTINCT content (different word streams, so the
+prefix cache cannot collapse them and fake the result), ~195K tokens each.
+
+| stream | prompt_tokens | TTFT | end |
+|---|---:|---:|---:|
+| 0 | 195,344 | 247.6s | 247.9s |
+| 1 | 195,531 | 260.0s | 260.0s |
+
+Combined = **390,875 tokens**, which EXCEEDS the old pool of 360,448.
+
+Why this is decisive: if the pool still held only 360,448, the two could not be
+resident together, so stream 1 would have to finish and release before stream 2
+could prefill — giving TTFTs of roughly 115s and 230s (ratio ~2.0). Observed
+ratio is **1.05x**, and stream 1 ended at 247.9s while stream 2's first token
+came 12.1s later; since a ~195K prefill takes >100s, stream 2 must have been
+prefilling long before stream 1 released. **Both contexts were resident
+simultaneously, so the pool is provably larger than 360,448.**
+
+Caveat on the absolute numbers: live fleet traffic was present throughout
+(peak `running=4`, `waiting=2`), so the ~250s TTFTs are inflated by sharing
+compute with real agents and with each other. The OVERLAP conclusion is robust
+to that noise; the timings are not a decode/prefill benchmark.
+
+Corroborating checks: all three containers carry `TF_GLM_POOL_TOKENS=786432` in
+their actual docker env, and the startup log shows no clamp or fallback (the
+only warnings are the known-benign NCCL `ibv_query_port_speed` fabric lines).
