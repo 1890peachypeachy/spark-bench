@@ -113,6 +113,24 @@ freud, jarvis, librarian, momo, ollie, pandy, peachy, sila, spark,
 therapyconsult). Sampled over 60 s the lane was **0% idle** — a persistent
 1 running + 1 waiting.
 
+**Do NOT read `vllm:num_requests_running=1` as "the lane serializes".** That
+gauge is a vLLM-compatibility shim. The engine's own gauge,
+`tensorfold:inflight`, read **3** at the same instant the shim said
+`running=1, waiting=2`. Concurrency is configured (`SERVE_PARALLEL=8`,
+`TF_GLM_FAIR_SCHED=1`) and verified from the client side: 3 barrier-released
+streams all began decoding within 10 ms of each other, overlapped pairwise
+(2.86 / 2.86 / 7.04 s) and gave a concurrency factor of **2.37x** on 3 streams
+(1.0 would be serialized). Peak gauges during that run reached
+`inflight=6, running=5, waiting=5`, so `running` is not pinned at 1 either.
+The steady 1-running/1-waiting simply reflects our real demand shape: the fleet
+sends FEW but VERY LARGE requests (69 requests / ~1.24M prompt tokens in ~30
+min), not many small ones.
+
+The cost is therefore not a concurrency cap but **head-of-line prefill
+blocking**: those same 3 test streams each waited **23.2 s for their first
+token** while a large prefill owned the GPUs. Concurrency cannot rescue a lane
+where one ~155K-token prefill monopolizes the step loop for ~110 s.
+
 A streamed decode benchmark run against it returned 8-10 tok/s with TTFT of
 49-101 s. Those numbers are pure queueing artefact and must NOT be recorded as
 lane performance. The idle gate caught it; without the gate they would have
