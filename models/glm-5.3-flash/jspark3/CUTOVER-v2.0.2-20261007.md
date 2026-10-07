@@ -219,6 +219,71 @@ Levers, none yet tried (ordered by expected value / risk):
 Raising `SERVE_PARALLEL` would NOT help — see the concurrency note above; the
 lane already batches (2.37x on 3 streams) and the cost is prefill monopoly.
 
+### The real concurrency ceiling is the shared KV pool, not `--parallel`
+
+Live engine cmdline: `--tp 3 --context 262144 --max-tokens 32768 --parallel 8`.
+So **8 request slots are configured** (the earlier "3" was only this probe's N).
+
+But all running requests share ONE context pool. From the rank-0 startup log:
+
+```
+[tensorfold] GLM shared token pool: 360,448 usable tokens (requested 360,448);
+             per-request context 262,144
+[tensorfold] CUDA rank 0 startup estimate 79.70 GiB within 102.16 GiB
+```
+
+`docs/OPERATIONS.md`: "All running requests share one pool of context memory. A
+request near the full context window can wait in the queue until other long
+requests finish."
+
+Arithmetic against our own limits (Hermes agents are capped at 256K = the lane's
+`--context`):
+
+| concurrent sessions of... | pool needed | fits in 360,448? |
+|---|---:|---|
+| 1 x 256K (max-size agent) | 262,144 (73% of pool) | yes, barely |
+| 2 x 256K | 524,288 | **no** |
+| 2 x ~156K (observed real size) | ~312,000 (87%) | yes |
+| 3 x ~156K | ~468,000 | **no** |
+| 8 x ~156K (to use `--parallel 8`) | ~1,248,000 (3.5x pool) | **no** |
+
+**So effective concurrency for our workload is 2, not 8** — and exactly 1 if an
+agent actually fills its 256K allowance. That, not a metrics shim and not a
+scheduler cap, is the structural reason the lane sits at ~1 running.
+
+Why is the pool so small? `TF_GLM_POOL_TOKENS=360448` is **upstream's default**
+and equals 1.375x context — just above the engine's legal floor. From
+`engine/src/tensorfold/families/glm5_next/cuda/engine.py`, the accepted range is
+`--context` through `parallel * --context`:
+
+- floor: 262,144 (1x)
+- **current: 360,448 (1.375x) = 17% of the legal maximum**
+- ceiling: 2,097,152 (8x)
+
+It was never tuned for our context sizes. Headroom exists: rank 0 reports 79.70
+GiB used within a 102.16 GiB budget, and `fit_shared_pool` subtracts the
+`TF_GLM_CACHE_GIB=5` snapshot reserve, leaving **~17.5 GiB** to grow into. Ranks
+1 and 2 are slightly lighter (77.40 GiB within 103.38 / 102.82 GiB), so **rank 0
+is the binding node.**
+
+Two safety properties of this knob, both read from the source:
+
+1. `fit_shared_pool` **binary-searches the largest pool that fits the budget and
+   clamps** — it does not OOM on an over-large request. Our log shows
+   `usable == requested`, proving we were never memory-limited, just modest.
+2. The chosen size is `min()` across ranks and must match on every rank, so the
+   weakest node governs and a mismatch is a hard startup error, not a silent skew.
+
+**This knob plausibly attacks BOTH problems at once**: a larger pool keeps more
+sessions resident, which should reduce the `store-evicted` re-prefills as well as
+raise usable concurrency. Untested.
+
+Not changed, and must NOT be changed on the live lane: raising it requires a
+restart, so it needs a drained lane plus Victor's approval, and the GB10
+crash-forensics rule applies (an NVRM OOM wedges the node). The honest test is
+to raise the request on a drained lane and read back the
+`usable tokens (requested N)` line to discover the true ceiling empirically.
+
 One-shot cron `jspark3-v202-resume-recheck` (job `e8827d963c41`) re-runs the
 audit to quantify the standing cost and confirm `store-evicted` persists.
 
