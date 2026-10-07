@@ -153,14 +153,74 @@ production prefill/resume/decode per request. Audit script committed at
   produces the permanent 1-running/1-waiting backlog, and it starves every
   other profile on the lane.
 
-Open question, deliberately NOT closed: v2.0.2 derives its session namespace
-from the wheel digest, so every session started cold by design at cutover. The
-cold big-context prefills may be expected warm-up. One-shot cron
-`jspark3-v202-resume-recheck` (job `e8827d963c41`) re-runs the audit ~5 h later.
-If big-context requests STILL show `resumed=0` once warm, it is a real resume
-defect; the next step is checking `session_miss_reason` on those requests for
-`fork`/`shared-prefix-divergence` (an agent prompt changing early, e.g. a
-timestamp in a system prompt) versus eviction.
+### ROOT CAUSE (found 2026-10-07, supersedes the warm-up hypothesis)
+
+The cold big-context prefills are **NOT** post-cutover warm-up. Reading
+`session_miss_reason` on each big request over a 90-minute window:
+
+| sid | prompt | resumed | prefill | miss / evidence |
+|---|---:|---:|---:|---|
+| 53 | 156616 | 0 | 101.9s | cold / none / unknown |
+| 57 | 154540 | 0 | 112.1s | cold / none / unknown |
+| 60 | 156996 | 0 | 114.7s | **store-evicted / observed-prior-prompt** |
+| 64 | 154872 | 0 | 90.0s | store-evicted / observed-prior-prompt |
+| 65 | 157889 | 0 | 92.6s | store-evicted / observed-prior-prompt |
+| 66 | 155273 | 0 | 90.7s | store-evicted / observed-prior-prompt |
+| 67 | 158380 | 0 | 92.7s | store-evicted / observed-prior-prompt |
+| 68 | 156912 | 0 | 106.3s | store-evicted / observed-prior-prompt |
+| 70 | 158907 | 0 | 116.5s | store-evicted / observed-prior-prompt |
+| 75 | 157255 | 0 | 92.4s | store-evicted / observed-prior-prompt |
+
+Only the first two were genuine cold starts. Every subsequent one is
+`store-evicted` with evidence `observed-prior-prompt`: **the engine saw the
+conversation's prior prompt and had lost the stored anchor.** `dropped_anchors`
+climbs monotonically (59 -> 82 -> 83 observed).
+
+Upstream's own `release/v2.0.2/ROOTCAUSE.md` and `LIMITATIONS.md` explain why:
+
+> The existing bounded writer refuses another optional snapshot batch while a
+> write is pending. Its **quiet gate requires 0.5 seconds without model work or
+> request preparation.** Continuous traffic without that opportunity can
+> therefore skip optional disk saves. [...] This does not promise lossless
+> checkpoint persistence under sustained backpressure. **The two fixes do not
+> change that writer policy.**
+
+So this is a **self-reinforcing trap**, not a transient:
+
+1. Our agents RESUME long conversations (~155K contexts) rather than starting
+   new ones (Victor, 2026-10-07 — this is the demand shape that makes the
+   checkpoint store load-bearing in the first place).
+2. Resuming requires a persisted anchor.
+3. The writer only persists during >=0.5 s of true quiet.
+4. The lane is 0% idle (~15 profiles), so that quiet never arrives.
+5. Anchors are dropped -> next turn reports `store-evicted` -> full ~155K
+   re-prefill at 90-116 s.
+6. That re-prefill keeps the lane busy, which prevents the quiet gate, which
+   prevents checkpointing. Loop closes.
+
+**v2.0.2 does not fix this** — upstream states the fixes do not touch the writer
+policy. The upgrade's GIF and image-rotation fixes are real and verified; this is
+a separate, pre-existing limitation that our specific load pattern maximizes.
+
+`TF_GLM_SESSION_CHECKPOINTS=0` in `config/serve.env` is **upstream's own
+default**, not a local deviation. It is undocumented anywhere else in the repo;
+whether enabling it changes the anchor-persistence path is UNKNOWN and untested.
+
+Levers, none yet tried (ordered by expected value / risk):
+- **Reduce resumed-context size agent-side** (more aggressive Hermes
+  compaction, or start new sessions): attacks step 1, no lane risk.
+- **Create quiet windows** (stagger fleet polling / cap concurrent agents) so
+  the 0.5 s writer gate can fire: attacks step 4.
+- **Test `TF_GLM_SESSION_CHECKPOINTS=1`** on a drained lane: unknown effect,
+  needs a controlled A/B, do not flip on the live lane.
+- **Raise with upstream**: the quiet gate is unachievable on a shared
+  always-busy lane; a time-budgeted or forced-save policy would help.
+
+Raising `SERVE_PARALLEL` would NOT help — see the concurrency note above; the
+lane already batches (2.37x on 3 streams) and the cost is prefill monopoly.
+
+One-shot cron `jspark3-v202-resume-recheck` (job `e8827d963c41`) re-runs the
+audit to quantify the standing cost and confirm `store-evicted` persists.
 
 ## Mia TensorFold recipe (parked lane) updated in the same session
 
