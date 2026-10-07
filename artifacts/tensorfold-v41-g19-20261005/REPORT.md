@@ -1,7 +1,7 @@
-# G19 on four Sparks — first measurements (2026-10-05)
+# G19 on four Sparks (2026-10-05 → 2026-10-07)
 
-**Status: under test, not serving.** The live server stays on the fork's `main` (engine G13 + patches 0003–0006)
-until the candidate passes every check (below).
+**Status: serving since 2026-10-07 00:06** (image `tp4g19b`), after the candidate window below passed every check.
+First measurements (2026-10-05) first, then the candidate window and the TP=2 check for Jay's PR (2026-10-06/07).
 
 ## What was tested
 
@@ -41,8 +41,40 @@ Read with care:
   The RDMA plan link, worth 23.4 → 21.8 ms a token at two Sparks, is not what limits four.
 - One boot per configuration, and the `live` column was measured ~40 minutes before the others.
 
-## Next
+## Candidate window (2026-10-06 23:48 → 2026-10-07 00:06)
 
-A candidate window: the live build and `+ fused + rdma` with native images and a 420k context (1.2M-token KV
-pool) back to back; long-prompt needles at 20k / 80k / 158k and ~405k, the seven short gates, the six wide
-sampling cases, an image question. It goes live only if every check passes and it is not slower.
+The live G13 build and `+ fused + rdma` with native images, `CONTEXT=420000` and `TF_DSV41_POOL_TOKENS=1201152`,
+back to back in one window, 1k / 20k / 160k prose and code, two trials (cold, repeat).
+
+| | G13 build (live until then) | **G19 candidate** |
+| --- | ---: | ---: |
+| decode, prose 1k / 20k / 160k cold (tok/s) | 53.1 / 50.1 / 47.5 | 54.5 / 50.3 / 48.6 |
+| decode, code 1k / 20k / 160k cold (tok/s) | 88.9 / 80.8 / 84.9 | 90.7 / 82.3 / 86.2 |
+| mean decode over the 12 cells (tok/s) | 69.1 | 70.3 |
+| cold first token 20k / 160k (mean of prose and code) | 6.3 s / 39.0 s | 5.7 s / 36.1 s |
+
+| check | result |
+| --- | --- |
+| code word at 30 / 60 / 85% of 20k / 80k / 158k-token prompts | 3 / 3 |
+| code word at 50% of a 404,655-token prompt (67.5 s) | 1 / 1 |
+| short gates | 7 / 7 |
+| nucleus, nucleus + min_p, `top_k` 40,000 and 32,000, `top_k` 20, JSON nucleus | 6 / 6 |
+| image question (a 64×64 PNG, red and blue halves) | "Red and blue" |
+| `/v1/model_info` | `max_model_len` 420000, `max_num_seqs` 4 |
+| greedy reply vs the G13 build | byte-identical |
+
+Every check passed and nothing was slower, so the window promoted the candidate (`tp4.env`; the old file is
+`pf/tp4.env.before-g19`). The first try (2026-10-05) failed at start: one node's cache volume lacked the image
+routing bias (its download had failed); copied from another node, checksum checked.
+
+## TP=2: Jay's main vs main + the PR #6 patch (2026-10-06)
+
+Jay's merge conditions for PR #6 include TP=2 evidence on G19. Two of our Sparks (forge, anvil), his
+`scripts/serve.sh` and `config/prod.env.example` (placeholders filled), images built with his Dockerfile from fresh
+clones: main `4b235ad` and the fork's `four-sparks` branch `27502c1` (main + `0003`, four ranks and the review's
+fixes only). Each: prebuild, start (preflight + canary), canary, nine greedy requests, a streamed decode rate.
+
+- canary (chat, thinking, tool, json, tokenize): passes on both
+- greedy replies, 9 / 9 identical (essay, code, math, list, thinking with reasoning, forced tool call, JSON
+  schema, 20k-token prose and code prompts), the same token counts; only a tool call's random `call_` id differs
+- decode, a code prompt streamed three times: main 76.9 / 78.1 / 78.2, main + 0003 77.4 / 77.6 / 77.7 tok/s

@@ -1,6 +1,6 @@
 # DeepSeek V4.1 Flash on TensorFold, 4× DGX Spark
 
-**Status (2026-10-05): serving on `forge:8000`, with pipelined prompt reading ([below](#faster-prompt-reading-2026-10-05)) and the review fixes ([below](#fixed-2026-10-05-the-bugs-jays-review-found)).** This replaced the SGLang TP4/EP2 deployment the same day; that
+**Status (2026-10-07): serving on `forge:8000` on Jay's G19 engine ([below](#live-2026-10-07-jays-g19-engine)): 420K context, image input, pipelined prompt reading, the review fixes.** TensorFold replaced the SGLang TP4/EP2 deployment on 2026-10-04; that
 deployment is stopped, not removed, and is the rollback (below).
 
 The engine is [jayleaton/deepseek-v41-tensorfold-spark](https://github.com/jayleaton/deepseek-v41-tensorfold-spark):
@@ -126,15 +126,41 @@ Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifa
 failures unrelated to four Sparks; the image built from a fresh clone; the Spark test windows):
 [the fork's README](https://github.com/neko-legends/deepseek-v41-tensorfold-spark#how-it-was-tested-2026-10-05).
 
-## In test 2026-10-05: Jay's G19 engine
+## Live 2026-10-07: Jay's G19 engine
 
-Our four-Spark port of his newer engine is on the fork's [`g19` branch](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/tree/g19). First numbers, one boot each: cold 160k prompt **36.0–36.9 s** (live 39.0–39.3 s), 20k 5.3–6.0 s, decode within noise. It goes live only after the full checks (needles to ~405k, gates, wide sampling, images, 420k context). [Report](../../../artifacts/tensorfold-v41-g19-20261005/REPORT.md).
+Our four-Spark port of his newer engine, now the fork's `main`, serving since 2026-10-07 00:06. The G13 build it
+replaced, measured in the same window (one boot each, 512-token replies, two trials):
+
+| | G13 build | **G19 build** |
+| --- | ---: | ---: |
+| decode, prose 1k / 20k / 160k (cold, tok/s) | 53.1 / 50.1 / 47.5 | 54.5 / 50.3 / 48.6 |
+| decode, code 1k / 20k / 160k (cold, tok/s) | 88.9 / 80.8 / 84.9 | 90.7 / 82.3 / 86.2 |
+| cold first token, 20k / 160k | 5.9-6.7 s / 38.9-39.1 s | **5.4-6.0 s / 35.9-36.2 s** |
+| context a request slot | 300K | **420K** (KV pool 1,201,152 tokens, independent of the context) |
+| image input | no | **yes** (DeepSeek's ViT on rank 0) |
+
+| check on the G19 build | result |
+| --- | --- |
+| code word at 30 / 60 / 85% of 20k / 80k / 158k-token prompts, and at 50% of a ~405k-token prompt | 3 / 3, 1 / 1 |
+| short gates; nucleus, `top_k` 40,000 / 32,000, JSON nucleus | 7 / 7; 6 / 6 |
+| image question (red / blue halves) | "Red and blue" |
+| greedy reply vs the G13 build | byte-identical |
+
+What changed: G19's prompt-reading speed switches and fused dense prefill (~7% at 160k), the context and image
+input, and his fail-fast and memory fixes at four ranks. Writing speed is unchanged within noise: the per-token
+plan link over RDMA was worth only ~1-2% at four ranks. One setup trap: the image routing bias must be in the cache
+volume on **every** node (one node had missed the download; that rank refused to start).
+
+Jay's PR review asked for a smaller patch for his repository: four ranks and the review's fixes only, two-Spark
+output unchanged. That version (the fork's `four-sparks` branch) gives byte-identical replies at TP=2 against his
+main on two of our Sparks (9 / 9 requests, the same tok/s). Details:
+[artifacts/tensorfold-v41-g19-20261005](../../../artifacts/tensorfold-v41-g19-20261005/REPORT.md).
 
 ## Our installation (forge, anvil, ember, flame)
 
 | | |
 | --- | --- |
-| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4m6` (the fork's `main`: patches 0001-0006, the three switches above) since 2026-10-05 13:06 (rollback: `/home/jun/tf4/pf/tp4.env.before-m6` for 0005 alone, `pf/tp4.env.before-fix` for 0004, `pf/tp4.env.before-pipeline` for 0003). `/v1/model_info` and the `vllm:` series on `/metrics` report the 4 request slots; sparkDash (`dgx-dash.service` on eva-core, DGX-dash `4d27fd1`) shows 4, and Eva's router sizes its concurrency from it |
+| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4g19b` (the fork's `main` on G19, with `config/tp4.env.example`'s G19 block: 420K context, images, RDMA plan link, fused dense prefill) since 2026-10-07 00:06 (rollback: `/home/jun/tf4/pf/tp4.env.before-g19` for the G13 build `tp4m6`; older: `pf/tp4.env.before-m6`, `before-fix`, `before-pipeline`). `/v1/model_info` and the `vllm:` series on `/metrics` report the 4 request slots; sparkDash (`dgx-dash.service` on eva-core, DGX-dash `4d27fd1`) shows 4, and Eva's router sizes its concurrency from it |
 | keeper | `/home/jun/tf4/keeper.sh` from cron: starts 4 min after a reboot, restarts after 3 failed health checks; pauses while `/home/jun/tf4/maintenance` is newer than an hour or an SGLang head container runs |
 | model names | `deepseek-v4.1-flash` (alias) and `DeepSeek-V4.1-Flash-TF`; thinking on by default (effort 75), `chat_template_kwargs.thinking=false` turns it off |
 | rollback to SGLang | `touch /home/jun/tf4/maintenance && /home/jun/tf4/serve4.sh stop && python3 /home/jun/tensorfold-native-20261002/restore_ep2.py` (the keeper stands down while SGLang runs) |
