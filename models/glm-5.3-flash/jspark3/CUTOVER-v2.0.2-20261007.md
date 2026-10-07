@@ -284,6 +284,68 @@ crash-forensics rule applies (an NVRM OOM wedges the node). The honest test is
 to raise the request on a drained lane and read back the
 `usable tokens (requested N)` line to discover the true ceiling empirically.
 
+### Napkin math: how much pool could we actually get? (2026-10-07)
+
+Computed by calling the engine's OWN sizing functions with our real config
+inside the serving container (`mla_geometry`/`draft_geometry`/`fit_shared_pool`
+are closed-form arithmetic — they allocate nothing). Scripts:
+`checks/pool-slope.py`, `checks/pool-ceiling-calc.py`.
+
+Rank 0 (the binding rank — it carries the vision tower):
+
+| term | value |
+|---|---:|
+| weights resident | 62.59 GiB |
+| loading/staging | 6.33 GiB |
+| workspace at current 360,448 pool | 12.98 GiB |
+| vision tower + session/reply reserves + draft slot graphs (constant) | 4.14 GiB |
+| **total** | **79.70 GiB** (matches the startup log exactly) |
+| budget (`available_bytes` at startup) | 102.16 GiB |
+| minus `TF_GLM_CACHE_GIB=5` snapshot reserve | ceiling **97.16 GiB** |
+
+**Marginal cost of pool: 20,224 bytes/token = 19.75 KiB/token.**
+So **1 GiB buys ~53,000 pool tokens**; 100K extra tokens costs 1.88 GiB.
+
+The 4.14 GiB constant was calibrated from the engine's own logged total rather
+than re-derived (I initially passed `with_fixed(extra=0)` and came out 4.14 GiB
+light at 75.56 vs the logged 79.70 — the gap is rank-0's vision tower plus
+reserves, which is pool-independent).
+
+Options, all within the engine's legal range (`--context` .. `parallel x --context`):
+
+| setting | tokens | x ctx | concurrent ~156K | concurrent 256K | rank-0 total |
+|---|---:|---:|---:|---:|---:|
+| current | 360,448 | 1.38x | 2.3 | 1.4 | 79.7 GiB |
+| **step 1 (recommended)** | **786,432** | **3.00x** | **~5.0** | **~3.0** | **~87.7 GiB** |
+| step 2 | 1,048,576 | 4.00x | ~6.7 | ~4.0 | ~92.6 GiB |
+| calibrated max | 1,287,442 | 4.91x | ~8.3 | ~4.9 | 97.16 GiB (zero spare) |
+
+So **~3.5x more pool is available, taking usable concurrency from ~2 to ~8** at
+observed context sizes — or from 1 to ~5 agents at the full 256K Hermes cap.
+
+Notes and cautions:
+- The budget is NOT reckless to approach: engine.py's own comment says the
+  capacity budget "already leaves at least a tenth of host RAM available", and
+  the 5 GiB snapshot reserve is subtracted on top. Still, prefer step 1 first.
+- **Do not go to the calibrated max** — it leaves zero spare against an
+  *estimate*, and our GB10 crash forensics show an NVRM OOM wedges the node.
+- `budget_bytes` is measured from free memory AT STARTUP, so it must be set on a
+  drained lane; ranks 1/2 reported 103.38 / 102.82 GiB budget and only 77.40 GiB
+  total (no vision tower), so **rank 0 binds** and `fit_shared_pool` takes the
+  `min()` across ranks anyway.
+- **Tradeoff worth knowing:** `ceiling = budget - TF_GLM_CACHE_GIB`. The 5 GiB
+  conversation store is subtracted from the pool's room, so pool (live
+  concurrency) and snapshot cache (resume durability) compete for the same
+  budget. Raising both is not free.
+- Effect on the `store-evicted` problem is PLAUSIBLE but unproven: a larger pool
+  keeps more sessions' contexts resident, so a next turn may resume from the
+  pool without needing a disk snapshot at all. That sidesteps the quiet-gate
+  writer rather than fixing it. Must be measured, not assumed.
+- Raising `TF_GLM_POOL_TOKENS` requires a lane restart. Needs a drained window
+  and Victor's approval. Verify after start by reading
+  `GLM shared token pool: N usable tokens (requested N)` — if usable < requested
+  the engine clamped and the real ceiling is lower than this math.
+
 One-shot cron `jspark3-v202-resume-recheck` (job `e8827d963c41`) re-runs the
 audit to quantify the standing cost and confirm `store-evicted` persists.
 
