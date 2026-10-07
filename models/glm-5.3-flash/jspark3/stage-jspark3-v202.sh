@@ -34,6 +34,22 @@ echo "--- cluster.env ---"; grep -vE '^#|^$' "$NEW_KIT/cluster.env"
 sed -i "s#^SERVE_NAME=.*#SERVE_NAME=GLM-5.3-Flash-EXL3#" "$NEW_KIT/config/serve.conf"
 grep -E '^SERVE_NAME=|^SERVE_SESSION_NAMESPACE=' "$NEW_KIT/config/serve.conf"
 
+# --- 3b. fleet deviation: shared KV pool ----------------------------------
+# Upstream ships TF_GLM_POOL_TOKENS=360448 (1.375x context), just above the
+# engine's legal floor. Our agents are capped at 256K context, so that pool
+# holds only ONE max-size conversation and ~2 at observed (~156K) sizes, which
+# caps usable concurrency at ~2 regardless of --parallel 8.
+# Raised to 786432 (3x context) on 2026-10-07: ~5 concurrent 156K / ~3 at 256K.
+# Verified granted in full ("786,432 usable tokens (requested 786,432)") and
+# proven functionally: two concurrent 195K contexts (390,875 combined) stayed
+# resident together, which the old pool could not hold.
+# Legal range is --context .. parallel*--context (262,144 .. 2,097,152); the
+# calibrated memory ceiling is ~1,287,442. Do NOT go to the max: it leaves zero
+# spare against an ESTIMATE and an NVRM OOM wedges a GB10 node.
+# MUST be identical on every rank - the engine hard-errors on a mismatch.
+sed -i "s#^TF_GLM_POOL_TOKENS=.*#TF_GLM_POOL_TOKENS=786432#" "$NEW_KIT/config/serve.env"
+grep -E '^TF_GLM_POOL_TOKENS=' "$NEW_KIT/config/serve.env"
+
 # --- 4. DATA: reuse verified weights by symlink, fresh sessions ------------
 # wheels.lock + manifests/{inputs,base} are byte-identical v2.0.1..v2.0.2,
 # so the verified weights and dep wheels are valid for this release.
