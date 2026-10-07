@@ -17,7 +17,7 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash · TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | 🟢 **serving** | **63** prose / **100** code tok/s · cold 160k prompt **36 s** · 420K context |
+| 🐋 | **[DeepSeek V4.1 Flash · TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | 🟢 **serving** | **67** prose / **104** code tok/s · cold 160k prompt **36 s** · 420K context |
 | 🐋 | [DeepSeek V4.1 Flash · SGLang](models/deepseek-v4.1-flash/README.md) | 🟡 rollback | 38 prose / 54–62 code tok/s · 1M context |
 | 🐋 | [DeepSeek V4.1 Flash · vLLM](docs/dsv41-vllm-tp4.md) | 🟡 fallback | 71 code tok/s · 109 tok/s for 4 users |
 | 🦄 | [Qwen 3.8 Flash Next](models/qwen-3.8-flash-next/README.md) | ⚪ archived | 91 code tok/s · 600 tok/s for 16 users |
@@ -48,6 +48,7 @@ That history is the point. When a new model comes out, the next engineer (or the
 - 🔥 **Warm up before you trust a number.** JIT kernels and draft acceptance start cold (acceptance went from 2.6 at first boot to 7.95 an hour later). Warm the kernels at boot.
 - 🧮 **Unified memory is GPU memory.** Leave headroom (GLM crashed at 0.85 and is stable at 0.80) and drop the page cache before a start.
 - 💾 **No bulk disk writes on a serving node.** Engram reads NVMe on every step, so one slow rank stalls all four.
+- 🕵️ **Fallbacks are silent.** Check the boot log for the transport you expect (`over RoCE`, not NCCL) after every start. A leftover failure file cost TensorFold 12–19% for two days ([report](artifacts/tensorfold-v41-roce-20261007/REPORT.md)).
 - ⏳ **Busy is not wedged.** Check the queue before restarting. A server is alive only if it answers a real 1-token completion.
 - ✍️ **Speculative decoding depends on the text.** Code and math run about 2× faster than prose. Always quote task, prompt length and thinking mode.
 - 🪶 **Fewer bytes per token, faster decode.** 2.9-bit EXL3 gave 1.7× over FP8 on the same four Sparks.
@@ -61,15 +62,16 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/lane-dsv41-tensorfold-dark.svg">
-  <img alt="DeepSeek V4.1 Flash on TensorFold, four Sparks: writing speed prose 63 vs 38 tok/s for SGLang, code 100 vs 57, four users 119 vs 76; cold 160k-token prompt 97-100 s on 2026-10-04, 39 s pipelined on 2026-10-05, 36 s on the G19 engine live since 2026-10-07, SGLang 48-52 s" src="docs/images/lane-dsv41-tensorfold-light.svg">
+  <img alt="DeepSeek V4.1 Flash on TensorFold, four Sparks: writing speed prose 66 vs 38 tok/s for SGLang, code 104 vs 57, four users 122 vs 76; cold 160k-token prompt 97-100 s on 2026-10-04, 39 s pipelined on 2026-10-05, 36 s on the G19 engine live since 2026-10-07, SGLang 48-52 s" src="docs/images/lane-dsv41-tensorfold-light.svg">
 </picture>
 
 - ⚡ **1.7× SGLang's decode** at every prompt length from 1k to 160k: jayleaton's engine, ported by us to four Sparks.
 - 🏭 **Long prompts run as a pipeline** across the Sparks: a cold 160k-token prompt takes 36 s (was 100 s).
 - 🛠️ **The bugs from Jay's review are fixed** (crash at `top_k` above 32,256): same replies byte for byte, same speed.
 - 🆕 **Jay's newer engine (G19), live since 2026-10-07:** 420K context and image input; long prompts ~7% faster. [Report](artifacts/tensorfold-v41-g19-20261005/REPORT.md).
+- 🔌 **Back on RoCE (2026-10-07):** a stale failure file had silently forced the slower NCCL path for two days. Fixed: prose 66.5, code 104.1 tok/s, 4 users 122. [Report](artifacts/tensorfold-v41-roce-20261007/REPORT.md).
 
-📦 [Recipe: our four-Spark fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [decode](artifacts/tensorfold-v41-4x-20261004/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
+📦 [Recipe: our four-Spark fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [decode](artifacts/tensorfold-v41-roce-20261007/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
 
 <a id="dsv41-sglang"></a>
 

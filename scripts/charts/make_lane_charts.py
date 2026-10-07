@@ -101,11 +101,11 @@ def tensorfold(t, theme):
           "Uncensored 2.9-bit EXL3 · 420K context · images · G19 engine live since 2026-10-07")
     axclean(a, t, "Writing speed  (tok/s, higher is better)")
     hbars(a, t, ["Prose", "Code", "4 users"],
-          [("TensorFold", [63.4, 100.2, 119.2], "new", None),
+          [("TensorFold", [66.5, 104.1, 122.2], "new", None),
            ("SGLang TP4/EP2", [37.8, 57.4, 75.7], "old", None)], xmax=145)
     axclean(b, t, "Cold 160k-token prompt  (s, lower is better)")
     hbars(b, t, ["2026-10-04", "10-05 pipelined", "10-07 G19 (live)", "SGLang"],
-          [("", [98.6, 39.1, 36.1, 50.1], "new", ["97–100 s", "39 s", "36 s", "48–52 s"])], xmax=125)
+          [("", [98.6, 39.1, 35.9, 50.1], "new", ["97–100 s", "39 s", "36 s", "48–52 s"])], xmax=125)
     for i in (0, 1, 3):
         b.patches[i].set_color(t["old"]); b.texts[i].set_color(t["ink2"]); b.texts[i].set_fontweight("normal")
     legend(fig, t, [("TensorFold (ours, 4 Sparks)", "new"), ("SGLang TP4/EP2 · earlier build", "old")])

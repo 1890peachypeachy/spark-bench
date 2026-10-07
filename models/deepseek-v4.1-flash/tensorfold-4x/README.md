@@ -12,8 +12,28 @@ our fork, **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../../docs/images/lane-dsv41-tensorfold-dark.svg">
-  <img alt="DeepSeek V4.1 Flash on TensorFold, four Sparks: writing speed prose 63 vs 38 tok/s for SGLang, code 100 vs 57, four users 119 vs 76; cold 160k-token prompt 97-100 s on 2026-10-04, 39 s pipelined on 2026-10-05, SGLang 48-52 s" src="../../../docs/images/lane-dsv41-tensorfold-light.svg">
+  <img alt="DeepSeek V4.1 Flash on TensorFold, four Sparks: writing speed prose 66 vs 38 tok/s for SGLang, code 104 vs 57, four users 122 vs 76; cold 160k-token prompt 97-100 s on 2026-10-04, 39 s pipelined on 2026-10-05, 36 s on the G19 engine, SGLang 48-52 s" src="../../../docs/images/lane-dsv41-tensorfold-light.svg">
 </picture>
+
+## Results (2026-10-07, live: G19 on RoCE)
+
+The same depth sweep as 2026-10-04 (median of 3 a cell, 512 tokens, greedy, isolated), on the live G19 server:
+
+| prompt | 1k | 20k | 40k | 80k | 160k | geometric mean | 2026-10-04 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| prose, tok/s | 66.0 | 66.7 | 68.7 | 69.6 | 62.0 | **66.5** | 63.4 |
+| code, tok/s | 107.2 | 103.5 | 105.0 | 101.7 | 103.4 | **104.1** | 100.2 |
+| cold first token (prose / code) | 0.9 / 0.7 s | 6.0 / 5.3 s | 9.3 / 9.4 s | 17.9 / 17.8 s | **35.9 / 35.8 s** | | 99.8 / 97.4 s at 160k |
+
+Four users at once (`dsbench`): **122.2 tok/s** aggregate (was 119.2).
+
+**From 2026-10-05 17:32 to 2026-10-07, the server ran on NCCL instead of RoCE without saying so.** A crash test left
+RoCE's failure file `/cache/roce-failed` in forge's cache volume. While that file exists, every start uses NCCL.
+Moving it aside gave +12% code and +19% prose on `m2bench`. The G13 vs G19 table [below](#live-2026-10-07-jays-g19-engine)
+was measured in that state, so both of its columns are lower than this table.
+
+After a start, check that rank 0's log says `all-gathers ... over RoCE` and `plan link: rdma`.
+[Report](../../../artifacts/tensorfold-v41-roce-20261007/REPORT.md).
 
 ## Results (2026-10-04)
 
@@ -138,6 +158,8 @@ replaced, measured in the same window (one boot each, 512-token replies, two tri
 | cold first token, 20k / 160k | 5.9-6.7 s / 38.9-39.1 s | **5.4-6.0 s / 35.9-36.2 s** |
 | context a request slot | 300K | **420K** (KV pool 1,201,152 tokens, independent of the context) |
 | image input | no | **yes** (DeepSeek's ViT on rank 0) |
+
+Both columns ran on the NCCL fallback (above), so their decode numbers sit below the RoCE table at the top.
 
 | check on the G19 build | result |
 | --- | --- |

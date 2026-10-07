@@ -1,0 +1,102 @@
+[
+ {
+  "kind": "prose",
+  "depth": 1000,
+  "g19_roce_tps": 66.0,
+  "tf4_20261004_tps": 63.6,
+  "g19_roce_cold_ttft": 0.9,
+  "tf4_20261004_cold_ttft": 0.3,
+  "g19_roce_warm_ttft": 0.23,
+  "n": 3
+ },
+ {
+  "kind": "prose",
+  "depth": 20000,
+  "g19_roce_tps": 66.7,
+  "tf4_20261004_tps": 65.7,
+  "g19_roce_cold_ttft": 6.0,
+  "tf4_20261004_cold_ttft": 14.2,
+  "g19_roce_warm_ttft": 0.29,
+  "n": 3
+ },
+ {
+  "kind": "prose",
+  "depth": 40000,
+  "g19_roce_tps": 68.7,
+  "tf4_20261004_tps": 64.0,
+  "g19_roce_cold_ttft": 9.3,
+  "tf4_20261004_cold_ttft": 24.5,
+  "g19_roce_warm_ttft": 0.26,
+  "n": 3
+ },
+ {
+  "kind": "prose",
+  "depth": 80000,
+  "g19_roce_tps": 69.6,
+  "tf4_20261004_tps": 62.8,
+  "g19_roce_cold_ttft": 17.9,
+  "tf4_20261004_cold_ttft": 45.9,
+  "g19_roce_warm_ttft": 0.41,
+  "n": 3
+ },
+ {
+  "kind": "prose",
+  "depth": 160000,
+  "g19_roce_tps": 62.0,
+  "tf4_20261004_tps": 61.0,
+  "g19_roce_cold_ttft": 35.9,
+  "tf4_20261004_cold_ttft": 99.8,
+  "g19_roce_warm_ttft": 0.62,
+  "n": 3
+ },
+ {
+  "kind": "code",
+  "depth": 1000,
+  "g19_roce_tps": 107.2,
+  "tf4_20261004_tps": 104.9,
+  "g19_roce_cold_ttft": 0.7,
+  "tf4_20261004_cold_ttft": 0.8,
+  "g19_roce_warm_ttft": 0.23,
+  "n": 3
+ },
+ {
+  "kind": "code",
+  "depth": 20000,
+  "g19_roce_tps": 103.5,
+  "tf4_20261004_tps": 97.0,
+  "g19_roce_cold_ttft": 5.3,
+  "tf4_20261004_cold_ttft": 12.9,
+  "g19_roce_warm_ttft": 0.27,
+  "n": 3
+ },
+ {
+  "kind": "code",
+  "depth": 40000,
+  "g19_roce_tps": 105.0,
+  "tf4_20261004_tps": 96.4,
+  "g19_roce_cold_ttft": 9.4,
+  "tf4_20261004_cold_ttft": 24.7,
+  "g19_roce_warm_ttft": 0.31,
+  "n": 3
+ },
+ {
+  "kind": "code",
+  "depth": 80000,
+  "g19_roce_tps": 101.7,
+  "tf4_20261004_tps": 103.1,
+  "g19_roce_cold_ttft": 17.8,
+  "tf4_20261004_cold_ttft": 46.8,
+  "g19_roce_warm_ttft": 0.41,
+  "n": 3
+ },
+ {
+  "kind": "code",
+  "depth": 160000,
+  "g19_roce_tps": 103.4,
+  "tf4_20261004_tps": 99.8,
+  "g19_roce_cold_ttft": 35.8,
+  "tf4_20261004_cold_ttft": 97.4,
+  "g19_roce_warm_ttft": 0.58,
+  "n": 3
+ }
+]
