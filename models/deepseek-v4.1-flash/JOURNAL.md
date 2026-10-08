@@ -4,6 +4,21 @@ Every dated entry for this model, newest first: what we changed, what it measure
 
 ---
 
+**2026-10-07 (19:00) — expert split rotated (live, +1-1.5% at four users); a drafter retrain that did not pay.**
+
+- **Rotation (`TF_DSV41_EXPERT_ROTATE=1`, fork `patches/0004`).** Each expert's wide 128-column slices now rotate round the four Sparks by expert id, instead of always landing on Sparks 1 and 2. The x3ld kernel reads an expert's own width; nothing else changes and it stays exact.
+  - One user: unchanged (code 122.2 vs 122.9, prose 69.0 vs 68.7, three boots against one in the same window).
+  - Four users: aggregate 137.3 → **138.7**, steady 196.9 → **199.8** tok/s (two boots each).
+  - Verify windows of 16-48 rows: 2-8% faster.
+
+  Live since 19:01. It passes every gate (needle at 20k / 80k / 158k, image, the six wide sampling cases).
+- **Drafter retrain on the uncensored model: no gain.** This was the prose lever we hoped for.
+  - We captured 510 prompts (173k positions) at TP4.
+  - We fixed the trainer so its drafter matches the engine's: the engine's 4-bit head, bf16 mHC weights, and greedy passes only. Agreement went 0.72 → 0.90 (0.985 at the first draft). Jay's "port fidelity" blocker was half a measurement artifact.
+  - Offline, the trained drafters gained +1.9% (heads) and +5.5% (heads + LoRA) tokens a round.
+  - On the engine, prose acceptance rose only ~1.7%, and the LoRA version's draft pass costs +0.3 ms. Result: code 122.5-123.6 → 119.5-121.1 (heads) / 114-116 (LoRA). Not adopted, not published.
+  - Lesson: offline acceptance gains on this drafter do not transfer, even with a faithful trainer.
+
 **2026-10-07 (14:06) — single-user decode: the four-Spark tax measured; a 4-bit draft head adopted.** We A/B'd every exact switch on the exchanges and the L2 prefetch, one fresh boot each with `m2bench` C1. None moved code or prose beyond the ±2% between identical boots. The switches tried were RoCE lean, one-HCA stripes, 3 pollers, lazy completions, a pinned proxy, and L2 prefetch off / 6 / 24 MB. The drafter's 4-bit head (`TF_DSV41_DRAFT_HEAD=q4`) won on both of its boots: code 120.3 → **123.4**, prose 66.8 → **67.8** tok/s, draft pass 2.6 → 2.4 ms. It is exact, because drafts only propose, and it is live. A RoCE trace of 367 decode windows shows where four Sparks lose to perfect scaling:
 - **~2.5 ms a window is ranks waiting for the slowest one.** ~0.9 ms of that is structural: Sparks 1 and 2 hold 640 of each expert's 2,304 columns against 512, so they lose every MoE step by ~30 us. The rest is the jitter of waiting on four GPUs instead of two.
 - **~2.5 ms more is spent inside the exchange kernels.**
