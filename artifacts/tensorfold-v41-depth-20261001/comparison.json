@@ -1,0 +1,435 @@
+{
+  "cells": [
+    {
+      "target_tokens": 1000,
+      "kind": "code",
+      "baseline": {
+        "prompt_tokens": 1001,
+        "decode_tps_median": 55.72602777653426,
+        "decode_tps_min": 50.719378210244145,
+        "decode_tps_max": 56.889564110208056,
+        "decode_tps_trials": [
+          56.889564110208056,
+          50.719378210244145,
+          55.72602777653426
+        ],
+        "cold_ttft_s": 0.5185316372662783,
+        "warm_ttft_s_median": 0.3041246244683862,
+        "cold_prompt_tokens_per_ttft_s": 1930.451158732216,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 1001,
+        "decode_tps_median": 62.18966458173808,
+        "decode_tps_min": 58.16359659293414,
+        "decode_tps_max": 62.45894326168633,
+        "decode_tps_trials": [
+          62.18966458173808,
+          58.16359659293414,
+          62.45894326168633
+        ],
+        "cold_ttft_s": 0.5271203988231719,
+        "warm_ttft_s_median": 0.29903420410118997,
+        "cold_prompt_tokens_per_ttft_s": 1898.9968937548101,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 11.59895485664888,
+      "cold_ttft_change_pct": 1.65636210785014,
+      "restored_ep4": {
+        "prompt_tokens": 1001,
+        "decode_tps_median": 51.42499429100648,
+        "decode_tps_min": 51.177654578294614,
+        "decode_tps_max": 59.24824327052122,
+        "decode_tps_trials": [
+          51.42499429100648,
+          51.177654578294614,
+          59.24824327052122
+        ],
+        "cold_ttft_s": 0.5265887072309852,
+        "warm_ttft_s_median": 0.3043660914991051,
+        "cold_prompt_tokens_per_ttft_s": 1900.914292795339,
+        "unique_output_hashes": 3
+      },
+      "decode_change_vs_restored_pct": 20.932759330639716
+    },
+    {
+      "target_tokens": 1000,
+      "kind": "prose",
+      "baseline": {
+        "prompt_tokens": 1001,
+        "decode_tps_median": 35.905170739338516,
+        "decode_tps_min": 35.8425634983725,
+        "decode_tps_max": 37.032148578779285,
+        "decode_tps_trials": [
+          37.032148578779285,
+          35.8425634983725,
+          35.905170739338516
+        ],
+        "cold_ttft_s": 0.521509453188628,
+        "warm_ttft_s_median": 0.31018978590145707,
+        "cold_prompt_tokens_per_ttft_s": 1919.428293925752,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 1001,
+        "decode_tps_median": 37.69956549558322,
+        "decode_tps_min": 36.89868503099341,
+        "decode_tps_max": 39.34466138407113,
+        "decode_tps_trials": [
+          37.69956549558322,
+          36.89868503099341,
+          39.34466138407113
+        ],
+        "cold_ttft_s": 0.5031496360898018,
+        "warm_ttft_s_median": 0.29481579689309,
+        "cold_prompt_tokens_per_ttft_s": 1989.4678008300143,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 4.9975942720660305,
+      "cold_ttft_change_pct": -3.5205147263525194,
+      "restored_ep4": {
+        "prompt_tokens": 1001,
+        "decode_tps_median": 35.11234484494202,
+        "decode_tps_min": 33.791932979982484,
+        "decode_tps_max": 36.774608063121406,
+        "decode_tps_trials": [
+          33.791932979982484,
+          35.11234484494202,
+          36.774608063121406
+        ],
+        "cold_ttft_s": 0.5176168973557651,
+        "warm_ttft_s_median": 0.3126270028296858,
+        "cold_prompt_tokens_per_ttft_s": 1933.8626793553053,
+        "unique_output_hashes": 3
+      },
+      "decode_change_vs_restored_pct": 7.368407499033469
+    },
+    {
+      "target_tokens": 20000,
+      "kind": "code",
+      "baseline": {
+        "prompt_tokens": 19999,
+        "decode_tps_median": 58.0975133061746,
+        "decode_tps_min": 55.92484631165218,
+        "decode_tps_max": 58.5375085889024,
+        "decode_tps_trials": [
+          55.92484631165218,
+          58.5375085889024,
+          58.0975133061746
+        ],
+        "cold_ttft_s": 5.335779944900423,
+        "warm_ttft_s_median": 0.23639314249157906,
+        "cold_prompt_tokens_per_ttft_s": 3748.0931010121,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 19999,
+        "decode_tps_median": 56.92812585703713,
+        "decode_tps_min": 54.247265684452756,
+        "decode_tps_max": 61.20748994140615,
+        "decode_tps_trials": [
+          61.20748994140615,
+          56.92812585703713,
+          54.247265684452756
+        ],
+        "cold_ttft_s": 5.344275907147676,
+        "warm_ttft_s_median": 0.2102855599950999,
+        "cold_prompt_tokens_per_ttft_s": 3742.1346404014125,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": -2.012801207127024,
+      "cold_ttft_change_pct": 0.15922624873936364
+    },
+    {
+      "target_tokens": 20000,
+      "kind": "prose",
+      "baseline": {
+        "prompt_tokens": 19999,
+        "decode_tps_median": 35.45710536733063,
+        "decode_tps_min": 34.49335976948055,
+        "decode_tps_max": 35.56550912963264,
+        "decode_tps_trials": [
+          35.45710536733063,
+          35.56550912963264,
+          34.49335976948055
+        ],
+        "cold_ttft_s": 5.417426542378962,
+        "warm_ttft_s_median": 0.23214451549574733,
+        "cold_prompt_tokens_per_ttft_s": 3691.605201021851,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 19999,
+        "decode_tps_median": 38.02186903894254,
+        "decode_tps_min": 36.50052687907109,
+        "decode_tps_max": 40.23248797137807,
+        "decode_tps_trials": [
+          40.23248797137807,
+          38.02186903894254,
+          36.50052687907109
+        ],
+        "cold_ttft_s": 5.47960864007473,
+        "warm_ttft_s_median": 0.20124103454872966,
+        "cold_prompt_tokens_per_ttft_s": 3649.71320282597,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 7.233426544669452,
+      "cold_ttft_change_pct": 1.1478161671290898
+    },
+    {
+      "target_tokens": 40000,
+      "kind": "code",
+      "baseline": {
+        "prompt_tokens": 40000,
+        "decode_tps_median": 52.908740279774655,
+        "decode_tps_min": 50.45345438136892,
+        "decode_tps_max": 57.50914447681083,
+        "decode_tps_trials": [
+          50.45345438136892,
+          57.50914447681083,
+          52.908740279774655
+        ],
+        "cold_ttft_s": 10.766562181990594,
+        "warm_ttft_s_median": 0.3281021125148982,
+        "cold_prompt_tokens_per_ttft_s": 3715.206332705593,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 40000,
+        "decode_tps_median": 53.83123544151261,
+        "decode_tps_min": 53.1756672815874,
+        "decode_tps_max": 63.30498951229774,
+        "decode_tps_trials": [
+          63.30498951229774,
+          53.83123544151261,
+          53.1756672815874
+        ],
+        "cold_ttft_s": 10.761824743822217,
+        "warm_ttft_s_median": 0.2798511255532503,
+        "cold_prompt_tokens_per_ttft_s": 3716.8417951576325,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 1.7435591111410353,
+      "cold_ttft_change_pct": -0.04400140070988101
+    },
+    {
+      "target_tokens": 40000,
+      "kind": "prose",
+      "baseline": {
+        "prompt_tokens": 40001,
+        "decode_tps_median": 34.480057051501966,
+        "decode_tps_min": 33.37284244047628,
+        "decode_tps_max": 36.43815383169838,
+        "decode_tps_trials": [
+          34.480057051501966,
+          36.43815383169838,
+          33.37284244047628
+        ],
+        "cold_ttft_s": 10.850729597732425,
+        "warm_ttft_s_median": 0.33568063913844526,
+        "cold_prompt_tokens_per_ttft_s": 3686.480216810432,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 40001,
+        "decode_tps_median": 38.12873163709163,
+        "decode_tps_min": 35.833288139475755,
+        "decode_tps_max": 39.33453482697155,
+        "decode_tps_trials": [
+          38.12873163709163,
+          39.33453482697155,
+          35.833288139475755
+        ],
+        "cold_ttft_s": 10.72141943871975,
+        "warm_ttft_s_median": 0.3042213059961796,
+        "cold_prompt_tokens_per_ttft_s": 3730.942551835892,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 10.581985349211397,
+      "cold_ttft_change_pct": -1.1917185646179829
+    },
+    {
+      "target_tokens": 80000,
+      "kind": "code",
+      "baseline": {
+        "prompt_tokens": 80000,
+        "decode_tps_median": 50.30425691372869,
+        "decode_tps_min": 45.32808481805728,
+        "decode_tps_max": 55.01465616334143,
+        "decode_tps_trials": [
+          55.01465616334143,
+          45.32808481805728,
+          50.30425691372869
+        ],
+        "cold_ttft_s": 22.04107648693025,
+        "warm_ttft_s_median": 0.48742558201774955,
+        "cold_prompt_tokens_per_ttft_s": 3629.5867875345284,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 80000,
+        "decode_tps_median": 59.87885578060176,
+        "decode_tps_min": 53.47820847041715,
+        "decode_tps_max": 64.49066575198871,
+        "decode_tps_trials": [
+          53.47820847041715,
+          64.49066575198871,
+          59.87885578060176
+        ],
+        "cold_ttft_s": 21.99512685695663,
+        "warm_ttft_s_median": 0.46769213886000216,
+        "cold_prompt_tokens_per_ttft_s": 3637.169293010809,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 19.03337700285168,
+      "cold_ttft_change_pct": -0.20847271230544084
+    },
+    {
+      "target_tokens": 80000,
+      "kind": "prose",
+      "baseline": {
+        "prompt_tokens": 80000,
+        "decode_tps_median": 34.55299571650042,
+        "decode_tps_min": 33.84138943567897,
+        "decode_tps_max": 34.75238269847749,
+        "decode_tps_trials": [
+          34.55299571650042,
+          34.75238269847749,
+          33.84138943567897
+        ],
+        "cold_ttft_s": 22.119657929055393,
+        "warm_ttft_s_median": 0.5004432795103639,
+        "cold_prompt_tokens_per_ttft_s": 3616.6924577488867,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 80000,
+        "decode_tps_median": 37.06926528273879,
+        "decode_tps_min": 36.56922409419494,
+        "decode_tps_max": 37.33470695394952,
+        "decode_tps_trials": [
+          37.33470695394952,
+          37.06926528273879,
+          36.56922409419494
+        ],
+        "cold_ttft_s": 22.02511131297797,
+        "warm_ttft_s_median": 0.47216126951389015,
+        "cold_prompt_tokens_per_ttft_s": 3632.217738344014,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 7.282348502815217,
+      "cold_ttft_change_pct": -0.42743254159112176
+    },
+    {
+      "target_tokens": 160000,
+      "kind": "code",
+      "baseline": {
+        "prompt_tokens": 159999,
+        "decode_tps_median": 47.48903391283165,
+        "decode_tps_min": 45.82863999892407,
+        "decode_tps_max": 49.45011911236912,
+        "decode_tps_trials": [
+          45.82863999892407,
+          49.45011911236912,
+          47.48903391283165
+        ],
+        "cold_ttft_s": 49.17284837458283,
+        "warm_ttft_s_median": 0.7191573632881045,
+        "cold_prompt_tokens_per_ttft_s": 3253.807849022279,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 159999,
+        "decode_tps_median": 54.59608263595203,
+        "decode_tps_min": 54.318185529141296,
+        "decode_tps_max": 55.2518839325256,
+        "decode_tps_trials": [
+          55.2518839325256,
+          54.318185529141296,
+          54.59608263595203
+        ],
+        "cold_ttft_s": 52.06324815796688,
+        "warm_ttft_s_median": 0.6795944252517074,
+        "cold_prompt_tokens_per_ttft_s": 3073.1659214680876,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 14.96566288580581,
+      "cold_ttft_change_pct": 5.878040176493182,
+      "restored_ep4": {
+        "prompt_tokens": 159999,
+        "decode_tps_median": 49.769229893846735,
+        "decode_tps_min": 48.16884064706902,
+        "decode_tps_max": 50.11442244647647,
+        "decode_tps_trials": [
+          48.16884064706902,
+          50.11442244647647,
+          49.769229893846735
+        ],
+        "cold_ttft_s": 47.77867943607271,
+        "warm_ttft_s_median": 0.6713729132898152,
+        "cold_prompt_tokens_per_ttft_s": 3348.753081676875,
+        "unique_output_hashes": 3
+      },
+      "decode_change_vs_restored_pct": 9.698467813145871
+    },
+    {
+      "target_tokens": 160000,
+      "kind": "prose",
+      "baseline": {
+        "prompt_tokens": 160000,
+        "decode_tps_median": 34.141729213854525,
+        "decode_tps_min": 34.12917175327668,
+        "decode_tps_max": 34.869792889514784,
+        "decode_tps_trials": [
+          34.12917175327668,
+          34.869792889514784,
+          34.141729213854525
+        ],
+        "cold_ttft_s": 49.165988409891725,
+        "warm_ttft_s_median": 0.7600353439338505,
+        "cold_prompt_tokens_per_ttft_s": 3254.2821811309204,
+        "unique_output_hashes": 3
+      },
+      "candidate": {
+        "prompt_tokens": 160000,
+        "decode_tps_median": 38.31146114390182,
+        "decode_tps_min": 36.55602549334716,
+        "decode_tps_max": 39.018813957272904,
+        "decode_tps_trials": [
+          38.31146114390182,
+          39.018813957272904,
+          36.55602549334716
+        ],
+        "cold_ttft_s": 48.1208489947021,
+        "warm_ttft_s_median": 0.7174803733360022,
+        "cold_prompt_tokens_per_ttft_s": 3324.9621181375105,
+        "unique_output_hashes": 3
+      },
+      "decode_change_pct": 12.213007442971712,
+      "cold_ttft_change_pct": -2.1257366097807373,
+      "restored_ep4": {
+        "prompt_tokens": 160000,
+        "decode_tps_median": 35.04157084256146,
+        "decode_tps_min": 32.37490773073294,
+        "decode_tps_max": 35.93752249611894,
+        "decode_tps_trials": [
+          35.93752249611894,
+          32.37490773073294,
+          35.04157084256146
+        ],
+        "cold_ttft_s": 49.481417974922806,
+        "warm_ttft_s_median": 0.7507853761781007,
+        "cold_prompt_tokens_per_ttft_s": 3233.5370841855834,
+        "unique_output_hashes": 3
+      },
+      "decode_change_vs_restored_pct": 9.331460384671896
+    }
+  ],
+  "limitations": [
+    "One full sweep per configuration, with a restored EP4 endpoint control when provided; requests within a boot are not independent boots.",
+    "One cold request and two repeats per cell; cold TTFT is a single observation.",
+    "SSE timing measures a rate proxy; events may contain multiple tokens.",
+    "Greedy outputs may differ across repeats/configurations; hashes and raw outputs are retained.",
+    "This sweep measures single-stream decoding, not four-stream throughput at depth."
+  ]
+}

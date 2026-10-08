@@ -12,7 +12,7 @@ models/deepseek-v4-flash/nvfp4-tp4/stop-dspark-tp4.sh
 
 ## Required inputs; this is not a one-command fresh-clone deployment
 
-Read the [original launch guide](../../../README.md#deepseek-v4-flash) first.
+Read the [original launch guide](../JOURNAL.md#how-to-run-deepseek-v4-flash-recipe) first.
 The retained implementations are [start](../../../scripts/start-dspark-tp4.sh),
 [status](../../../scripts/status-dspark-tp4.sh) and [stop](../../../scripts/stop-dspark-tp4.sh).
 

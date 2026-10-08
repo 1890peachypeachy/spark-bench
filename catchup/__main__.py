@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from .service import CatchupService
+from .switch import DEFAULT_POLL_S, CatchupSwitch, http_fetcher, resolve_config
 
 
 def _json(handler: BaseHTTPRequestHandler, status: int, payload: dict | list) -> None:
@@ -28,7 +29,7 @@ def build_handler(service: CatchupService) -> type[BaseHTTPRequestHandler]:
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
             if parsed.path == "/v1/health":
-                return _json(self, 200, {"ok": True, "vllm": service.vllm_url})
+                return _json(self, 200, {"ok": True, "vllm": service.vllm_url, **service.stats()})
             if parsed.path == "/v1/status":
                 query = parse_qs(parsed.query)
                 session_id = (query.get("session_id") or [""])[0]
@@ -60,16 +61,47 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default=os.environ.get("CATCHUP_MODEL", ""))
     parser.add_argument("--max-context", type=int, default=int(os.environ.get("CATCHUP_MAX_CONTEXT", "1000000")))
     parser.add_argument("--timeout", type=float, default=float(os.environ.get("CATCHUP_TIMEOUT_S", "1800")))
+    parser.add_argument(
+        "--max-inflight",
+        type=int,
+        default=int(os.environ.get("CATCHUP_MAX_INFLIGHT", "2")),
+        help="max concurrent warm prefills sent to the engine (backpressure; default 2)",
+    )
+    parser.add_argument(
+        "--switch-poll",
+        type=float,
+        default=float(os.environ.get("CATCHUP_SWITCH_POLL_S", str(DEFAULT_POLL_S))),
+        help="seconds between polls of eva-core's /api/kv-catchup/health (default 10)",
+    )
+    parser.add_argument(
+        "--no-switch",
+        action="store_true",
+        default=os.environ.get("CATCHUP_SWITCH", "1") == "0",
+        help="ignore eva-core's on/off switch (always on; pre-2026-10-05 behaviour)",
+    )
     args = parser.parse_args(argv)
     host, _, port = args.listen.partition(":")
+    switch = None
+    if not args.no_switch:
+        config = resolve_config()
+        switch = CatchupSwitch(http_fetcher(config["url"], config["token"]), poll_s=args.switch_poll)
+        print(
+            f"[kv-catchup] switch source: {config['url']} every {switch.poll_s:g}s "
+            f"(service token {'set' if config['token'] else 'MISSING'}; default ON until first read)",
+            flush=True,
+        )
     service = CatchupService(
         vllm_url=args.vllm,
         model=args.model,
         max_context=args.max_context,
         timeout_s=args.timeout,
+        max_inflight=args.max_inflight,
+        switch=switch,
     )
+    if switch is not None:
+        switch.start()
     server = ThreadingHTTPServer((host or "127.0.0.1", int(port or 18900)), build_handler(service))
-    print(f"catchup listening on {host or '127.0.0.1'}:{port or 18900} → {args.vllm}", flush=True)
+    print(f"catchup listening on {host or '127.0.0.1'}:{port or 18900} → {args.vllm} (max_inflight={args.max_inflight})", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

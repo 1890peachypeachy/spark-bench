@@ -7,7 +7,7 @@ The live campaign-selected configuration is **MTP k=4 + the local GEMV image
 end-to-end aggregate (three-repeat medians), with a **7.9% C1 prose regression**
 against the fresh k2 baseline. The official NVIDIA weights are unchanged.
 
-See the [dated update and screenshot](../../../README.md#qwen-3-8-flash),
+See the [dated journal](../JOURNAL.md),
 [campaign report, configuration and rollback](../../../results/qwen38-tuning-2026-09-06/REPORT.md),
 and [GEMV build recipe](../../../results/qwen38-tuning-2026-09-06/gemv-candidate-image/).
 The public GHCR `e1` tag below remains the original image, **not** the GEMV variant.
@@ -152,7 +152,7 @@ Local build/launcher defects fixed during bring-up:
 
 ## Measurements and their limits
 
-See the [README table](../../../README.md#qwen-3-8-flash) and
+See the [dated journal](../JOURNAL.md) and
 [recorded summary](../../../results/qwen38-nvfp4-tp4-2026-09-05.json).
 The [benchmark scripts](../benchmarks/) are archived as executed,
 not endorsed as a finished regression suite.

@@ -11,8 +11,10 @@ from .service import (
     hash_snapshot,
     normalize_snapshot,
 )
+from .switch import CatchupSwitch
 
 __all__ = [
+    "CatchupSwitch",
     "COLORS",
     "REASONS",
     "CatchupService",

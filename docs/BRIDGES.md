@@ -38,6 +38,32 @@ Eva-core is a Pi (or OMP) harness plus a chat UI.
 | compact hook | channel compact + auto-compact → `reason=compact` |
 | `GET /api/kv-catchup/status` | UI poll |
 | context pip | orange → green next to the context % |
+| `GET /api/kv-catchup/health` | admin on/off switch; the sidecar polls it |
+
+The sidecar honours the switch itself too, so one that eva-core did not
+stop (an old post, another caller) also goes quiet. It polls
+`/api/kv-catchup/health` every `CATCHUP_SWITCH_POLL_S` (10 s) with
+`x-service-token`. With `switchedOn: false` (or the session's agent in
+`disabledAgents`, where agent = session id before the first `:`) it starts
+no warms, drops queued ones, and cuts in-flight warms by closing the vLLM
+socket. While a session is switched off, `/v1/status` reports it as
+`state`/`color` `off`, never green, even if its KV was warm before.
+`/v1/health` reports `state`/`color` `off` while the master switch is off. Turning the switch back on
+replays nothing: catch-up resumes with the next snapshot. If the poll fails,
+the sidecar keeps the last-known state and logs the failure. If the switch
+has never been read, it defaults to ON. A malformed `disabledAgents` (not a
+list of names) fails closed: no warms run until a well-formed body arrives.
+
+How an abort reaches the engine: the sidecar shuts down its TCP connection,
+and the engine aborts the request when it sees the disconnect. The socket is
+held from connect onwards, so the abort also cuts a body read after the engine
+sent `Connection: close` (http.client drops `conn.sock` at that point). Each warm
+carries `X-Request-Id: kvwarm-…`. The sidecar logs `warm kvwarm-… aborted`,
+so the engine's `Aborted request …kvwarm-…` line can be matched to it. vLLM
+has no HTTP abort endpoint, and killing the shared engine is not acceptable,
+so escalation stays inside the sidecar. Connects time out after 10 s.
+`WARNING abort … not confirmed` is logged if a warm thread is still blocked
+5 s after its abort.
 
 Eva often chats on Venice and only sometimes on `sparks/auto`. The watcher
 is the point: Sparks plays catch-up in the background.

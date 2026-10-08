@@ -1,133 +1,150 @@
 #!/usr/bin/env python3
-"""
-patch_checkpoint_config.py — Qwen3.8-Flash-Next-NVFP4 MTP layer-index alias fix.
+"""Add the missing MTP layer-index aliases to a checkpoint's quantization config.
 
-Reconstructed for the DGX Spark fleet from the neko-legends/spark-bench launcher
-(artifacts/qwen38-nvfp4-20260905/launch-qwen38-tp4.sh) reference. The upstream
-script is not in the repo (reproduction boundary); this replicates its documented
-behavior (MiaAI merge 2026-09-05, from MiaAI-Lab/Qwen3.8-Flash-Next-Dual-DGX-Sparks).
+vLLM instantiates the MTP draft layers at *absolute* indices continuing the main
+stack: with num_hidden_layers=48 the single MTP layer is built with the runtime
+prefix `mtp.layers.48.mlp.experts`. ModelOptMixedPrecisionConfig._resolve_quant_algo
+matches those prefixes against `quantized_layers` by exact string, with no
+renumbering.
 
-WHY: vLLM builds the MTP draft layer at the ABSOLUTE index continuing the main
-stack (mtp.layers.48 for num_hidden_layers=48) and matches quantization metadata
-by exact string. The nvidia/Qwen3.8-Flash-Next-NVFP4 checkpoint records only
-mtp.layers.0 (in config.json text_config.mtp AND hf_quant_config.json). The lookup
-misses -> the MTP MoE is built unquantized -> dies ~7 min into the weight load.
-This script generates patched config copies that remap mtp.layers.0 -> mtp.layers.N
-and bind-mounts them over the container config paths. The NVMe copy is never modified.
+Checkpoints disagree on which name they record:
 
-Usage:
-  patch_checkpoint_config.py <MODEL_HOST> <OUT_DIR>        # write patched configs
-  patch_checkpoint_config.py --mtp-moe-algo <MODEL_HOST>   # print MTP expert quant algo, exit 3 if unbuildable
-Exit 0 = patched (relative->absolute), empty stdout if no patch needed.
+  local-inference-lab/Qwen3.8-Flash-Next-NVFP4   mtp.layers.0.*  AND  mtp.layers.48.*
+  nvidia/Qwen3.8-Flash-Next-NVFP4                mtp.layers.0.*  only
+
+With only the `.0.` name the lookup misses, the MTP MoE is built unquantized,
+and loading dies at:
+
+  AttributeError: Layer mtp.layers.48.mlp.experts has no parameter
+  'w2_weight_scale_inv' for checkpoint weight
+  'mtp.layers.48.mlp.experts.0.down_proj.weight_scale_inv'
+
+BOTH files must be patched: `quantized_layers` appears in config.json's
+`quantization_config` *and* in the legacy hf_quant_config.json, and vLLM reads
+the legacy file when it is present. Patching only config.json is not enough.
+
+Outputs go next to this script; start.sh bind-mounts them over the snapshot's
+copies in the container, so the HF cache is never modified.
+
+Usage: patch_checkpoint_config.py <snapshot dir> <output dir>
+Prints the space-separated basenames that needed patching (empty if none).
 """
 import json
 import os
 import re
 import sys
 
-
-def find_layers(quant_cfg, main_layers=48):
-    """Return set of layer indices referenced under language_model.layers."""
-    idx = set()
-    text = json.dumps(quant_cfg)
-    for m in re.finditer(r"model\.language_model\.layers\.(\d+)\b", text):
-        idx.add(int(m.group(1)))
-    return idx
+MTP_RE = re.compile(r"^mtp\.layers\.(\d+)\.")
 
 
-def patch_configs(model_host, out_dir):
-    cfg_path = os.path.join(model_host, "config.json")
-    quant_path = os.path.join(model_host, "hf_quant_config.json")
-    with open(cfg_path) as f:
-        cfg = json.load(f)
-    with open(quant_path) as f:
-        quant = json.load(f)
+def _aliaser(num_hidden_layers: int):
+    def alias(name: str) -> str | None:
+        match = MTP_RE.match(name)
+        if not match:
+            return None
+        index = int(match.group(1))
+        if index >= num_hidden_layers:
+            return None  # already an absolute index
+        return f"mtp.layers.{num_hidden_layers + index}." + name[match.end() :]
 
-    tc = cfg.get("text_config", {})
-    mtp = tc.get("mtp")
-    if not mtp:
-        print("", end="")  # no MTP in checkpoint — nothing to patch
-        return None
-
-    n_main = tc.get("num_hidden_layers", 48)
-    mtp_layers = mtp.get("num_hidden_layers", 1)
-    abs_start = n_main  # mtp.layers.0 -> mtp.layers.N, N = num_hidden_layers
-    patched = False
-
-    # --- patch text_config.mtp.layer_types / num_hidden_layers stays; the layer
-    #     index is implicit. vLLM derives absolute index from num_hidden_layers.
-    #     The real mismatch is in hf_quant_config targets.
-
-    changed_quant = False
-    q = json.dumps(quant)
-    # Remap mtp.layers.<rel> -> mtp.layers.<abs> in ALL layer-path references.
-    def remap_path(p):
-        nonlocal patched, changed_quant
-        if isinstance(p, str) and re.match(r"mtp\.layers\.(\d+)\b", p):
-            rel = int(re.match(r"mtp\.layers\.(\d+)\b", p).group(1))
-            if rel < abs_start:
-                patched = True
-                changed_quant = True
-                return re.sub(r"mtp\.layers\.\d+\b", f"mtp.layers.{rel + abs_start}", p)
-        return p
-
-    if "quantization" in quant:
-        qq = quant["quantization"]
-        if isinstance(qq, dict):
-            if "exclude_modules" in qq and isinstance(qq["exclude_modules"], list):
-                qq["exclude_modules"] = [remap_path(e) for e in qq["exclude_modules"]]
-                quant["quantization"]["exclude_modules"] = qq["exclude_modules"]
-            # quantized_layers is a dict keyed by layer path -> algo spec
-            ql = qq.get("quantized_layers")
-            if isinstance(ql, dict):
-                new_ql = {}
-                for k, v in ql.items():
-                    new_ql[remap_path(k)] = v
-                quant["quantization"]["quantized_layers"] = new_ql
-            # config_groups targets (older layouts)
-            for gname, g in qq.get("config_groups", {}).items() if isinstance(qq.get("config_groups"), dict) else []:
-                if isinstance(g, dict) and "targets" in g:
-                    g["targets"] = [remap_path(e) for e in g["targets"]]
-                    quant["quantization"]["config_groups"][gname]["targets"] = g["targets"]
-
-    if not patched:
-        print("", end="")
-        return None
-
-    os.makedirs(out_dir, exist_ok=True)
-    cfg_p = os.path.join(out_dir, "config.json")
-    quant_p = os.path.join(out_dir, "hf_quant_config.json")
-    with open(cfg_p, "w") as f:
-        json.dump(cfg, f, indent=2)
-    with open(quant_p, "w") as f:
-        json.dump(quant, f, indent=2)
-    # also write the _patched names the launcher expects
-    with open(os.path.join(out_dir, "config_patched.json"), "w") as f:
-        json.dump(cfg, f, indent=2)
-    with open(os.path.join(out_dir, "hf_quant_config_patched.json"), "w") as f:
-        json.dump(quant, f, indent=2)
-    print(f"mtp.layers.0..{mtp_layers-1} -> mtp.layers.{abs_start}..{abs_start+mtp_layers-1} in {cfg_p},{quant_p}")
-    return cfg_p
+    return alias
 
 
-def mtp_moe_algo(model_host):
-    """Determine MTP experts quantization algo. Exit 3 if the image's mixed
-    dispatch cannot build it (per upstream: needs image patch 9)."""
-    quant_path = os.path.join(model_host, "hf_quant_config.json")
-    with open(quant_path) as f:
-        quant = json.load(f)
-    qq = quant.get("quantization", {})
-    # MTP experts are FP8 (from the FP8 PLE/MTP shard); report buildability.
-    # We assume FP8_BLOCK_SCALES is handled by the e1 image (patch 9). If the
-    # algo is nvfp4_ds / modelopt and the image lacks patch 9, MTP won't build.
-    print("nvfp4_fp8_block_scales" if qq.get("quant_algo") == "MIXED_PRECISION" else (qq.get("quant_algo") or "unquantized"))
-    return 0
+def add_aliases(quant_config: dict, num_hidden_layers: int) -> bool:
+    """Add absolute-index MTP aliases in place. Returns True if anything changed."""
+    alias = _aliaser(num_hidden_layers)
+    changed = False
+
+    layers = quant_config.get("quantized_layers")
+    if isinstance(layers, dict):
+        for name, info in list(layers.items()):
+            aliased = alias(name)
+            if aliased and aliased not in layers:
+                layers[aliased] = info
+                changed = True
+
+    # Mirror into config_groups so the file stays self-consistent for anything
+    # reading targets rather than quantized_layers.
+    for group in (quant_config.get("config_groups") or {}).values():
+        targets = group.get("targets")
+        if not isinstance(targets, list):
+            continue
+        for name in list(targets):
+            aliased = alias(name)
+            if aliased and aliased not in targets:
+                targets.append(aliased)
+                changed = True
+
+    return changed
+
+
+# RoutedExperts algos ModelOptMixedPrecisionConfig.get_quant_method can build.
+# Anything else resolves to a *silently unquantized* MoE, which then dies at load
+# with "has no parameter 'w2_weight_scale_inv'".
+# FP8_BLOCK_SCALES is supported only because files/patch_modelopt_fp8_block_moe.py
+# adds that branch; stock vLLM (image and upstream main) would build an
+# unquantized MoE and die at load.
+SUPPORTED_MOE_ALGOS = {"FP8", "NVFP4", "W4A16_NVFP4", "MXFP8", "FP8_BLOCK_SCALES"}
+
+
+def mtp_moe_algo(snapshot_dir: str) -> str:
+    """quant_algo of the MTP routed experts, or "" when they are unquantized."""
+    for name in ("config.json", "hf_quant_config.json"):
+        path = os.path.join(snapshot_dir, name)
+        if not os.path.isfile(path):
+            continue
+        with open(path) as fh:
+            doc = json.load(fh)
+        quant = doc.get("quantization_config") or doc.get("quantization") or {}
+        for key, info in (quant.get("quantized_layers") or {}).items():
+            if MTP_RE.match(key) and key.endswith(".mlp.experts"):
+                return str(info.get("quant_algo", "")).upper()
+    return ""
+
+
+def main(snapshot_dir: str, out_dir: str) -> None:
+    config_path = os.path.join(snapshot_dir, "config.json")
+    if not os.path.isfile(config_path):
+        print(f"patch_checkpoint_config: no config.json at {config_path}", file=sys.stderr)
+        sys.exit(1)
+    with open(config_path) as fh:
+        config = json.load(fh)
+
+    text_config = config.get("text_config", config)
+    num_hidden_layers = text_config.get("num_hidden_layers")
+    if not isinstance(num_hidden_layers, int):
+        raise SystemExit("patch_checkpoint_config: num_hidden_layers missing")
+
+    patched: list[str] = []
+
+    quant_config = config.get("quantization_config")
+    if isinstance(quant_config, dict) and add_aliases(quant_config, num_hidden_layers):
+        with open(os.path.join(out_dir, "config_patched.json"), "w") as fh:
+            json.dump(config, fh, indent=2)
+        patched.append("config.json")
+
+    # Legacy sidecar — vLLM prefers it when present, so it needs the same fix.
+    legacy_path = os.path.join(snapshot_dir, "hf_quant_config.json")
+    if os.path.isfile(legacy_path):
+        with open(legacy_path) as fh:
+            legacy = json.load(fh)
+        if add_aliases(legacy.get("quantization", legacy), num_hidden_layers):
+            with open(os.path.join(out_dir, "hf_quant_config_patched.json"), "w") as fh:
+                json.dump(legacy, fh, indent=2)
+            patched.append("hf_quant_config.json")
+
+    print(" ".join(patched))
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3 and sys.argv[1] == "--mtp-moe-algo":
-        sys.exit(mtp_moe_algo(sys.argv[2]))
-    if len(sys.argv) < 3:
-        sys.exit("usage: patch_checkpoint_config.py <MODEL_HOST> <OUT_DIR> | --mtp-moe-algo <MODEL_HOST>")
-    r = patch_configs(sys.argv[1], sys.argv[2])
-    sys.exit(0)
+    if len(sys.argv) == 3 and sys.argv[1] == "--mtp-moe-algo":
+        algo = mtp_moe_algo(sys.argv[2])
+        sys.stdout.write(algo)
+        # exit 3 = MTP experts use an algo the mixed-precision MoE dispatch
+        # cannot build, so speculative decoding cannot work on this checkpoint.
+        sys.exit(3 if algo and algo not in SUPPORTED_MOE_ALGOS else 0)
+    if len(sys.argv) != 3:
+        print(f"usage: {sys.argv[0]} <snapshot dir> <output dir>", file=sys.stderr)
+        print(f"       {sys.argv[0]} --mtp-moe-algo <snapshot dir>", file=sys.stderr)
+        sys.exit(2)
+    main(sys.argv[1], sys.argv[2])
