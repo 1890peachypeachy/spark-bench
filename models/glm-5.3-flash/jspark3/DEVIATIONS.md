@@ -11,6 +11,7 @@ not silently revert to upstream defaults.
 |---|---|---|---|---|
 | 1 | `config/serve.conf` `SERVE_NAME` | `glm53` | `GLM-5.3-Flash-EXL3` | Served model id the whole fleet's clients already point at. Keeps `/v1/models` stable across lane cutovers. **Causes the one expected `smoke.sh` FAIL** (`models glm53 listed`) — 5/6 is a PASS for us. |
 | 2 | `config/serve.env` `TF_GLM_POOL_TOKENS` | `360448` | `786432` | Shared KV pool. See below. |
+| 3 | `config/serve.env` `TF_GLM_DISK_GIB` + `config/serve.conf` `SERVE_SESSION_GIB` | `64` | `192` | Disk session store. 64 GiB held only ~26 conversations and evicted states it then needed. See below. |
 
 ## 1. `SERVE_NAME`
 
@@ -69,6 +70,61 @@ Constraints when changing it:
    DISTINCT-content requests (390,875 tokens combined — more than the old pool
    could hold). Overlapping TTFTs prove both were resident at once. Content
    must differ per stream or the prefix cache collapses them and fakes a pass.
+
+## 3. `TF_GLM_DISK_GIB` / `SERVE_SESSION_GIB` — raised 2026-10-07
+
+Upstream's `64` is far too small for this lane's prompt sizes. **Real session
+files reach 3.0 GB each** (`du` inside the container, not `staged_bytes` — see
+the measurement trap below), so 64 GiB held only **~26 conversations**. The
+store therefore sat permanently at its cap and evicted states it then needed
+again: **265 `store-evicted` / `observed-prior-prompt` misses in a single boot**,
+against 856 hits and 174 `fork` misses.
+
+Cost of a miss, from the engine's own request log:
+
+| session source | prompt | prefill |
+|---|---:|---:|
+| `memory` (89,779 resumed) | 93,259 | **21.0s** |
+| `cold` / store-evicted | 99,999 | **279.7s** |
+| `cold` / store-evicted | 145,213 | **476.0s** |
+
+59 requests in one hour burned 10,553s of prefill (avg 178.9s). The slowness is
+**prefill, not decode** — long agent turns re-read the whole prompt.
+
+Raised to `192` (~78 conversations). Costs **no GPU memory**, unlike
+`TF_GLM_CACHE_GIB`, which shares the pool budget (`ceiling = budget - CACHE_GIB`).
+
+Constraints when changing it:
+- **Size by the TIGHTEST node, not the roomiest.** The tier is per box, and
+  `serve.sh` warns and stops writing below `150 GiB` free (`free < (150 +
+  SERVE_SESSION_GIB)`). On 2026-10-07 spark4 had **434 GiB** free vs ~1250 on
+  spark1/spark3, so 192 (needs 342, leaves 92 GiB margin) was the safe ceiling.
+  **384 would have exceeded spark4's budget** and silently stopped writing there.
+- **Both knobs move together.** `serve.env` `TF_GLM_DISK_GIB` drives the engine;
+  `serve.conf` `SERVE_SESSION_GIB` drives the free-space guard and the operator
+  message. Changing only one leaves the guard computing on a stale number.
+- Requires a ring restart; the store itself SURVIVES it (verified: 64 G / 286
+  session files intact across the 2026-10-07 restart), so there is no cold-start
+  penalty from bouncing the lane.
+
+### Measurement traps (both cost real time on 2026-10-07)
+
+1. **`staged_bytes` is NOT the session size.** It is a staging increment
+   (240-453 MiB) and reads ~6x smaller than the real 3.0 GB session file. Sizing
+   the store from it overestimates capacity by the same factor.
+2. **Read the store from INSIDE the container.** The store dir is
+   `drwx------ root:root`, so a host-side `du`/`find` as the ssh user returns
+   `60K` and `0` files — making a full 64 GiB store look empty. Use
+   `docker exec <rank0> du -sh /sessions`. `disk_bytes` in the session-cache log
+   is actual usage (it grew 42.6 -> 64.0 GiB across the boot), not a budget.
+
+### What this does NOT fix
+
+The 174 `fork` / `shared-prefix-divergence` misses are architectural: reuse
+requires a prompt to start with the ENTIRE earlier prompt, and `LIMITATIONS.md`
+is explicit that a shared system prompt with a different first message is read
+in full. Those show `cached: 9` on 195K-token prompts. No store size helps;
+that needs stable append-only prefixes per agent, or block-level prefix caching.
 
 ## Known-benign, not a deviation
 

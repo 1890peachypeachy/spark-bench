@@ -50,6 +50,25 @@ grep -E '^SERVE_NAME=|^SERVE_SESSION_NAMESPACE=' "$NEW_KIT/config/serve.conf"
 sed -i "s#^TF_GLM_POOL_TOKENS=.*#TF_GLM_POOL_TOKENS=786432#" "$NEW_KIT/config/serve.env"
 grep -E '^TF_GLM_POOL_TOKENS=' "$NEW_KIT/config/serve.env"
 
+# --- 3c. fleet deviation: disk session store size -------------------------
+# Upstream ships 64 GiB. Real session files on this lane reach 3.0 GB each, so
+# 64 GiB held only ~26 conversations -> the store ran permanently at its cap and
+# evicted states it then needed again (265 store-evicted / observed-prior-prompt
+# misses in one boot on 2026-10-07). Each such miss re-prefills the whole prompt:
+# measured 232-476s for ~100-195K tokens, vs 21s for a resumed hit.
+# Raised to 192 GiB (~78 conversations) on 2026-10-07.
+# Sized by the TIGHTEST node, not the roomiest: the tier is per box, and serve.sh
+# stops writing below 150 GiB free (warns when free < 150 + SERVE_SESSION_GIB).
+# spark4 had 434 GiB free vs ~1250 on spark1/spark3, so 192 is the safe ceiling
+# (needs 342, leaves 92 GiB margin). 384 would have exceeded spark4's budget.
+# Costs NO GPU memory - unlike TF_GLM_CACHE_GIB, which competes with the pool.
+# Both knobs must move together: serve.env drives the engine, serve.conf drives
+# the free-space guard and the operator-facing message.
+sed -i "s#^TF_GLM_DISK_GIB=.*#TF_GLM_DISK_GIB=192#" "$NEW_KIT/config/serve.env"
+sed -i "s#^SERVE_SESSION_GIB=.*#SERVE_SESSION_GIB=192#" "$NEW_KIT/config/serve.conf"
+grep -E '^TF_GLM_DISK_GIB=' "$NEW_KIT/config/serve.env"
+grep -E '^SERVE_SESSION_GIB=' "$NEW_KIT/config/serve.conf"
+
 # --- 4. DATA: reuse verified weights by symlink, fresh sessions ------------
 # wheels.lock + manifests/{inputs,base} are byte-identical v2.0.1..v2.0.2,
 # so the verified weights and dep wheels are valid for this release.

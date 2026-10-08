@@ -1237,17 +1237,47 @@ glm53_tf3_down() {
   return 0
 }
 
-# ── jspark3 lane (github.com/jakejharris/jspark3 v2.0.1, cutover 2026-10-04) ─
+# ── jspark3 lane (github.com/jakejharris/jspark3, cutover 2026-10-04) ────────
 # jspark3's own serve.sh/stop.sh on each node are the source of truth for flags and
 # container naming (jspark3-rank{0,1,2}); this harness only orders the bring-up
 # (rank2 -> rank1 -> rank0/head), waits for the endpoint + real chat canary, and
-# parks it. The kit lives at spark3:/var/tmp/jspark3/jspark3 (same tree on all three
-# nodes). SERVE_NAME is overridden to $GLM53_MODEL in config/serve.conf so the
-# identity check below holds; see the cutover runbook for the full deviation list.
-JSPARK3_KIT="/var/tmp/jspark3/jspark3"
+# parks it. SERVE_NAME is overridden to $GLM53_MODEL in config/serve.conf so the
+# identity check below holds; see DEVIATIONS.md for the full deviation list.
+JSPARK3_KIT="/var/tmp/jspark3/jspark3-v202"   # DEFAULT ONLY — the live deploy wins
+JSPARK3_HEAD_HOST="spark3"
+
+# The kit path is BUMPED PER DEPLOYMENT (jspark3 -> jspark3-v202 -> ...) because the
+# staging script clones each release into a NEW tree beside the old one. A stale
+# constant fails ASYMMETRICALLY, and both directions are silent:
+#   * `up`   boots the OLD engine tree, reverting every deviation in DEVIATIONS.md
+#            (observed 2026-10-07: constant still said .../jspark3 while the lane
+#            had been serving .../jspark3-v202 since the v2.0.2 cutover).
+#   * `down` runs stop.sh from the wrong tree and can report PASS while every
+#            rank keeps serving.
+# So resolve it from the fleet and treat the constant as a fallback only.
+#   1. A RUNNING rank is authoritative: its /bundle/wheels mount source IS the kit.
+#   2. Lane down (the `up` path): newest /var/tmp/jspark3/jspark3* tree that
+#      actually carries scripts/serve.sh.
+jspark3_resolve_kit() {
+  [[ -n "${JSPARK3_KIT_RESOLVED:-}" ]] && return 0
+  JSPARK3_KIT_RESOLVED=1
+  local live="" head="${JSPARK3_HEAD_HOST:-spark3}"   # :- so set -u cannot kill the resolver
+  live="$(sshx "$head" "docker inspect jspark3-rank0 --format '{{range .Mounts}}{{if eq .Destination \"/bundle/wheels\"}}{{.Source}}{{end}}{{end}}' 2>/dev/null" 2>/dev/null | tr -d '[:space:]')"
+  if [[ -n "$live" ]]; then
+    live="$(dirname "$live")"
+  else
+    live="$(sshx "$head" "for d in \$(ls -dt /var/tmp/jspark3/jspark3* 2>/dev/null); do [ -f \"\$d/scripts/serve.sh\" ] && { echo \"\$d\"; break; }; done" 2>/dev/null | tr -d '[:space:]')"
+  fi
+  if [[ -n "$live" && "$live" != "$JSPARK3_KIT" ]]; then
+    warn "live jspark3 kit is $live, registry default is $JSPARK3_KIT — using the live one"
+    info "update JSPARK3_KIT in this file so a COLD up (no running rank to inspect) resolves it too"
+    JSPARK3_KIT="$live"
+  fi
+}
 jspark3_up() {
   local lane="jspark3"
   STEPS=7; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  jspark3_resolve_kit   # must precede the kit step and every launch_detached below
 
   step "occupancy" "$(lane_nodes "$lane")"
   local conflict
@@ -1335,6 +1365,7 @@ except Exception: print("")' 2>/dev/null)"
 jspark3_down() {
   local lane="jspark3"
   STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  jspark3_resolve_kit   # a stale kit runs the wrong stop.sh and still reports PASS
 
   step "stop" "stop.sh per node (recipe's own teardown, bounded 180s each)"
   local n
