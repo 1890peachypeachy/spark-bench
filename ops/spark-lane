@@ -23,7 +23,7 @@
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8000/v1
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8000/v1 (Mia's fast line)
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.5, CONTAINER glm53-tf3)
-#   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (knapcio recipe)
+#   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tf4)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
 #   jspark3           spark1,3,4    GLM-5.3-Flash EXL3 (jspark3 v2.0.1 TensorFold fork, MLX 4-bit
 #                                   weights, disk session-chain) -> :8888/v1; containers
@@ -94,6 +94,16 @@ GLM53_TF2_KIT="/home/spark3/GLM53-TF"
 # KV_POOL_GIB=27 (Mia's README: 32 leaves rank 0 <6 GiB free at TP3), TP=3 via ./start-tp3.sh.
 GLM53_TP3_HEAD="spark3"
 GLM53_TP3_KIT="/home/spark3/GLM53-TF3"
+# glm53-tp4 re-pointed 2026-10-10: TensorFold TP4 (GLM-5.3-Flash-4x family, branch tp4 tip
+# d220030, pinned image tensorfold-glm53:v0.6.0-*, 107 patches). Kit at $GLM53_TP4_TF_KIT on
+# the head, container glm53-tf4, workers spark1+spark2+spark4 (scripts/local.sh WORKER/2/3),
+# weights over NFS from spark3's dsv41-nfs export. See spark-bench
+# models/glm-5.3-flash/tensorfold-tp4-trial/CUTOVER-2026-10-10.md.
+# The pre-repoint knapcio/vLLM stack (GLM53_TP4_KIT=/var/tmp/glm53-recipe-tp4, containers
+# glm53-alignfix-20260929-r0..r3, image glm53-roce:v11-b58f34ea) is preserved STOPPED for
+# rollback: docker start glm53-alignfix-20260929-rN on each node + that kit's start.sh.
+GLM53_TP4_TF_HEAD="spark3"
+GLM53_TP4_TF_KIT="/var/tmp/glm53-tf4-trial"
 GLM53_TP4_ENV=".env"
 #
 # NAME WARNING (restored 2026-09-29 — it applies to this recipe too): the served name
@@ -193,7 +203,7 @@ lane_container_names() {
     dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
     glm53-tp3)           echo "glm53-tf3" ;;
     jspark3)             echo "jspark3-rank0 jspark3-rank1 jspark3-rank2" ;;
-    glm53-tp4)           echo "${GLM53_TP4_CTN}-r0 ${GLM53_TP4_CTN}-r1 ${GLM53_TP4_CTN}-r2 ${GLM53_TP4_CTN}-r3" ;;
+    glm53-tp4)           echo "glm53-tf4" ;;
     glm53-tf2)           echo "glm53-flash-tf" ;;
     comfy-engine)        echo "spark-comfy" ;;
     *) return 1 ;;
@@ -253,12 +263,12 @@ timeout_run() {
 # NOTHING serving. Order matters: the first entry is what node_occupant reports.
 node_occupants() {
   local node="$1" out lanes=""
-  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|jspark3-rank|^glm53[|]' || true)"
+  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|jspark3-rank|^glm53[|]' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
   echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
   # glm family stays mutually exclusive (an image string can match both arms).
-  if   echo "$out" | grep -qiE 'glm53-alignfix|glm53-lvkp|glm53-roce' || echo "$out" | grep -qE '^glm53[|]'; then
+  if   echo "$out" | grep -qiE 'glm53-alignfix|glm53-lvkp|glm53-roce|glm53-tf4' || echo "$out" | grep -qE '^glm53[|]'; then
     lanes="$lanes glm53-tp4"
   elif echo "$out" | grep -qiE 'jspark3-rank'; then
     lanes="$lanes jspark3"
@@ -1455,7 +1465,7 @@ mem_blame() {
   local n names
   for n in "$@"; do
     names="$(sshx "$n" "docker ps --format '{{.Names}}|{{.Label \"x\"}}' 2>/dev/null | cut -d'|' -f1 \
-      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tp3|dsv41|qwen3' \
+      | grep -vE 'glm53-lvkp|glm53-roce|glm53-tf4|glm53-tp3|dsv41|qwen3' \
       | head -8 | paste -sd, -" 2>/dev/null)"
     if [[ -n "$names" ]]; then
       info "  $n co-tenants holding memory: $names"
@@ -1466,219 +1476,99 @@ mem_blame() {
   done
 }
 
+# ── GLM-5.3-Flash TensorFold TP4 lane (glm53-tp4 re-point, 2026-10-10) ───────
+# Same TensorFold recipe family as glm53-tf2/tf3, served over FOUR ranks via the
+# kit's ./start-tp4.sh. The kit is its own copy at $GLM53_TP4_TF_KIT so its .env
+# never collides with the other GLM lanes' kits. Workers: spark1 + spark2 + spark4
+# (scripts/local.sh WORKER/WORKER2/WORKER3), weights over NFS from spark3's
+# dsv41-nfs export. Endpoint/name unchanged: :8888 + GLM-5.3-Flash-EXL3 — a swap
+# needs zero consumer changes.
+# The pre-repoint knapcio/vLLM stack is preserved STOPPED for rollback (constants
+# block above); up/down here only ever touch the TensorFold kit + glm53-tf4 ranks.
 glm53_tp4_up() {
   local lane="glm53-tp4"
-  # 11: occupancy, kit, image, already-up, cleanup, weights+NFS, memory, start,
-  # wait-healthy, identity, canary. (The mentat kit's "node identity" and "mentatd"
-  # steps are gone with it: this recipe has no mesh daemon and no per-node naming.)
-  STEPS=11; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
-  local n
+  STEPS=9; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
   step "occupancy" "$(lane_nodes "$lane")"
   local conflict
   conflict="$(occupancy_conflict "$lane")"
   if [[ -n "$conflict" ]]; then
     note_fail "occupancy" "nodes already taken:$conflict"
-    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes (incl. glm53-tp3), then brings this one up"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
-  ok "all 4 nodes free"
+  ok "all required nodes free"
 
-  # Only the HEAD needs the kit: start.sh rsyncs overlay/scripts/bench/profiles out to
-  # every node itself. Do not "fix" a worker by copying .env to it — the levers that
-  # file sets are wired in the launcher + overlay, so a lone .env yields a lane that
-  # reads as configured and is not.
-  step "kit" "$GLM53_TP4_KIT/$GLM53_TP4_CLI + $GLM53_TP4_ENV on $GLM53_HEAD_HOST"
-  if ! sshx "$GLM53_HEAD_HOST" "test -x $GLM53_TP4_KIT/$GLM53_TP4_CLI && test -f $GLM53_TP4_KIT/$GLM53_TP4_ENV"; then
-    note_fail "kit" "launcher or .env missing on $GLM53_HEAD_HOST:$GLM53_TP4_KIT"
-    NEXT_CMD="rsync -a --exclude .git ~/recipe-db/GLM-5.3-Flash-4x-DGX-Spark-TP4/ $GLM53_HEAD_HOST:$GLM53_TP4_KIT/"
+  step "cleanup" "removing any dead glm53-tf4 containers left from a prior crash"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
+
+  step "kit" "$GLM53_TP4_TF_KIT/start-tp4.sh exists on $GLM53_TP4_TF_HEAD"
+  if ! sshx "$GLM53_TP4_TF_HEAD" "test -f $GLM53_TP4_TF_KIT/start-tp4.sh"; then
+    note_fail "kit" "$GLM53_TP4_TF_KIT/start-tp4.sh missing on $GLM53_TP4_TF_HEAD"
+    NEXT_CMD="spark-lane status"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
-  ok "launcher + .env present on the head"
-  glm53_tp4_resolve_ctn   # must follow the kit check: it reads that .env
+  ok "kit present"
 
-  step "image" "$GLM53_TP4_IMAGE on all 4 nodes"
-  local missing=""
-  for n in $(lane_nodes "$lane"); do
-    sshx "$n" "docker image inspect $GLM53_TP4_IMAGE >/dev/null 2>&1" || missing="$missing $n"
-  done
-  if [[ -n "$missing" ]]; then
-    note_fail "image" "$GLM53_TP4_IMAGE missing on:$missing"
-    info "ship it over the RoCE fabric FROM a Spark node (the Mac cannot route 10.73.0.x)"
-    # The SSH user is NOT uniform: spark1's account is `spark`, the others are sparkN.
-    # Using spark1@10.73.0.1 fails with a publickey error that reads like a missing
-    # key when the key is in fact already authorized (chased this 2026-09-29).
-    info "ssh users: 10.73.0.1=spark, 10.73.0.2=spark2, 10.73.0.3=spark3, 10.73.0.4=spark4"
-    NEXT_CMD="ssh $GLM53_HEAD_HOST 'docker save $GLM53_TP4_IMAGE | ssh <user>@10.73.0.<n> \"docker load\"'"
+  step "workers" "WORKER + WORKER2 + WORKER3 configured in $GLM53_TP4_TF_KIT/scripts/local.sh"
+  local w3
+  w3="$(sshx "$GLM53_TP4_TF_HEAD" "grep -c '^WORKER3=' $GLM53_TP4_TF_KIT/scripts/local.sh 2>/dev/null" || echo 0)"
+  if [[ "$w3" != "1" ]]; then
+    note_fail "workers" "WORKER3 not set in $GLM53_TP4_TF_KIT/scripts/local.sh — TP4 needs rank 3 (spark4)"
+    NEXT_CMD="ssh $GLM53_TP4_TF_HEAD 'cat $GLM53_TP4_TF_KIT/scripts/local.sh'"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
-  ok "runtime image present everywhere"
+  ok "rank 3 configured"
 
-  step "already up?" "is $GLM53_ENDPOINT already serving?"
+  step "nfs" "dsv41-nfs export alive on $GLM53_TP4_TF_HEAD (all workers read weights through it)"
+  if ! sshx "$GLM53_TP4_TF_HEAD" "docker ps --format '{{.Names}}' | grep -q '^dsv41-nfs$'" 2>/dev/null; then
+    note_fail "nfs" "dsv41-nfs is NOT running on $GLM53_TP4_TF_HEAD — the workers' NFS volumes would hard-hang instead of failing fast"
+    NEXT_CMD="ssh $GLM53_TP4_TF_HEAD 'docker start dsv41-nfs'   # then re-run: spark-lane up $lane"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+    return 1
+  fi
+  ok "dsv41-nfs up"
+
+  step "already up?" "is $GLM53_ENDPOINT already serving completions?"
   if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)" == "200" ]]; then
-    if canary "$GLM53_ENDPOINT" "$GLM53_MODEL" >/dev/null 2>&1; then
+    if canary_tf2 "$GLM53_ENDPOINT" "$GLM53_MODEL" >/dev/null 2>&1; then
       ok "already serving — no change made (and no restart)"
       result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(already up, unchanged)"
+      NEXT_CMD="nothing"
       return 0
     fi
-    # Zombie head: the endpoint answers but cannot complete a chat. Do NOT fall
-    # through into a bring-up. The old ranks are still up holding their allocation,
-    # so the memory step below would find ~21 GiB free against an 87.6 GiB floor,
-    # FAIL on all four nodes, and mem_blame() would name this lane's OWN ranks as
-    # the co-tenants — telling the operator that the fleet's signature failure mode
-    # is a memory problem when it is really a wedged lane. Measured 2026-09-29 with
-    # the lane HEALTHY: 21/21/20/23 GiB free. Fail fast with the fix instead.
-    note_fail "already up?" "endpoint answers but the chat canary failed — the lane is wedged, not down"
-    info "a bring-up from here would misreport this as a memory failure: the live ranks still hold their allocation"
-    NEXT_CMD="spark-lane down $lane && spark-lane up $lane"
-    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
-    return 1
+    warn "endpoint answers but the chat canary failed — doing a full bring-up"
   fi
   ok "not serving yet"
 
-  # Deliberately NOT `docker rm -f`, and deliberately AFTER the already-up check.
-  # On 2026-09-27 this step used -f and ran before that check: it force-removed the
-  # RUNNING ranks of a healthy lane, and the bring-up then cheerfully reported
-  # "not serving yet" about the lane it had just killed. Plain `docker rm` refuses
-  # anything still running, so the worst case here is a no-op.
-  #
-  # This lane ALSO needs it because upstream's stop preserves containers by design,
-  # so a normal `down` legitimately leaves four EXITED ranks that would otherwise
-  # collide with the next `docker run` on the same CTN.
-  step "cleanup" "removing EXITED ${GLM53_TP4_CTN}-r* ranks (recipe's own relaunch bug)"
-  for n in $(lane_nodes "$lane"); do
-    sshx "$n" "ids=\$(docker ps -a --filter name=^/${GLM53_TP4_CTN}-r --filter status=exited --filter status=created -q); [ -n \"\$ids\" ] && docker rm \$ids >/dev/null 2>&1; true"
-  done
-  ok "dead ranks cleared (if any); running ranks untouchable by design"
+  step "start" "./start-tp4.sh on $GLM53_TP4_TF_HEAD (detached, survives this session)"
+  local log="$GLM53_TP4_TF_KIT/lane-up-$(date +%Y%m%d-%H%M%S).log"
+  launch_detached "$GLM53_TP4_TF_HEAD" "cd $GLM53_TP4_TF_KIT && setsid nohup bash ./start-tp4.sh >> $log 2>&1 < /dev/null"
+  ok "launched detached; log: $log"
+  info "TensorFold TP4 boot: 4 ranks (spark3 head, spark1+spark2+spark4 workers over NFS); first boot compiles kernels (~6+ min, cached after)"
 
-  # NFS-backed: spark3 holds MODEL_DIR on local disk and exports it; the workers see it
-  # through a fabric NFS mount. So "weights present" on a worker is really "the mount is
-  # up", and an unmounted worker shows an EMPTY directory rather than a missing one —
-  # which is why this checks shard COUNT, not mere existence.
-  step "weights" "checkpoint + drafter readable on all 4 nodes (head local, workers over NFS)"
-  local w_bad="" nfs_bad=""
-  for n in $(lane_nodes "$lane"); do
-    glm53_tp4_weights_ok "$n" || w_bad="$w_bad $n"
-    if [[ "$n" != "$GLM53_HEAD_HOST" ]]; then
-      sshx "$n" "findmnt -no FSTYPE $GLM53_TP4_NFS_MOUNT 2>/dev/null | grep -q nfs" \
-        || nfs_bad="$nfs_bad $n"
-    fi
-  done
-  if [[ -n "$nfs_bad" ]]; then
-    note_fail "weights" "$GLM53_TP4_NFS_MOUNT is not an NFS mount on:$nfs_bad"
-    info "the head exports it; a worker without the mount cannot read a single shard"
-    NEXT_CMD="ssh <node> 'sudo mount -t nfs4 10.73.0.3:/ $GLM53_TP4_NFS_MOUNT'   # or: systemctl start var-tmp-models.mount"
-    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
-    return 1
-  fi
-  if [[ -n "$w_bad" ]]; then
-    note_fail "weights" "checkpoint or drafter unreadable on:$w_bad"
-    info "ship shards over the RoCE fabric FROM a Spark node (the Mac cannot route 10.73.0.x)"
-    NEXT_CMD="ssh $GLM53_HEAD_HOST 'ls $GLM53_TP4_WEIGHTS | wc -l; ls $GLM53_TP4_DRAFTER'"
-    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
-    return 1
-  fi
-  ok "checkpoint + drafter readable on every node (NFS mounts up on all 3 workers)"
-
-  # Page cache competes with the CUDA free-memory check because GB10 is UMA, so
-  # always drop it first — that part is cheap and has recovered ~16 GiB in practice.
-  #
-  # The GATE, though, only rejects what is PHYSICALLY impossible: a node whose
-  # MemAvailable is under GPU_UTIL*total can never satisfy the request. Everything
-  # above that is a judgement call we are not entitled to make: observed data is
-  # 99.5G failed, 105.9G worked, so the real threshold lives somewhere in between
-  # and depends on the driver's carveout at that moment. An earlier version of this
-  # step added a guessed +10 GiB of headroom and promptly refused to launch over a
-  # 0.1 GiB shortfall (101.2 vs 101.3), telling the operator to reboot a node for
-  # no reason. Warn about the grey zone, then let the engine be the authority — it
-  # fails in ~2 min with an exact number, and the rank-crash hint below finds it.
-  step "memory" "drop page cache, then check each node can physically satisfy GPU_UTIL"
-  # 2026-09-27: "MemAvailable anomaly" was the wrong diagnosis. spark2 kept losing
-  # ~7 GiB between runs and a reboot "fixed" it only until the co-tenant restarted:
-  # Penpot (5 containers, restart=unless-stopped) came back on boot and re-took the
-  # headroom. Rebooting a node whose competitor is unless-stopped just wastes 5 min.
-  # So: name the co-tenants and let the operator decide, instead of ordering a reboot.
-  local util req warnfloor avail short="" grey="" short_nodes="" grey_nodes=""
-  # This recipe's knob is GPU_UTIL in the TOP-LEVEL .env, NOT the mentat kit's
-  # GPU_MEM_UTIL in compose/.env. Reading the old name here would silently fall back
-  # to a default and check the wrong floor. Our .env pins 0.72; the profile ships 0.78.
-  util="$(sshx "$GLM53_HEAD_HOST" "grep -E '^GPU_UTIL=' $GLM53_TP4_KIT/$GLM53_TP4_ENV | tail -1 | cut -d= -f2" 2>/dev/null | tr -d '[:space:]')"
-  util="${util:-$GLM53_TP4_UTIL_DEFAULT}"
-  req="$(python3 -c "print(round(121.69*$util, 1))" 2>/dev/null || echo 91.3)"
-  warnfloor="$(python3 -c "print(round(121.69*$util + 10, 1))" 2>/dev/null || echo 101.3)"
-  for n in $(lane_nodes "$lane"); do
-    sshx "$n" "sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1; true"
-    sleep 1
-    avail="$(sshx "$n" "awk '/^MemAvailable/ {printf \"%.1f\", \$2/1048576}' /proc/meminfo" 2>/dev/null || echo 0)"
-    if python3 -c "import sys; sys.exit(0 if float('${avail:-0}') < float('$req') else 1)" 2>/dev/null; then
-      short="$short $n(${avail}G<${req}G)"; short_nodes="$short_nodes $n"
-    elif python3 -c "import sys; sys.exit(0 if float('${avail:-0}') < float('$warnfloor') else 1)" 2>/dev/null; then
-      grey="$grey $n(${avail}G)"; grey_nodes="$grey_nodes $n"
-    fi
-  done
-  if [[ -n "$short" ]]; then
-    note_fail "memory" "node(s) cannot physically satisfy GPU_UTIL=$util:$short"
-    mem_blame $short_nodes
-    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
-    return 1
-  fi
-  if [[ -n "$grey" ]]; then
-    warn "thin margin on:$grey (want >=${warnfloor}G, hard floor ${req}G) — proceeding anyway"
-    mem_blame $grey_nodes
-  fi
-  ok "all nodes clear the ${req}G hard floor (GPU_UTIL=$util)"
-
-  # ONE launcher on the head fans out: start.sh rsyncs the overlay to every node, then
-  # starts ranks 3,2,1,0 itself. It runs in the FOREGROUND for the whole bring-up, so it
-  # must be detached with launch_detached (`ssh -f`) — `ssh host "... &"` hangs until the
-  # whole remote child chain exits, which would strand this function on the launch line
-  # while the lane actually comes up fine behind it.
-  step "start" "$GLM53_TP4_CLI serve on $GLM53_HEAD_HOST (fans out to all 4 ranks)"
-  local log="$GLM53_TP4_KIT/lane-up-$(date +%Y%m%d-%H%M%S).log"
-  if ! launch_detached "$GLM53_HEAD_HOST" \
-      "cd $GLM53_TP4_KIT && setsid nohup $GLM53_TP4_CLI serve >> $log 2>&1 < /dev/null"; then
-    note_fail "start" "could not launch $GLM53_TP4_CLI serve on $GLM53_HEAD_HOST"
-    NEXT_CMD="ssh $GLM53_HEAD_HOST 'cd $GLM53_TP4_KIT && $GLM53_TP4_CLI serve'   # run in foreground to see why"
-    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
-    return 1
-  fi
-  ok "launcher started detached (log: $log)"
-  info "healthy in ~5-6 min on our fleet (66 cuda-graph capture sizes x 7 spec families)"
-
-  local ok_wait=0 t=0 code="" ranks="" probe_rc=0 dead_streak=0
-  step "wait healthy" "endpoint up, or all ranks die (ceiling ${ENGINE_MAX_WAIT}s)"
+  local ok_wait=0 t=0 code="" last=""
+  step "wait healthy" "endpoint up, or start exited (ceiling ${ENGINE_MAX_WAIT}s)"
   while [[ $t -lt $ENGINE_MAX_WAIT ]]; do
     code="$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)"
     [[ "$code" == "200" ]] && { ok "endpoint up after ${t}s"; ok_wait=1; break; }
-    # Rank-liveness probe. An ssh FAILURE is not evidence of a dead rank: during
-    # CUDA graph capture the head node is saturated and ssh routinely times out.
-    # The original version collapsed both cases to "0" and aborted on a single
-    # sample — on 2026-09-27 that killed a perfectly healthy bring-up that was
-    # mid-warmup. Only a definitive "ssh worked AND reported zero containers",
-    # observed 3 times in a row, counts as a crash.
-    ranks="$(sshx "$GLM53_HEAD_HOST" "docker ps --filter name=^/${GLM53_TP4_CTN}-r -q | wc -l" 2>/dev/null)"
-    probe_rc=$?
-    ranks="$(printf '%s' "$ranks" | tr -d '[:space:]')"
-    if [[ $probe_rc -ne 0 || -z "$ranks" ]]; then
-      dead_streak=0
-      info "+${t}s rank probe unreachable (node busy) — not treating as a crash"
-    elif [[ "$ranks" == "0" ]]; then
-      dead_streak=$((dead_streak + 1))
-      warn "+${t}s head node reports 0 ranks (${dead_streak}/3 confirmations)"
-    else
-      dead_streak=0
-    fi
-    if [[ $dead_streak -ge 3 ]]; then
-      note_fail "start" "the head rank exited before the endpoint came up"
-      info "a rank crash is usually memory on ONE node — check each rank, not just the head"
-      NEXT_CMD="for n in \$(echo spark1 spark2 spark3 spark4); do ssh \$n 'docker logs \$(docker ps -a --filter name=^/${GLM53_TP4_CTN}-r -q | head -1) 2>&1 | grep -iE \"ValueError.*memory|Unsupported|RuntimeError\" | tail -3'; done"
+    alive="$(sshx "$GLM53_TP4_TF_HEAD" "pgrep -f 'start-tp4[.]sh' >/dev/null 2>&1 && echo 1 || echo 0" 2>/dev/null || echo 0)"
+    if [[ "$alive" != "1" ]]; then
+      last="$(sshx "$GLM53_TP4_TF_HEAD" "grep -E '^!!!|FAILED|Error|error:' $log 2>/dev/null | tail -3" || true)"
+      note_fail "start" "the start command exited before the endpoint came up"
+      info "log: ${last:-<no error line found — read the log>}"
+      NEXT_CMD="ssh $GLM53_TP4_TF_HEAD 'tail -60 $log'"
       result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
       return 1
     fi
-    if [[ $t -gt 0 && $((t % 120)) -eq 0 ]]; then info "+${t}s still booting (head rank alive)"; fi
+    if [[ $t -gt 0 && $((t % 120)) -eq 0 ]]; then
+      last="$(sshx "$GLM53_TP4_TF_HEAD" "tail -1 $log 2>/dev/null | cut -c1-110" || true)"
+      info "+${t}s still working: ${last:-<no log line yet>}"
+    fi
     sleep 15; t=$((t + 15))
   done
   if [[ $ok_wait -eq 0 ]]; then
@@ -1695,12 +1585,12 @@ try: print(" ".join(m.get("id","") for m in json.load(sys.stdin).get("data",[]))
 except Exception: print("")' 2>/dev/null)"
   if [[ "$ids" != *"$GLM53_MODEL"* ]]; then
     note_fail "identity" "endpoint serves [$ids], expected $GLM53_MODEL"
-    NEXT_CMD="ssh $GLM53_HEAD_HOST 'grep -n SERVED_NAME $GLM53_TP4_KIT/.env'"
+    NEXT_CMD="ssh $GLM53_TP4_TF_HEAD 'grep -rn SERVED_NAME $GLM53_TP4_TF_KIT/scripts/'"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
   for n in $(lane_nodes "$lane"); do
-    [[ "$(sshx "$n" "docker ps --filter name=^/${GLM53_TP4_CTN}-r -q | wc -l" 2>/dev/null || echo 0)" != "0" ]] && up_ranks=$((up_ranks + 1))
+    [[ "$(sshx "$n" "docker ps --filter name=^/glm53-tf4$ -q | wc -l" 2>/dev/null || echo 0)" != "0" ]] && up_ranks=$((up_ranks + 1))
   done
   if [[ $up_ranks -ne 4 ]]; then
     note_fail "identity" "serving $ids but only $up_ranks/4 ranks are up — this is NOT a healthy TP4"
@@ -1710,54 +1600,34 @@ except Exception: print("")' 2>/dev/null)"
   ok "serving $ids on 4/4 ranks"
 
   step "canary" "real chat completion (port-open is not proof)"
-  canary "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
+  # TensorFold is reasoning-first: the generic 8-token canary returns content=None.
+  canary_tf2 "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
 
   result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified, TP4 4/4)"
-  NEXT_CMD="nothing — lane is serving. Quality gate (after config changes): see the recipe's docs/validation.md qeval panel, needs >=72/75 at c1 and c4."
+  NEXT_CMD="nothing — lane is serving."
   return 0
 }
 
 glm53_tp4_down() {
   local lane="glm53-tp4"
-  STEPS=2; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
-  # ONE bounded stop on the head — start.sh stop tears down every rank over the fabric.
-  # It is wrapped in timeout_run because an ssh call to a recipe stop script that wedges
-  # otherwise hangs indefinitely and silently (that is how spark3 sat dead for an hour on
-  # 2026-09-25). A wedge must surface as a fast FAIL, not a stall.
-  #
-  # The NFS export/mounts are deliberately LEFT ALONE: unmounting /var/tmp/models mid-
-  # teardown is the exact wildcard trap that wedged spark3 when a blanket sweep removed
-  # the dsv41 NFS exporter while it was still mounted. Weights and mounts survive a down.
-  step "stop" "$GLM53_TP4_CLI stop on the head (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
-  local n stop_rc=0
-  glm53_tp4_resolve_ctn
-  timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_HEAD_HOST" \
-    "cd $GLM53_TP4_KIT && $GLM53_TP4_CLI stop" >/dev/null 2>&1 || stop_rc=1
-
-  # Upstream stops WITHOUT removing, on purpose (start.sh:149): the exited containers
-  # stay for forensics and for a fast `docker start` restart. So there is no blanket
-  # sweep here — force-removing them would throw away both. The sweep is a FALLBACK
-  # that fires only when stop actually failed, and `up`'s cleanup step removes the
-  # preserved ranks later anyway, right before they would collide with a fresh run.
-  if [[ $stop_rc -ne 0 ]]; then
-    warn "$GLM53_TP4_CLI stop returned non-zero or timed out — falling back to a direct sweep"
-    for n in $(lane_nodes "$lane"); do
-      sshx "$n" "ids=\$(docker ps -a --filter name=^/${GLM53_TP4_CTN}-r -q); [ -n \"\$ids\" ] && docker rm -f \$ids >/dev/null 2>&1; true"
-    done
-    ok "ranks force-swept on all 4 nodes (stop had failed)"
-  else
-    ok "stop issued on all 4 ranks; containers PRESERVED for inspection/restart (upstream design)"
+  step "stop" "./stop.sh on $GLM53_TP4_TF_HEAD (bounded, ${DSV41_STOP_TIMEOUT:-180}s cap)"
+  if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_TP4_TF_HEAD" "cd $GLM53_TP4_TF_KIT && ./stop.sh" >/dev/null 2>&1; then
+    note_fail "stop" "./stop.sh returned non-zero OR timed out after ${DSV41_STOP_TIMEOUT:-180}s — verify with 'ssh $GLM53_TP4_TF_HEAD uptime' before retrying"
+    NEXT_CMD="ssh $GLM53_TP4_TF_HEAD 'cd $GLM53_TP4_TF_KIT && ./stop.sh'   # run in the foreground to see whether it hangs or fails cleanly"
+    result "$lane" "down" "-" "-"
+    return 1
   fi
-  info "NFS export + worker mounts deliberately left up — unmounting mid-teardown is what wedged spark3 on 2026-09-25"
+  ok "stop issued"
 
-  step "verify torn down" "no ${GLM53_TP4_CTN}-r* ranks left on $(lane_nodes "$lane")"
-  local left="" c
+  # The pre-repoint knapcio containers (glm53-alignfix-20260929-r*) are DELIBERATELY
+  # not matched here: they are the preserved rollback lane (docker stop, NOT rm —
+  # see CUTOVER-2026-10-10.md). Only this lane's own TensorFold rank counts.
+  step "verify torn down" "no glm53-tf4 ranks left on $(lane_nodes "$lane")"
+  local n left="" c
   for n in $(lane_nodes "$lane"); do
-    # Anchored to the NAME field. An unanchored "glm53" matches the TP3 lane's
-    # glm53-exl3 container AND this lane's own image (glm53-roce:v11-*), so a clean
-    # teardown would report itself as failed while TP3 was merely running.
-    c="$(docker_names "$n" | grep -E "^${GLM53_TP4_CTN}-r" || true)"
+    c="$(docker_names "$n" | grep -E '^glm53-tf4' || true)"
     [[ -n "$c" ]] && left="$left $n:$c"
   done
   if [[ -n "$left" ]]; then
@@ -1766,10 +1636,10 @@ glm53_tp4_down() {
     result "$lane" "down" "-" "-"
     return 1
   fi
-  ok "all 4 nodes released"
+  ok "all required nodes released"
 
   result "$lane" "down" "-" "-"
-  NEXT_CMD="nothing — nodes released. Weights, NFS mounts and images were NOT touched."
+  NEXT_CMD="nothing — nodes released. Weights and images were NOT deleted."
   return 0
 }
 
@@ -1891,9 +1761,12 @@ print(" ".join(k if v in files else k.upper()+"-MISSING" for k,v in want.items()
     warn "http $code — falling through to a timed canary anyway (list-models is not proof)"
   else ok "200"; fi
   step "canary" "real chat completion"
-  # glm53-tf2: the generic canary's 8-token budget returns content=None on TensorFold
-  # (reasoning-first template) — use the enable_thinking:false variant for real proof.
-  if [[ "$lane" == "glm53-tf2" ]]; then canary_tf2 "$ep" "$model"; else canary "$ep" "$model"; fi
+  # glm53-tf2/tf3/tp4: TensorFold is reasoning-first — the generic canary's 8-token
+  # budget returns content=None on it. Use the enable_thinking:false variant for real proof.
+  case "$lane" in
+    glm53-tf2|glm53-tp3|glm53-tp4) canary_tf2 "$ep" "$model" ;;
+    *)                             canary "$ep" "$model" ;;
+  esac
   result "$lane" "verify" "$ep" "$model"
   return $FAILED
 }
@@ -1916,7 +1789,7 @@ lanes:
   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3 -> $DSV41_ENDPOINT
   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4 -> $DSV41_ENDPOINT  (fast line)
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
-  glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (knapcio recipe)
+  glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold engine)
   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
   jspark3           spark1,3,4    GLM-5.3-Flash EXL3 (jspark3) -> $GLM53_ENDPOINT
 
@@ -1977,7 +1850,7 @@ case "$ACT" in
   logs)
     case "${LANE:-}" in
       glm53-tp3) kit="$GLM53_TP3_KIT"; host="$GLM53_TP3_HEAD" ;;
-      glm53-tp4) kit="$GLM53_TP4_KIT"; host="$GLM53_HEAD_HOST" ;;
+      glm53-tp4) kit="$GLM53_TP4_TF_KIT"; host="$GLM53_TP4_TF_HEAD" ;;
       glm53-tf2) kit="$GLM53_TF2_KIT"; host="$GLM53_TF2_HEAD" ;;
       dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
       *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4|glm53-tf2>" >&2; exit 2 ;;
