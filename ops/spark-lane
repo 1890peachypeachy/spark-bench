@@ -99,9 +99,13 @@ GLM53_TP3_KIT="/home/spark3/GLM53-TF3"
 # the head, container glm53-tf4, workers spark1+spark2+spark4 (scripts/local.sh WORKER/2/3),
 # weights over NFS from spark3's dsv41-nfs export. See spark-bench
 # models/glm-5.3-flash/tensorfold-tp4-trial/CUTOVER-2026-10-10.md.
-# The pre-repoint knapcio/vLLM stack (GLM53_TP4_KIT=/var/tmp/glm53-recipe-tp4, containers
-# glm53-alignfix-20260929-r0..r3, image glm53-roce:v11-b58f34ea) is preserved STOPPED for
-# rollback: docker start glm53-alignfix-20260929-rN on each node + that kit's start.sh.
+# The pre-repoint knapcio/vLLM stack was DELETED 2026-10-10 (Victor's call, ~203G freed):
+# containers glm53-alignfix-20260929-r0..r3 rm'd, image glm53-roce:v11-b58f34ea rmi'd on
+# all 4 nodes (+ ghcr base on spark1), kit /var/tmp/glm53-recipe-tp4 and weights
+# /var/tmp/models/glm-quant-mix + nvidia/GLM-5.3-Flash-NVFP4 removed on spark3.
+# Kit + qmix plan archived at spark-bench backups/old-tp4-deleted-20261010/. NVFP4 base is
+# re-downloadable (nvidia/GLM-5.3-Flash-NVFP4, public); overlay rebuild documented in
+# glm53-flash-nvfp4-4x-dspark-recipe runs/2026-09-29-knapcio-stack/RUNBOOK.md.
 GLM53_TP4_TF_HEAD="spark3"
 GLM53_TP4_TF_KIT="/var/tmp/glm53-tf4-trial"
 GLM53_TP4_ENV=".env"
