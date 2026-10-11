@@ -1,6 +1,6 @@
 # DeepSeek V4.1 Flash on TensorFold, 4× DGX Spark
 
-**Status (2026-10-11): serving on `forge:8000` is still the Python engine (Jay's G19, [below](#live-2026-10-07-jays-g19-engine)). The Zig engine — TP=4 with pipelined prompt reading — is benchmarked and verified on four Sparks ([below](#benchmarked-2026-10-11-the-zig-engine-tp4-pipelined-prefill-roce--not-live)); it is not live, and the migration is pending.** TensorFold replaced the SGLang TP4/EP2 deployment on 2026-10-04; that
+**Status (2026-10-11): serving on `forge:8000` is the Zig engine — TP=4 with pipelined prompt reading over RoCE — live since 2026-10-11 ([below](#live-2026-10-11-the-zig-engine-tp4-pipelined-prefill-roce)). The Python engine (Jay's G19, [below](#live-2026-10-07-jays-g19-engine)) served 2026-10-07 → 2026-10-11 and stays as history.** TensorFold replaced the SGLang TP4/EP2 deployment on 2026-10-04; that
 deployment is stopped, not removed, and is the rollback (below).
 
 The engine is [jayleaton/deepseek-v41-tensorfold-spark](https://github.com/jayleaton/deepseek-v41-tensorfold-spark):
@@ -12,14 +12,14 @@ our fork, **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../../docs/images/lane-dsv41-tensorfold-dark.svg">
-  <img alt="DeepSeek V4.1 Flash on TensorFold's Zig engine, four Sparks, benchmark 2026-10-11 on RoCE: writing speed code 129 tok/s one stream and 218 for four vs 119 and 208 for the Python engine, prose 66 and 138 vs 66 and 130; cold 154K-token prompt 60.5 s with the pipeline off, 30.0 s with it on, 35.4 s for Python" src="../../../docs/images/lane-dsv41-tensorfold-light.svg">
+  <img alt="DeepSeek V4.1 Flash on TensorFold's Zig engine, four Sparks, live since 2026-10-11 on RoCE: writing speed code 129 tok/s one stream and 218 for four vs 113 and 205 for the previous Python engine, cold against cold, prose 66 and 138 vs 65 and 128; cold 154K-token prompt 60.5 s with the pipeline off, 30.0 s with it on, 35.4 s for Python" src="../../../docs/images/lane-dsv41-tensorfold-light.svg">
 </picture>
 
-## Benchmarked 2026-10-11: the Zig engine (TP=4, pipelined prefill, RoCE) — not live
+## Live 2026-10-11: the Zig engine (TP=4, pipelined prefill, RoCE)
 
-The lane's engine is becoming Zig: the CUDA Zig port in [the fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark),
-benched on four Sparks over **RoCE** on 2026-10-11 (window 8). **Benchmark, not live: what serves is still the Python
-G19 build below, and window 8's numbers are under independent review.** Short cells are 384-token greedy replies, a
+The lane's engine is Zig: the CUDA Zig port in [the fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark),
+serving since 2026-10-11. The numbers below are its window-8 bench on four Sparks over **RoCE** (2026-10-11, the
+basis for the migration). Short cells are 384-token greedy replies, a
 single cold repetition; ×4 is the aggregate of four streams; the long prompts are 37,987 and 154,196 tokens.
 
 | cell | Zig + pipeline (RoCE) | Zig, pipeline off (same window) | Δ |
@@ -31,8 +31,9 @@ single cold repetition; ×4 is the aggregate of four streams; the long prompts a
 | cold first token, 154K-token prompt | **30.0 s** | 60.5 s | **−50.5 %** |
 | decode after the 131K prompt, tok/s | 99.6 | 90.7 | +9.9 % |
 
-Against the live Python engine benched with the same harness over RoCE (2026-10-10, cross-session, its short cells
-warm best-of-3): code ×1 119.1 → 129.1 (+8 %), code ×4 207.9 → 218.3 (+5 %), prose within noise to +7 %, first
+Against the previous Python engine benched with the same harness over RoCE (2026-10-10, cross-session), short
+cells **cold against cold** (one cold repetition a side): code ×1 113.0 → 129.1 (+14 %), code ×4 204.9 → 218.3
+(+7 %), prose ×1 65.2 → 66.2 (+2 %), prose ×4 128.2 → 138.2 (+8 %); first
 token on the 154K prompt 35.4 → 30.0 s (−15 %). Failed streams 0. The warm short cells and the mix cells were **not
 measured on RoCE** in this window and stay empty (the NCCL window-7 figures are in the fork's `docs/ZIG-RESULTS.md`;
 no 1k–160k depth sweep or `m2bench` steady run exists for Zig). Full table, method and sources:
@@ -40,7 +41,7 @@ no 1k–160k depth sweep or `m2bench` steady run exists for Zig). Full table, me
 
 ![TP=4: Python vs Zig vs Zig + pipelined prefill](../../../docs/images/prefill-pipe-comparison-20261011.png)
 
-## Results (2026-10-07, live: G19 on RoCE)
+## Results (2026-10-07, previous engine: G19 on RoCE)
 
 The same depth sweep as 2026-10-04 (median of 3 a cell, 512 tokens, greedy, isolated), on the live G19 server:
 
@@ -175,9 +176,10 @@ Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifa
 failures unrelated to four Sparks; the image built from a fresh clone; the Spark test windows):
 [the fork's README](https://github.com/neko-legends/deepseek-v41-tensorfold-spark#how-it-was-tested-2026-10-05).
 
-## Live 2026-10-07: Jay's G19 engine
+## 2026-10-07: Jay's G19 engine (previous; live 2026-10-07 → 2026-10-11)
 
-Our four-Spark port of his newer engine, now the fork's `main`, serving since 2026-10-07 00:06. The G13 build it
+Our four-Spark port of his newer engine, then the fork's `main`, served from 2026-10-07 00:06 until the Zig engine
+took over on 2026-10-11. The G13 build it
 replaced, measured in the same window (one boot each, 512-token replies, two trials):
 
 | | G13 build | **G19 build** |

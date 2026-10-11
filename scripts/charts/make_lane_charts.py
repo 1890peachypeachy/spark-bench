@@ -99,21 +99,21 @@ def tensorfold(t, theme):
     fig, a, b = two_panel(t)
     fig.subplots_adjust(left=0.185)
     frame(fig, t, "DeepSeek V4.1 Flash · TensorFold (Zig engine) · 4× Spark",
-          "Uncensored 2.9-bit EXL3 · Zig TP=4 + pipelined prefill on RoCE · benched 2026-10-11, not live")
+          "Uncensored 2.9-bit EXL3 · Zig TP=4 + pipelined prefill on RoCE · live since 2026-10-11")
     axclean(a, t, "Writing speed  (tok/s, higher is better)")
     hbars(a, t, ["Code, one stream", "Code, 4 streams total", "Prose, one stream", "Prose, 4 streams total"],
           [("Zig + pipeline", [129.1, 218.3, 66.2, 138.2], "new", ["129", "218", "66", "138"]),
-           ("Python engine", [119.1, 207.9, 66.1, 129.8], "old", ["119", "208", "66", "130"])], xmax=265)
+           ("Python engine", [113.0, 204.9, 65.2, 128.2], "old", ["113", "205", "65", "128"])], xmax=265)
     axclean(b, t, "Cold 154K-token prompt  (s, lower is better)")
     hbars(b, t, ["Zig, pipeline off", "Zig + pipeline", "Python engine"],
           [("", [60.5, 30.0, 35.4], "new", ["60.5 s", "30.0 s", "35.4 s"])], xmax=78)
     for i in (0, 2):
         b.patches[i].set_color(t["old"]); b.texts[i].set_color(t["ink2"]); b.texts[i].set_fontweight("normal")
-    legend(fig, t, [("TensorFold Zig engine + pipelined prefill (benched, not live)", "new"),
-                    ("TensorFold Python engine (the serving build)", "old")], y=0.135)
+    legend(fig, t, [("TensorFold Zig + pipeline (live since 2026-10-11)", "new"),
+                    ("TensorFold Python (previous build)", "old")], y=0.135)
     fig.text(0.035, 0.075, "pipeline on vs off: one window, same image — prompt reading +102 % at 131K · the prompt is 154,196 tokens",
              fontsize=10.5, color=t["muted"], va="center")
-    fig.text(0.035, 0.03, "short cells: 384-token greedy replies · Zig cold 1 rep (2026-10-11), Python best of 3 warm (2026-10-10)",
+    fig.text(0.035, 0.03, "short cells: 384-token greedy replies, cold against cold · 1 rep each (Zig 2026-10-11, Python 2026-10-10)",
              fontsize=10.5, color=t["muted"], va="center")
     save(fig, "dsv41-tensorfold", theme)
 
