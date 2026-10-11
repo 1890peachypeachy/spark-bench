@@ -8,7 +8,7 @@
 <p align="center">
   <img alt="cluster: 4× DGX Spark" src="https://img.shields.io/badge/cluster-4%C3%97%20DGX%20Spark-76b900">
   <img alt="serving: DeepSeek V4.1 Flash on TensorFold" src="https://img.shields.io/badge/serving-DeepSeek%20V4.1%20Flash%20%C2%B7%20TensorFold-2a78d6">
-  <img alt="updated 2026-10-07" src="https://img.shields.io/badge/updated-2026--10--07-8a8984">
+  <img alt="updated 2026-10-11" src="https://img.shields.io/badge/updated-2026--10--11-8a8984">
 </p>
 
 ## 🧭 Lanes
@@ -17,7 +17,7 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash · TensorFold](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | 🟢 **serving** | **123** code tok/s on a short prompt (**104** averaged 1k–160k) · **67** prose · **200** for 4 users · cold 160k prompt **36 s** |
+| 🐋 | **[DeepSeek V4.1 Flash · TensorFold (Zig engine)](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | 🟢 serving is still Python · 🧪 **Zig benched** | **129** code tok/s (**218** for 4) · **66** prose (**138** for 4) · cold 154K prompt **30 s** · benchmark, not live |
 | 🐋 | [DeepSeek V4.1 Flash · SGLang](models/deepseek-v4.1-flash/README.md) | 🟡 rollback | 38 prose / 54–62 code tok/s · 1M context |
 | 🐋 | [DeepSeek V4.1 Flash · vLLM](docs/dsv41-vllm-tp4.md) | 🟡 fallback | 71 code tok/s · 109 tok/s for 4 users |
 | 🦄 | [Qwen 3.8 Flash Next](models/qwen-3.8-flash-next/README.md) | ⚪ archived | 91 code tok/s · 600 tok/s for 16 users |
@@ -58,21 +58,21 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 <a id="dsv41-tensorfold"></a>
 
-## 🐋 DeepSeek V4.1 Flash · TensorFold · 🟢 serving
+## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🧪 benched, not live
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/lane-dsv41-tensorfold-dark.svg">
-  <img alt="DeepSeek V4.1 Flash on TensorFold, four Sparks: writing speed over 1k-160k prompts prose 66 vs 38 tok/s for SGLang, code 104 vs 57; code on a short prompt 123; four users 122 vs 76, and 200 steady; cold 160k-token prompt 97-100 s on 2026-10-04, 39 s pipelined on 2026-10-05, 36 s on the G19 engine live since 2026-10-07, SGLang 48-52 s" src="docs/images/lane-dsv41-tensorfold-light.svg">
+  <img alt="DeepSeek V4.1 Flash on TensorFold's Zig engine, four Sparks, benchmark 2026-10-11 on RoCE: writing speed code 129 tok/s one stream and 218 for four vs 119 and 208 for the Python engine, prose 66 and 138 vs 66 and 130; cold 154K-token prompt 60.5 s with the pipeline off, 30.0 s with it on, 35.4 s for Python" src="docs/images/lane-dsv41-tensorfold-light.svg">
 </picture>
 
-- ⚡ **1.7× SGLang's decode** at every prompt length from 1k to 160k: jayleaton's engine, ported by us to four Sparks.
-- 🏭 **Long prompts run as a pipeline** across the Sparks: a cold 160k-token prompt takes 36 s (was 100 s).
-- 🛠️ **The bugs from Jay's review are fixed** (crash at `top_k` above 32,256): same replies byte for byte, same speed.
-- 🆕 **Jay's newer engine (G19), live since 2026-10-07:** 420K context and image input; long prompts ~7% faster. [Report](artifacts/tensorfold-v41-g19-20261005/REPORT.md).
-- 🚀 **One user, short code prompt: 123 tok/s; four users: 200 tok/s steady** (2026-10-07, `m2bench`). Two Sparks run the same benchmark at ~80. Long prompts average 104 (code) / 67 (prose) over 1k–160k.
-- 🔌 **Back on RoCE (2026-10-07):** a stale failure file had silently forced the slower NCCL path for two days. Fixed: prose 66.5, code 104.1 tok/s, 4 users 122. [Report](artifacts/tensorfold-v41-roce-20261007/REPORT.md).
+- 🆕 **The engine is becoming Zig** (2026-10-11, RoCE — the transport the live server uses): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. **Benchmarked and verified, not live.** [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
+- 🏭 **Pipelined prompt reading is the big lever:** +75 % at 32K and **+102 % at 131K** prompt tok/s against the same build with it off (one window, controlled); the cold 154K-token prompt's first token halves, 60.5 → **30.0 s**. Decode unchanged (±1 %).
+- ⚖️ **Against the Python engine** (cross-session, RoCE, its cells warm best-of-3): code +8 % (×1) / +5 % (×4), prose within noise to +7 %, first token −15 %.
+- 🟢 **What serves today is still the Python engine** (Jay's G19, RoCE, since 2026-10-07: 420K context, image input, prose 66.5 / code 104.1 tok/s over 1k–160k, cold 160k prompt 36 s). The Zig migration is pending; window 8's numbers are under independent review.
+- 📜 The Python engine's numbers stay in the [lane page](models/deepseek-v4.1-flash/tensorfold-4x/README.md) and [journal](models/deepseek-v4.1-flash/JOURNAL.md); the 1k–160k depth sweep and `m2bench` steady runs have no Zig equivalent yet, so those rows end with the Python engine.
+- 🛠️ History: the bugs from Jay's review are fixed; a stale failure file once silently forced NCCL for two days (12–19 %). [Reports](artifacts/).
 
-📦 [Recipe: our four-Spark fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [decode](artifacts/tensorfold-v41-roce-20261007/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
+📦 [Recipe: our four-Spark fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [Zig benchmark](artifacts/tensorfold-v41-zig-20261011/REPORT.md), [decode](artifacts/tensorfold-v41-roce-20261007/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
 
 <a id="dsv41-sglang"></a>
 
