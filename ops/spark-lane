@@ -22,6 +22,9 @@
 #   comfy-engine      spark2        ComfyUI (music/image/design/video) -> :8188 (no LLM lane)
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8000/v1
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8000/v1 (Mia's fast line)
+# NOTE 2026-10-12: dsv41 lanes are PARKED-INVENTORY per Victor 2026-10-05 (GLM = main).
+# Not an open decision; restore only on explicit request. See GBrain
+# dsv41-g19-lane-parked-inventory.
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.5, CONTAINER glm53-tf3)
 #   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tf4)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
