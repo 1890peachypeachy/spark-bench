@@ -67,6 +67,10 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 - 🟢 **The serving engine is Zig** (live since 2026-10-11, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
 - 🏭 **Pipelined prompt reading is the big lever:** +75 % at 32K and **+102 % at 131K** prompt tok/s against the same build with it off (one window, controlled); the cold 154K-token prompt's first token halves, 60.5 → **30.0 s**. Decode unchanged (±1 %).
+- 🧪 **Long context, cold, measured 2026-10-14** — past the 131K the pipeline figure above tops out at: a **199,713-token** prompt returned its first token at **36.8 s** (~5,400 prompt tok/s), and a **332,847-token** prompt (79 % of the 420,096-token request slot) at **66.6 s** (~5,100 prompt tok/s). Both requests report `cached_tokens: 0`, so both reads are genuinely cold rather than prefix-cache hits. Thinking off for the clean timing run.
+
+![Cold 200K-token prompt on the live four-Spark Zig engine: 199,713 tokens, first token 36.8 s](docs/images/dsv41-zig-context-200k-20261014.webp)
+
 - ⚖️ **Against the previous Python engine** (cross-session, RoCE, cold against cold): code +14 % (×1) / +7 % (×4), prose +2 % (×1) / +8 % (×4), first token −15 %.
 - 📜 The Python engine's numbers stay in the [lane page](models/deepseek-v4.1-flash/tensorfold-4x/README.md) and [journal](models/deepseek-v4.1-flash/JOURNAL.md) (G19 on RoCE, live 2026-10-07 → 2026-10-11: 420K context, image input, prose 66.5 / code 104.1 tok/s over 1k–160k, cold 160k prompt 36 s); the 1k–160k depth sweep and `m2bench` steady runs have no Zig equivalent yet, so those rows end with the Python engine.
 - 🛠️ History: the bugs from Jay's review are fixed; a stale failure file once silently forced NCCL for two days (12–19 %). [Reports](artifacts/).
