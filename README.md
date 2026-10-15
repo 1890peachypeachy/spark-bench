@@ -26,35 +26,6 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 <sub>tok/s = writing speed. Rulers differ between lanes; each lane page says how its numbers were measured.</sub>
 
-<a id="dsv41-baseline"></a>
-
-## 📊 DeepSeek V4.1 Flash on four Sparks · quality + speed baseline (2026-10-15)
-
-One frozen suite (`bench/qbench.py`) against the live TensorFold Zig engine (TP=4 over RoCE), thinking off, greedy decoding, 283 requests, 0 transport errors. Scores are plain percentages on fixed inputs.
-
-| Area | What was asked | Result |
-| --- | --- | ---: |
-| Knowledge | MMLU-200, 0-shot, single A–D letter | **88.5 %** (177/200) |
-| Math | GSM8K test items 0–29, exact final number | **100 %** (30/30) |
-| Coding | 5 tasks, hidden stdlib-unittest tests | **80 %** (4/5) |
-| Instruction following | 20 items, programmatic checkers | **90 %** (18/20) |
-| Structured output | 6 JSON-Schema tasks, validated client-side | **100 %** (6/6) |
-| Tool use | 8 single calls + 2 dependent chains | **100 %** (10/10) |
-| Long context | passkey at 32K / 131K / 299K tokens | **100 %** (3/3) |
-| Summarization | 20-fact log → summary: facts kept / stale returned / invented numbers | **100 %** / **0 %** / **0 %** |
-| Vision: text | code-rendered images read in tiles, strings matched exactly | **98.5 %** (259/263; 7 of 8 text images at 100 %) |
-| Vision: counts, shapes, colour | region counts · shape matching · measured hex | counts **100 %** exact (39/39, 23/23, 11/11) · shapes **100 %** (20/20) · flat-fill colour ΔE 0.0 |
-
-| Speed (320-token outputs) | Decode tok/s | First token |
-| --- | ---: | ---: |
-| Code, 1 stream | **153.8** | 0.17 s |
-| Prose, 1 stream | **70.2** | 0.15 s |
-| 4 streams, aggregate | **170.2** | 0.17–0.50 s |
-
-📈 [Chart](results/qbench-dsv41-only-20261015.png) · 🔁 To reproduce, see [RERUN.md](RERUN.md) and [results/](results/) (raw per-item records: [`qbench-dsv41-zig-20261015.json`](results/qbench-dsv41-zig-20261015.json)). The vision rows come from a separate image harness, not `qbench.py`.
-
----
-
 ## 🧠 Why this repo exists
 
 This repo is about **four Sparks working as one machine**, and it keeps **every optimization we tried**: what we changed, what it measured, what failed and why, all dated.
@@ -93,6 +64,36 @@ That history is the point. When a new model comes out, the next engineer (or the
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/lane-dsv41-tensorfold-dark.svg">
   <img alt="DeepSeek V4.1 Flash on TensorFold's Zig engine, four Sparks, live since 2026-10-11 on RoCE: writing speed code 129 tok/s one stream and 218 for four vs 113 and 205 for the previous Python engine, cold against cold, prose 66 and 138 vs 65 and 128; cold 154K-token prompt 60.5 s with the pipeline off, 30.0 s with it on, 35.4 s for Python" src="docs/images/lane-dsv41-tensorfold-light.svg">
 </picture>
+
+<a id="dsv41-baseline"></a>
+
+### 📊 Quality + speed baseline (2026-10-15)
+
+One frozen suite (`bench/qbench.py`) against the live TensorFold Zig engine (TP=4 over RoCE), thinking off, greedy decoding, 283 requests, 0 transport errors. Scores are plain percentages on fixed inputs.
+
+| Area | What was asked | Result |
+| --- | --- | ---: |
+| Knowledge | MMLU-200, 0-shot, single A–D letter | **88.5 %** (177/200) |
+| Math | GSM8K test items 0–29, exact final number | **100 %** (30/30) |
+| Coding | 5 tasks, hidden stdlib-unittest tests | **80 %** (4/5) |
+| Instruction following | 20 items, programmatic checkers | **90 %** (18/20) |
+| Structured output | 6 JSON-Schema tasks, validated client-side | **100 %** (6/6) |
+| Tool use | 8 single calls + 2 dependent chains | **100 %** (10/10) |
+| Long context | passkey at 32K / 131K / 299K tokens | **100 %** (3/3) |
+| Summarization | 20-fact log → summary: facts kept / stale returned / invented numbers | **100 %** / **0 %** / **0 %** |
+| Vision: text | code-rendered images read in tiles, strings matched exactly | **98.5 %** (259/263; 7 of 8 text images at 100 %) |
+| Vision: counts, shapes, colour | region counts · shape matching · measured hex | counts **100 %** exact (39/39, 23/23, 11/11) · shapes **100 %** (20/20) · flat-fill colour ΔE 0.0 |
+
+| Speed (320-token outputs) | Decode tok/s | First token |
+| --- | ---: | ---: |
+| Code, 1 stream | **153.8** | 0.17 s |
+| Prose, 1 stream | **70.2** | 0.15 s |
+| 4 streams, aggregate | **170.2** | 0.17–0.50 s |
+
+📈 [Chart](results/qbench-dsv41-only-20261015.png) · 🔁 To reproduce, see [RERUN.md](RERUN.md) and [results/](results/) (raw per-item records: [`qbench-dsv41-zig-20261015.json`](results/qbench-dsv41-zig-20261015.json)). The vision rows come from a separate image harness, not `qbench.py`.
+
+---
+
 
 - 🟢 **The serving engine is Zig** (live since 2026-10-11, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
 - 🏭 **Pipelined prompt reading is the big lever:** +75 % at 32K and **+102 % at 131K** prompt tok/s against the same build with it off (one window, controlled); the cold 154K-token prompt's first token halves, 60.5 → **30.0 s**. Decode unchanged (±1 %).
