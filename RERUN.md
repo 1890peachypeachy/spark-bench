@@ -1,6 +1,6 @@
 # RERUN — benchmarking a new engine/model on the four Sparks
 
-**The rule (Jun, standing):** bench a model once; never rerun a sweep that already exists. A comparison with a
+**The rule (standing):** bench a model once; never rerun a sweep that already exists. A comparison with a
 changed variable is not a comparison — inputs, prompts, params and scoring must be identical across models.
 Scores go in as percentages, and nothing that may be published carries pricing.
 
@@ -13,7 +13,7 @@ model id/endpoint — e.g. another model on TensorFold — and the numbers compa
 ## 1. The one model-agnostic runner: `bench/qbench.py`
 
 ```bash
-cd /home/jun/git/spark-bench
+cd ~/git/spark-bench
 python3 bench/qbench.py --base-url http://forge:8000/v1 --model deepseek-v4.1-flash \
     --areas all --workers 4 --tag dsv41-zig-20261015 \
     --out results/qbench-dsv41-zig-20261015.json
@@ -57,7 +57,7 @@ is simply not drawn. Percentages only, no pricing.
 
 | area | harness | exact command (retargeted by argument) |
 |---|---|---|
-| worker roles (builder / reviewer / synthesis / IF / batch) | `nest/scripts/model-role-bench/run_bench.py` | `cd /home/jun/nest/scripts/model-role-bench && python3 run_bench.py --candidate-base http://forge:8000/v1 --candidate-no-thinking --models <served-id> --date <date>-<tag> --roles builder,reviewer,synthesis,if,batch --runs 2 --workers 4 --budget 15 --no-allowlist` |
+| worker roles (builder / reviewer / synthesis / IF / batch) | `nest/scripts/model-role-bench/run_bench.py` | `cd ~/nest/scripts/model-role-bench && python3 run_bench.py --candidate-base http://forge:8000/v1 --candidate-no-thinking --models <served-id> --date <date>-<tag> --roles builder,reviewer,synthesis,if,batch --runs 2 --workers 4 --budget 15 --no-allowlist` |
 | long-context **speed** (cold prefill ladder, C1/C4 decode) | fork `deepseek-v41-tensorfold-spark/bench/` (`m2bench`, `stress.py`, `soak.py`) + `spark-bench/scripts/` lane harnesses | see `spark-bench/scripts/README-bench.md` and the fork's `docs/BENCHMARKS.md`; the lane harnesses are lane-specific (hardcoded host/port) — the model-agnostic speed numbers come from `qbench --areas speed` |
 | structured output + tools (xgrammar gates) | fork `bench/structured.py`, `bench/tooleval/chains.py` | `python3 bench/structured.py --base http://forge:8000 --model <id> --out R.json` · `python3 bench/tooleval/chains.py --base http://forge:8000 --model <id> --mode off --out R.json` |
 | MMLU-200 + needle, through the serving path | fork `bench/quality.py` | `python3 bench/quality.py mmlu --base http://forge:8000 --model <id> --data bench/data/mmlu200.jsonl --out R.json` · `... needle --sizes 32768,131072,299000 --out N.json` |

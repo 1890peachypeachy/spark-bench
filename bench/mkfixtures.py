@@ -348,7 +348,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="bench/inputs")
     ap.add_argument("--mmlu-src",
-                    default="/home/jun/git/deepseek-v41-tensorfold-spark/bench/data/mmlu200.jsonl")
+                    default="~/git/deepseek-v41-tensorfold-spark/bench/data/mmlu200.jsonl")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
