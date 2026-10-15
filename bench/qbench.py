@@ -76,7 +76,8 @@ class Engine:
         t0 = time.time()
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:
-                raw = r.read()
+                # a stream is read line by line so each chunk keeps its arrival time (TTFT without a server block)
+                raw = [(time.time(), line) for line in r] if stream else r.read()
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             self.errors += 1
             if retry:
@@ -99,11 +100,12 @@ class Engine:
                 "seconds": time.time() - t0}
 
     @staticmethod
-    def _parse_stream(raw: bytes, t0: float) -> dict:
+    def _parse_stream(raw: list, t0: float) -> dict:
+        """``raw``: (arrival time, line bytes) pairs as the stream delivered them."""
         content, reasoning, calls, finish, usage, tf = "", "", {}, None, {}, {}
         first = None
-        for line in raw.decode(errors="replace").splitlines():
-            line = line.strip()
+        for at, line in raw:
+            line = line.decode(errors="replace").strip()
             if not line.startswith("data:"):
                 continue
             payload = line[5:].strip()
@@ -122,7 +124,7 @@ class Engine:
             ch = d["choices"][0]
             delta = ch.get("delta") or {}
             if first is None and (delta.get("content") or delta.get("tool_calls") or delta.get("reasoning_content")):
-                first = time.time()
+                first = at
             if delta.get("content"):
                 content += delta["content"]
             if delta.get("reasoning_content"):
@@ -177,7 +179,8 @@ def measured(eng: Engine, prompt: str, max_tokens: int) -> dict:
     """One generation with honest speed numbers: stream for TTFT, usage for the token count.
 
     Prefers the server's own ``tensorfold`` block (ttft_s / prefill_s / decode_s) when present; otherwise
-    falls back to the streamed timestamps, so the same harness measures a different engine the same way.
+    falls back to the streamed chunks' arrival times, so the same harness measures a different engine the same
+    way. ``timing`` says which source the numbers came from ("server" or "stream").
     """
     r = eng.chat([{"role": "user", "content": prompt}], max_tokens=max_tokens, stream=True)
     comp = (r.get("usage") or {}).get("completion_tokens")
@@ -189,7 +192,8 @@ def measured(eng: Engine, prompt: str, max_tokens: int) -> dict:
         r = r2
     ttft = tf.get("ttft_s") or r.get("ttft_s")
     dec_s = tf.get("decode_s") or (r["seconds"] - (ttft or 0))
-    return {"ttft_s": round(ttft, 3) if ttft else None,
+    return {"timing": "server" if tf.get("decode_s") else "stream",
+            "ttft_s": round(ttft, 3) if ttft else None,
             "prefill_tok_s": round(float(tf.get("prompt", 0)) / tf["prefill_s"], 1)
             if tf.get("prefill_s") else None,
             "completion_tokens": comp, "wall_s": round(r["seconds"], 2),
