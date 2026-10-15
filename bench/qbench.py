@@ -2,7 +2,7 @@
 """qbench — ONE model-agnostic quality/speed bench for whatever OpenAI-compatible server is up.
 
 Endpoint and model id are arguments, so the same frozen inputs and the same scoring can be pointed at a
-different engine/model (e.g. Nemotron on TensorFold later) and the numbers compare directly.
+different engine/model and the numbers compare directly.
 
     python3 bench/qbench.py --base-url http://forge:8000/v1 --model deepseek-v4.1-flash \
         --areas all --out results/qbench-dsv41-zig-20261015.json

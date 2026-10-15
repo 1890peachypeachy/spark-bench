@@ -6,7 +6,7 @@ Scores go in as percentages, and nothing that may be published carries pricing.
 
 So this file is two things: (1) **what is already benched for DeepSeek V4.1 Flash on the Sparks** (do not rerun),
 and (2) **the exact command for everything else**, written so the whole thing can be pointed at a different
-model id/endpoint — e.g. Nemotron on TensorFold — and the numbers compare directly.
+model id/endpoint — e.g. another model on TensorFold — and the numbers compare directly.
 
 ---
 
@@ -44,7 +44,7 @@ python3 bench/qbench.py --base-url http://forge:8000/v1 --model deepseek-v4.1-fl
 ### Chart from two result sets
 
 ```bash
-python3 bench/chart.py results/qbench-dsv41-zig-20261015.json results/qbench-<nemotron>.json \
+python3 bench/chart.py results/qbench-dsv41-zig-20261015.json results/qbench-<other-model>.json \
     --png results/qbench-compare.png --svg results/qbench-compare.svg --md results/qbench-compare.md
 ```
 
@@ -91,7 +91,7 @@ with the Sparks column: role suite `nest/scripts/model-role-bench/results/2026-0
 
 ---
 
-## 4. Order for a new model (e.g. Nemotron on TensorFold)
+## 4. Order for a new model
 
 1. Confirm the served id: `curl -s http://forge:8000/v1/models`.
 2. `qbench` (all areas) → `results/qbench-<tag>.json` (~3 min).

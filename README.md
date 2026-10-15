@@ -26,6 +26,35 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 <sub>tok/s = writing speed. Rulers differ between lanes; each lane page says how its numbers were measured.</sub>
 
+<a id="dsv41-baseline"></a>
+
+## 📊 DeepSeek V4.1 Flash on four Sparks · quality + speed baseline (2026-10-15)
+
+One frozen suite (`bench/qbench.py`) against the live TensorFold Zig engine (TP=4 over RoCE), thinking off, greedy decoding, 283 requests, 0 transport errors. Scores are plain percentages on fixed inputs.
+
+| Area | What was asked | Result |
+| --- | --- | ---: |
+| Knowledge | MMLU-200, 0-shot, single A–D letter | **88.5 %** (177/200) |
+| Math | GSM8K test items 0–29, exact final number | **100 %** (30/30) |
+| Coding | 5 tasks, hidden stdlib-unittest tests | **80 %** (4/5) |
+| Instruction following | 20 items, programmatic checkers | **90 %** (18/20) |
+| Structured output | 6 JSON-Schema tasks, validated client-side | **100 %** (6/6) |
+| Tool use | 8 single calls + 2 dependent chains | **100 %** (10/10) |
+| Long context | passkey at 32K / 131K / 299K tokens | **100 %** (3/3) |
+| Summarization | 20-fact log → summary: facts kept / stale returned / invented numbers | **100 %** / **0 %** / **0 %** |
+| Vision: text | code-rendered images read in tiles, strings matched exactly | **98.5 %** (259/263; 7 of 8 text images at 100 %) |
+| Vision: counts, shapes, colour | region counts · shape matching · measured hex | counts **100 %** exact (39/39, 23/23, 11/11) · shapes **100 %** (20/20) · flat-fill colour ΔE 0.0 |
+
+| Speed (320-token outputs) | Decode tok/s | First token |
+| --- | ---: | ---: |
+| Code, 1 stream | **153.8** | 0.17 s |
+| Prose, 1 stream | **70.2** | 0.15 s |
+| 4 streams, aggregate | **170.2** | 0.17–0.50 s |
+
+📈 [Chart](results/qbench-dsv41-only-20261015.png) · 🔁 To reproduce, see [RERUN.md](RERUN.md) and [results/](results/) (raw per-item records: [`qbench-dsv41-zig-20261015.json`](results/qbench-dsv41-zig-20261015.json)). The vision rows come from a separate image harness, not `qbench.py`.
+
+---
+
 ## 🧠 Why this repo exists
 
 This repo is about **four Sparks working as one machine**, and it keeps **every optimization we tried**: what we changed, what it measured, what failed and why, all dated.
@@ -156,7 +185,7 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 ## 🧰 Also here
 
-- 📏 **[RERUN.md](RERUN.md)**: one model-agnostic runner (`bench/qbench.py`, endpoint + model id as args), the frozen inputs behind it, what is already benched, and the exact command to point the whole suite at a new engine/model (e.g. Nemotron on TensorFold) for a like-for-like chart. DeepSeek baseline per area: [results/BASELINE-dsv41-sparks-20261015.md](results/BASELINE-dsv41-sparks-20261015.md).
+- 📏 **[RERUN.md](RERUN.md)**: one model-agnostic runner (`bench/qbench.py`, endpoint + model id as args), the frozen inputs behind it, what is already benched, and the exact command to point the whole suite at a new engine/model for a like-for-like chart. DeepSeek baseline per area: [results/BASELINE-dsv41-sparks-20261015.md](results/BASELINE-dsv41-sparks-20261015.md).
 - 🔌 **[Fabric runbook](docs/FABRIC.md)**: CX-7, RoCE, the switch. Most "TP4 is slow" reports are network problems, not the model.
 - 🔥 **[Catch-up sidecar](docs/CATCHUP.md)**: keeps a long chat warm in the local model's cache while you talk to another model.
 

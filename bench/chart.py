@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Side-by-side comparison chart + table for two (or more) qbench result sets.
 
-    python3 bench/chart.py results/qbench-dsv41-zig-20261015.json [results/qbench-nemotron-....json] \
+    python3 bench/chart.py results/qbench-dsv41-zig-20261015.json [results/qbench-<other-model>.json] \
         --png results/qbench-compare.png --md results/qbench-compare.md
 
 Renders an SVG (hand-written, no plotting library) and converts it with rsvg-convert or ImageMagick.

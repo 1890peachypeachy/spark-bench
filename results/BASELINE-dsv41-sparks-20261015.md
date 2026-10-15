@@ -31,7 +31,7 @@ Speed, same frozen prompts, 320-token outputs (source: the `speed` area of the s
 | prose, 1 stream | **70.2** | 0.15 s |
 | 4 streams, aggregate | **170.2** | 0.17–0.50 s |
 
-## Worker-role suite on the Sparks (2026-10-15, 2 runs/cell, judge `z-ai-glm-5-3`, 0.16 DIEM)
+## Worker-role suite on the Sparks (2026-10-15, 2 runs/cell, judge `z-ai-glm-5-3`)
 
 Harness: `nest/scripts/model-role-bench/run_bench.py --candidate-base http://forge:8000/v1 --candidate-no-thinking`
 (same fixtures as the 2026-09-01 Venice sweep; judge never from the scored model's family).
