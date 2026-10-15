@@ -156,6 +156,7 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 ## 🧰 Also here
 
+- 📏 **[RERUN.md](RERUN.md)**: one model-agnostic runner (`bench/qbench.py`, endpoint + model id as args), the frozen inputs behind it, what is already benched, and the exact command to point the whole suite at a new engine/model (e.g. Nemotron on TensorFold) for a like-for-like chart. DeepSeek baseline per area: [results/BASELINE-dsv41-sparks-20261015.md](results/BASELINE-dsv41-sparks-20261015.md).
 - 🔌 **[Fabric runbook](docs/FABRIC.md)**: CX-7, RoCE, the switch. Most "TP4 is slow" reports are network problems, not the model.
 - 🔥 **[Catch-up sidecar](docs/CATCHUP.md)**: keeps a long chat warm in the local model's cache while you talk to another model.
 

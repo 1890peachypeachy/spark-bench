@@ -1,0 +1,72 @@
+{
+ "deepseek-v4.1-flash": {
+  "privacy": "on-prem",
+  "builder": {
+   "n_cells": 6,
+   "latency_mean_s": 10.26,
+   "tokens_per_second_median": 65.4,
+   "diem": 0,
+   "failures": [],
+   "test_pass_rate": 1.0,
+   "score": 1.0
+  },
+  "reviewer": {
+   "n_cells": 6,
+   "latency_mean_s": 6.88,
+   "tokens_per_second_median": 12.5,
+   "diem": 0,
+   "failures": [],
+   "found_rate": 1.0,
+   "false_positives_mean": 0,
+   "score": 1.0,
+   "judge_models": [
+    "z-ai-glm-5-3"
+   ],
+   "judge_modes": [
+    "sampled"
+   ]
+  },
+  "synthesis": {
+   "n_cells": 2,
+   "latency_mean_s": 48.19,
+   "tokens_per_second_median": 50.3,
+   "diem": 0,
+   "failures": [],
+   "recall": 1.0,
+   "hallucinations_mean": 1,
+   "score": 1.0,
+   "judge_models": [
+    "z-ai-glm-5-3"
+   ],
+   "judge_modes": [
+    "sampled"
+   ]
+  },
+  "if": {
+   "n_cells": 12,
+   "latency_mean_s": 11.21,
+   "tokens_per_second_median": 36.4,
+   "diem": 0,
+   "failures": [],
+   "task_score_mean": 4.667,
+   "english_violations": 0,
+   "score": 4.667,
+   "judge_models": [
+    "z-ai-glm-5-3"
+   ],
+   "judge_modes": [
+    "sampled"
+   ]
+  },
+  "batch": {
+   "n_cells": 2,
+   "latency_mean_s": 8.7,
+   "tokens_per_second_median": 58.1,
+   "diem": 0,
+   "failures": [],
+   "accuracy": 1.0,
+   "diem_per_1k_items": 0.0,
+   "score": 1.0
+  }
+ }
+}
