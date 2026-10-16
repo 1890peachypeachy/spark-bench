@@ -44,13 +44,21 @@ own work half as often (25 harness runs vs 51).
 | :-: | :-: | :-: |
 | <img alt="Reference: voxel-style garage with a white car on a striped pad, tool pegboard, red drawers, cabinet with plant, two lamps, window, roll-up door, barrels and a crate" src="docs/images/garage-test-reference-20261016.webp" width="340"> | <img alt="DeepSeek's voxel garage built in three.js: brick walls, pegboard with tools, red drawers, cabinet with plant, lamps, striped parking pad with a white car, barrels and crate" src="docs/images/voxel-test-deepseek-20261016.webp" width="340"> | <img alt="Nemotron's voxel garage built in three.js: correct room layout but a long black bar crossing the scene, pale walls, blocky car" src="docs/images/voxel-test-nemotron-20261016.webp" width="340"> |
 
-| Both scenes side by side, labelled with model, time and tokens |
-| :-: |
-| <img alt="Labelled combined page: both voxel garages side by side, each labelled with the model that built it, its wall time and its token count" src="docs/images/voxel-test-labelled-20261016.webp" width="720"> |
+**Second test: driving a 3D editor through tool calls.** Same reference, same kind of agent, but this time each model
+built the garage by controlling Blender over MCP, writing editor code through tool calls and checking renders with its
+vision harness. Same referee setup: six zoomed regions, blinded, both orders, lower score kept.
 
-**An earlier test** built the same garage through a 3D editor's tool interface (the models drove it with code over
-that interface) scored DeepSeek 79/180 vs Nemotron 44/180, with DeepSeek winning 5 of 6 regions. We replaced it as
-the deciding test because the task is a voxel scene, not an editor scene; the result agreed in direction.
+| | DeepSeek V4.1 Flash | Nemotron 3.5 Super VL |
+| --- | ---: | ---: |
+| Referee total (6 zoomed regions × 30) | **79 / 180** | 44 / 180 |
+| Regions won | **5 of 6** | 1 of 6 |
+
+| Both Blender builds side by side, labelled with model, time and tokens |
+| :-: |
+| <img alt="Labelled combined scene from the Blender test: both garages side by side, each labelled with the model that built it, its wall time and its token count" src="docs/images/garage-test-labelled-20261016.webp" width="720"> |
+
+Both tests point the same way: DeepSeek V4.1 Flash turns a reference image into a faithful scene more reliably, whether
+it writes the scene itself or drives an editor to build it.
 
 ---
 
