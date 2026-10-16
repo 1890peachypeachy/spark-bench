@@ -16,30 +16,41 @@
 ## 📌 Now serving: DeepSeek V4.1 Flash, not Nemotron (2026-10-16)
 
 The Sparks are back on **DeepSeek V4.1 Flash** (TensorFold Zig engine, TP=4) as of 2026-10-16. We moved off
-**Nemotron 3.5 Super VL** after a real-world agent test, despite its promising numbers. Its speed and serving figures
-below stay published and are accurate. The decision is about the quality of the result, not speed.
+**Nemotron 3.5 Super VL** after two real-world agent tests, despite Nemotron's promising speed numbers. Its speed
+and serving figures below stay published and are accurate. The decision came down to the quality of the result.
 
-**The test.** Each model ran as a coding agent with the same tools and the same prompt. Through tool calls into Blender,
-each built the same voxel garage from one reference image. A neutral third model refereed the builds. It compared six
-zoomed regions of each build with the reference, judged every pair in both orders (blinded), and kept the lower score
-whenever the two runs disagreed.
+**The deciding test.** Each model ran as a coding agent on our four Sparks, with the same prompt (byte-identical),
+the same reference image, the same tools, and the same 2 h cap. The task: look at the reference and build the same
+voxel-style 3D garage as a live three.js scene in code — no 3D editor, no modelling tools. Each builder checked its
+own work by screenshotting its page and reading the screenshots through the vision harness of its own model.
 
 | | DeepSeek V4.1 Flash | Nemotron 3.5 Super VL |
 | --- | ---: | ---: |
-| Referee total (6 regions × 30) | **79 / 180** | 44 / 180 |
-| Regions won | **5 of 6** | 1 of 6 |
+| Referee total (6 zoomed regions × 30) | **87 / 180** | 60 / 180 |
+| Regions won | **6 of 6** | 0 of 6 |
+| Wall time | **16 m 39 s** | 23 m 31 s |
+| Tool calls (errors) | 87 (1) | 60 (5) |
 
-DeepSeek matched the reference's camera, palette and layout: brick walls, the tool pegboard, red drawers, the cabinet
-with its plant, two warm lamps, the striped parking pad, the barrels and the crate. Nemotron's garage came out pale and
-mostly frontal, with checkerboard walls instead of brick. Its car barely reads as one (the wheels stand off the body), its
-pegboard can't be seen from its own camera, and its lamps aren't visible. Neither build is a full recreation. (For this
-test DeepSeek V4.1 Flash ran on a hosted endpoint, not on our four Sparks.)
+A neutral third model refereed: it compared six zoomed regions of each build with the reference, judged every pair
+in both orders (blinded), and kept the lower score on disagreement. A model-free pixel check agrees with the referee
+(histogram overlap with the reference 0.77 vs 0.56; empty-background share 23% vs 50%). DeepSeek's build matches the
+reference's palette, layout and props: brick walls, the tool pegboard, red drawers, the cabinet with its plant, warm
+lamps, the striped parking pad, barrels and the crate. Nemotron got the room layout but its scene carries a long
+black bar across the view — a bug in its own code, four window-pane calls missing an argument, which turned a colour
+value into a depth of roughly ten million units. It also went 23 minutes with five malformed edits and checked its
+own work half as often (25 harness runs vs 51).
 
-| Reference image (the task) | Final builds: DeepSeek V4.1 Flash (left) · Nemotron 3.5 Super VL (right) |
-| :-: | :-: |
-| <img alt="Reference: voxel-style garage with a white car on a striped pad, tool pegboard, red drawers, cabinet with plant, two lamps, window, roll-up door, barrels and a crate" src="docs/images/garage-test-reference-20261016.webp" width="420"> | <img alt="Final renders side by side: DeepSeek's garage on the left, with brick walls, pegboard, lamps, car on a striped pad, barrels and crates; Nemotron's on the right, pale with checkerboard walls and a blocky car" src="docs/images/garage-test-final-20261016.webp" width="420"> |
+| Reference image (the task) | DeepSeek V4.1 Flash | Nemotron 3.5 Super VL |
+| :-: | :-: | :-: |
+| <img alt="Reference: voxel-style garage with a white car on a striped pad, tool pegboard, red drawers, cabinet with plant, two lamps, window, roll-up door, barrels and a crate" src="docs/images/garage-test-reference-20261016.webp" width="340"> | <img alt="DeepSeek's voxel garage built in three.js: brick walls, pegboard with tools, red drawers, cabinet with plant, lamps, striped parking pad with a white car, barrels and crate" src="docs/images/voxel-test-deepseek-20261016.webp" width="340"> | <img alt="Nemotron's voxel garage built in three.js: correct room layout but a long black bar crossing the scene, pale walls, blocky car" src="docs/images/voxel-test-nemotron-20261016.webp" width="340"> |
 
-| <img alt="Labelled combined scene: both garages side by side, labelled with which model built each, its wall time and tokens" src="docs/images/garage-test-labelled-20261016.webp" width="640"> |
+| Both scenes side by side, labelled with model, time and tokens |
+| :-: |
+| <img alt="Labelled combined page: both voxel garages side by side, each labelled with the model that built it, its wall time and its token count" src="docs/images/voxel-test-labelled-20261016.webp" width="720"> |
+
+**An earlier test** built the same garage through a 3D editor's tool interface (the models drove it with code over
+that interface) scored DeepSeek 79/180 vs Nemotron 44/180, with DeepSeek winning 5 of 6 regions. We replaced it as
+the deciding test because the task is a voxel scene, not an editor scene; the result agreed in direction.
 
 ---
 
