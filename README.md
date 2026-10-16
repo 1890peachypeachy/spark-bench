@@ -39,6 +39,8 @@ test DeepSeek V4.1 Flash ran on a hosted endpoint, not on our four Sparks.)
 | :-: | :-: |
 | <img alt="Reference: voxel-style garage with a white car on a striped pad, tool pegboard, red drawers, cabinet with plant, two lamps, window, roll-up door, barrels and a crate" src="docs/images/garage-test-reference-20261016.webp" width="420"> | <img alt="Final renders side by side: DeepSeek's garage on the left, with brick walls, pegboard, lamps, car on a striped pad, barrels and crates; Nemotron's on the right, pale with checkerboard walls and a blocky car" src="docs/images/garage-test-final-20261016.webp" width="420"> |
 
+| <img alt="Labelled combined scene: both garages side by side, labelled with which model built each, its wall time and tokens" src="docs/images/garage-test-labelled-20261016.webp" width="640"> |
+
 ---
 
 ## 🧭 Lanes
