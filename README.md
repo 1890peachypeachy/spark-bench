@@ -7,9 +7,39 @@
 
 <p align="center">
   <img alt="cluster: 4× DGX Spark" src="https://img.shields.io/badge/cluster-4%C3%97%20DGX%20Spark-76b900">
-  <img alt="serving: Nemotron 3.5 Super VL on TensorFold" src="https://img.shields.io/badge/serving-Nemotron%203.5%20Super%20VL%20%C2%B7%20TensorFold-2a78d6">
+  <img alt="serving: DeepSeek V4.1 Flash on TensorFold" src="https://img.shields.io/badge/serving-DeepSeek%20V4.1%20Flash%20%C2%B7%20TensorFold-2a78d6">
   <img alt="updated 2026-10-16" src="https://img.shields.io/badge/updated-2026--10--16-8a8984">
 </p>
+
+<a id="now-serving"></a>
+
+## 📌 Now serving: DeepSeek V4.1 Flash, not Nemotron (2026-10-16)
+
+The Sparks are back on **DeepSeek V4.1 Flash** (TensorFold Zig engine, TP=4) as of 2026-10-16. We moved off
+**Nemotron 3.5 Super VL** after a real-world agent test, despite its promising numbers. Its speed and serving figures
+below stay published and are accurate. The decision is about the quality of the result, not speed.
+
+**The test.** Each model ran as a coding agent with the same tools and the same prompt. Through tool calls into Blender,
+each built the same voxel garage from one reference image. A neutral third model refereed the builds. It compared six
+zoomed regions of each build with the reference, judged every pair in both orders (blinded), and kept the lower score
+whenever the two runs disagreed.
+
+| | DeepSeek V4.1 Flash | Nemotron 3.5 Super VL |
+| --- | ---: | ---: |
+| Referee total (6 regions × 30) | **79 / 180** | 44 / 180 |
+| Regions won | **5 of 6** | 1 of 6 |
+
+DeepSeek matched the reference's camera, palette and layout: brick walls, the tool pegboard, red drawers, the cabinet
+with its plant, two warm lamps, the striped parking pad, the barrels and the crate. Nemotron's garage came out pale and
+mostly frontal, with checkerboard walls instead of brick. Its car barely reads as one (the wheels stand off the body), its
+pegboard can't be seen from its own camera, and its lamps aren't visible. Neither build is a full recreation. (For this
+test DeepSeek V4.1 Flash ran on a hosted endpoint, not on our four Sparks.)
+
+| Reference image (the task) | Final builds: DeepSeek V4.1 Flash (left) · Nemotron 3.5 Super VL (right) |
+| :-: | :-: |
+| <img alt="Reference: voxel-style garage with a white car on a striped pad, tool pegboard, red drawers, cabinet with plant, two lamps, window, roll-up door, barrels and a crate" src="docs/images/garage-test-reference-20261016.webp" width="420"> | <img alt="Final renders side by side: DeepSeek's garage on the left, with brick walls, pegboard, lamps, car on a striped pad, barrels and crates; Nemotron's on the right, pale with checkerboard walls and a blocky car" src="docs/images/garage-test-final-20261016.webp" width="420"> |
+
+---
 
 ## 🧭 Lanes
 
@@ -17,8 +47,8 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🟩 | **[Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold)** | 🟢 **live** since 2026-10-15 | **185** code tok/s · **95** prose · **16** conversations × 307K tokens · **214–230** tok/s for 16 |
-| 🐋 | [DeepSeek V4.1 Flash · TensorFold (Zig engine)](models/deepseek-v4.1-flash/tensorfold-4x/README.md) | 🟡 previous (live 2026-10-11 → 2026-10-15) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
+| 🐋 | **[DeepSeek V4.1 Flash · TensorFold (Zig engine)](#dsv41-tensorfold)** | 🟢 **live** again since 2026-10-16 (also 2026-10-11 → 2026-10-15) · [why](#now-serving) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
+| 🟩 | [Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold) | 🟡 previous (live 2026-10-15 → 2026-10-16) · [why not now](#now-serving) | 185 code tok/s · 95 prose · 16 conversations × 307K tokens · 214–230 tok/s for 16 |
 | 🐋 | [DeepSeek V4.1 Flash · SGLang](models/deepseek-v4.1-flash/README.md) | 🟡 rollback | 38 prose / 54–62 code tok/s · 1M context |
 | 🐋 | [DeepSeek V4.1 Flash · vLLM](docs/dsv41-vllm-tp4.md) | 🟡 fallback | 71 code tok/s · 109 tok/s for 4 users |
 | 🦄 | [Qwen 3.8 Flash Next](models/qwen-3.8-flash-next/README.md) | ⚪ archived | 91 code tok/s · 600 tok/s for 16 users |
@@ -59,7 +89,11 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 <a id="nemotron-tensorfold"></a>
 
-## 🟩 Nemotron 3.5 Super VL · TensorFold (Zig engine) · 🟢 live since 2026-10-15
+## 🟩 Nemotron 3.5 Super VL · TensorFold (Zig engine) · 🟡 previous (live 2026-10-15 → 2026-10-16)
+
+> 📌 **Not serving since 2026-10-16.** We went back to DeepSeek V4.1 Flash after a real-world agent test: building a
+> 3D garage from one reference image, a blinded referee scored DeepSeek 79/180 and Nemotron 44/180
+> ([details and images](#now-serving)). The numbers below are still accurate. The reason is result quality, not speed.
 
 NVIDIA's [Nemotron 3.5 Super VL 120B-A12B](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4)
 (NVFP4 as shipped: 40 Mamba-2, 40 latent-MoE and 8 attention blocks, 12B active, MTP draft head, vision encoder) on
@@ -70,7 +104,7 @@ TensorFold's Zig engine, our TP-4 port over RoCE. Same suites as the DeepSeek la
   <img alt="Writing speed, one stream: code 185 tok/s Nemotron vs 155 DeepSeek, prose 95 vs 72; four streams 207 vs 172 tok/s aggregate; first token 43 ms vs 167 ms" src="docs/images/nemotron-vs-deepseek-speed-light.svg">
 </picture>
 
-**Serving capacity (live server):**
+**Serving capacity (measured on the live server, 2026-10-15/16):**
 
 - 🧵 **16 conversations at once**, each with a **307,200-token** window.
 - 🚀 **214–230 tok/s** total with all 16 streams busy; first token with 16 arriving together **0.8 s median, 1.9 s worst**.
@@ -93,7 +127,7 @@ TensorFold's Zig engine, our TP-4 port over RoCE. Same suites as the DeepSeek la
 | Cold 200K-token prompt | **48.3 s** | 36.8 s |
 
 Nemotron writes faster and holds 16 long conversations; DeepSeek is ahead on MMLU and math, reads a cold long prompt
-faster and counts objects in images far better. The shapes figure is with the live `NCCL_MAX_NCHANNELS=2` (faster
+faster and counts objects in images far better. The shapes figure is with the served `NCCL_MAX_NCHANNELS=2` (faster
 long prompts): the shapes scene read 17/20 with it and 19/20 without.
 
 <picture>
@@ -142,7 +176,7 @@ long prompts): the shapes scene read 17/20 with it and 19/20 without.
 
 <a id="dsv41-tensorfold"></a>
 
-## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🟡 previous (live 2026-10-11 → 2026-10-15)
+## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🟢 live again since 2026-10-16 (also 2026-10-11 → 2026-10-15)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/lane-dsv41-tensorfold-dark.svg">
@@ -179,7 +213,7 @@ One frozen suite (`bench/qbench.py`) against the TensorFold Zig engine while it 
 ---
 
 
-- 🟢 **The serving engine was Zig** (live 2026-10-11 → 2026-10-15, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
+- 🟢 **The serving engine is Zig** (live 2026-10-11 → 2026-10-15 and again since 2026-10-16, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
 - 🏭 **Pipelined prompt reading is the big lever:** +75 % at 32K and **+102 % at 131K** prompt tok/s against the same build with it off (one window, controlled); the cold 154K-token prompt's first token halves, 60.5 → **30.0 s**. Decode unchanged (±1 %).
 - 🧪 **Long context, cold, measured 2026-10-14** — past the 131K the pipeline figure above tops out at: a **199,713-token** prompt returned its first token at **36.8 s** (~5,400 prompt tok/s), and a **332,847-token** prompt (79 % of the 420,096-token request slot) at **66.6 s** (~5,100 prompt tok/s). Both requests report `cached_tokens: 0`, so both reads are genuinely cold rather than prefix-cache hits. Thinking off for the clean timing run.
 
