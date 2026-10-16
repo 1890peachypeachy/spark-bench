@@ -1,12 +1,14 @@
 # DeepSeek V4.1 Flash on TensorFold, 4× DGX Spark
 
-**Status (2026-10-11): serving on `forge:8000` is the Zig engine — TP=4 with pipelined prompt reading over RoCE — live since 2026-10-11 ([below](#live-2026-10-11-the-zig-engine-tp4-pipelined-prefill-roce)). The Python engine (Jay's G19, [below](#live-2026-10-07-jays-g19-engine)) served 2026-10-07 → 2026-10-11 and stays as history.** TensorFold replaced the SGLang TP4/EP2 deployment on 2026-10-04; that
+**2026-10-15: Nemotron 3.5 Super VL replaced DeepSeek on the four Sparks ([its lane](../../../README.md#nemotron-tensorfold)); this page describes DeepSeek as it served until then.**
+
+**Status (2026-10-11): serving on rank 0 port 8000 was the Zig engine — TP=4 with pipelined prompt reading over RoCE — live since 2026-10-11 ([below](#live-2026-10-11-the-zig-engine-tp4-pipelined-prefill-roce)). The Python engine (Jay's G19, [below](#live-2026-10-07-jays-g19-engine)) served 2026-10-07 → 2026-10-11 and stays as history.** TensorFold replaced the SGLang TP4/EP2 deployment on 2026-10-04; that
 deployment is stopped, not removed, and is the rollback (below).
 
 The engine is [jayleaton/deepseek-v41-tensorfold-spark](https://github.com/jayleaton/deepseek-v41-tensorfold-spark):
 TensorFold 0.6.0 plus his two-Spark DeepSeek V4.1 family, with exact DSpark speculative decoding, CED prompt replay,
 Engram rows read from NVMe, sessions, structured output and DSML tool calls. We ported it to four Sparks; the recipe is
-our fork, **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)**. Weights:
+our fork, **[neko-legends/tensorfold-4x-sparks](https://github.com/neko-legends/tensorfold-4x-sparks)**. Weights:
 [`dealignai/DeepSeek-V4.1-Flash-UNCENSORED-EXL3-2.9bpw`](https://huggingface.co/dealignai/DeepSeek-V4.1-Flash-UNCENSORED-EXL3-2.9bpw)
 (~197 GiB, the same uncensoring team and method as the FP8 checkpoint SGLang served).
 
@@ -17,7 +19,7 @@ our fork, **[neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko
 
 ## Live 2026-10-11: the Zig engine (TP=4, pipelined prefill, RoCE)
 
-The lane's engine is Zig: the CUDA Zig port in [the fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark),
+The lane's engine is Zig: the CUDA Zig port in [the fork](https://github.com/neko-legends/tensorfold-4x-sparks),
 serving since 2026-10-11. The numbers below are its window-8 bench on four Sparks over **RoCE** (2026-10-11, the
 basis for the migration). Short cells are 384-token greedy replies, a
 single cold repetition; ×4 is the aggregate of four streams; the long prompts are 37,987 and 154,196 tokens.
@@ -56,7 +58,7 @@ Four users at once (`dsbench`): **122.2 tok/s** aggregate (was 119.2).
 On `m2bench` (one short prompt, 384 tokens, exact), the live build (q4 draft head, rotated expert split) runs **code 122-124 / prose 68-69 tok/s** for one user, and **four users ~200 tok/s steady** (138-139 aggregate including ramp), against ~80 code for Jay's two-Spark build on the same benchmark.
 
 **From 2026-10-05 17:32 to 2026-10-07, the server ran on NCCL instead of RoCE without saying so.** A crash test left
-RoCE's failure file `/cache/roce-failed` in forge's cache volume. While that file exists, every start uses NCCL.
+RoCE's failure file `/cache/roce-failed` in rank 0's cache volume. While that file exists, every start uses NCCL.
 Moving it aside gave +12% code and +19% prose on `m2bench`. The G13 vs G19 table [below](#live-2026-10-07-jays-g19-engine)
 was measured in that state, so both of its columns are lower than this table.
 
@@ -89,15 +91,15 @@ Read these with the differences in mind:
 
 ## Getting it
 
-**Recipe: [neko-legends/deepseek-v41-tensorfold-spark](https://github.com/neko-legends/deepseek-v41-tensorfold-spark)**,
+**Recipe: [neko-legends/tensorfold-4x-sparks](https://github.com/neko-legends/tensorfold-4x-sparks)**,
 our four-Spark fork of jayleaton's two-Spark repository. Jay reviewed our pull request
 ([#6](https://github.com/jayleaton/deepseek-v41-tensorfold-spark/pull/6)) on 2026-10-05; his engine has moved on (G14-G19,
 built around two ranks) and he preferred four-Spark support to live outside his default image, so we keep it in the
 fork (decided 2026-10-05). Two Sparks: use [his repository](https://github.com/jayleaton/deepseek-v41-tensorfold-spark).
 
 ```bash
-git clone --recurse-submodules https://github.com/neko-legends/deepseek-v41-tensorfold-spark
-cd deepseek-v41-tensorfold-spark
+git clone --recurse-submodules https://github.com/neko-legends/tensorfold-4x-sparks
+cd tensorfold-4x-sparks
 ```
 
 The fork is his repository (engine G13) plus three engine patches the Dockerfile applies in order, so there is
@@ -130,7 +132,7 @@ bash scripts/serve4.sh prebuild
 bash scripts/serve4.sh start
 ```
 
-[`docs/FOUR_SPARKS.md`](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/blob/main/docs/FOUR_SPARKS.md) explains each setting. What bit us on the first boot:
+[`docs/FOUR_SPARKS.md`](https://github.com/neko-legends/tensorfold-4x-sparks/blob/main/docs/FOUR_SPARKS.md) explains each setting. What bit us on the first boot:
 - `TF_DSV41_PREFILL_ATTN_BMQ=16`: 16 heads a rank at TP=4, and 32 does not divide (since `0005` a 32 is clamped to 16).
 - List both CX7 functions in `NCCL_IB_HCA`: a 2,048-row prompt exchange drops from 5.6 ms to 2.9 ms.
 - A node with an unplugged port holding an address on the link subnet can drop TCP to that node (Linux keeps
@@ -150,7 +152,7 @@ TF_DSV41_PREFILL_OVERLAP=1024   # short prompts: exchanges behind compute (same 
 
 Put them in `config/tp4.env` and restart (`bash scripts/serve4.sh stop && bash scripts/serve4.sh start`). A cold 160k-token
 prompt: ~83 s → ~39 s; 20k: ~10.5 s → ~6 s. Memory: `MemAvailable` drops from ~50 to ~26 GB a node. How it works, the
-numbers and the checks: [`docs/PREFILL_SPEED.md`](https://github.com/neko-legends/deepseek-v41-tensorfold-spark/blob/main/docs/PREFILL_SPEED.md), and
+numbers and the checks: [`docs/PREFILL_SPEED.md`](https://github.com/neko-legends/tensorfold-4x-sparks/blob/main/docs/PREFILL_SPEED.md), and
 [artifacts/tensorfold-v41-prefill-20261005](../../../artifacts/tensorfold-v41-prefill-20261005/REPORT.md).
 
 ## Fixed 2026-10-05: the bugs Jay's review found
@@ -174,7 +176,7 @@ were warmed at boot.
 
 Details and every run: [artifacts/tensorfold-v41-fixes-20261005](../../../artifacts/tensorfold-v41-fixes-20261005/REPORT.md). How the recipe was tested (the patches rebuild the engine file for file; 327 CPU tests pass on that tree, 2 older
 failures unrelated to four Sparks; the image built from a fresh clone; the Spark test windows):
-[the fork's README](https://github.com/neko-legends/deepseek-v41-tensorfold-spark#how-it-was-tested-2026-10-05).
+[the fork's README](https://github.com/neko-legends/tensorfold-4x-sparks#how-it-was-tested-2026-10-05).
 
 ## 2026-10-07: Jay's G19 engine (previous; live 2026-10-07 → 2026-10-11)
 
@@ -209,11 +211,11 @@ output unchanged. That version (the fork's `four-sparks` branch) gives byte-iden
 main on two of our Sparks (9 / 9 requests, the same tok/s). Details:
 [artifacts/tensorfold-v41-g19-20261005](../../../artifacts/tensorfold-v41-g19-20261005/REPORT.md).
 
-## Our installation (forge, anvil, ember, flame)
+## Our installation (spark1 .. spark4)
 
 | | |
 | --- | --- |
-| launcher | `/home/jun/tf4/serve4.sh` with `/home/jun/tf4/tp4.env` (port 8000 on all interfaces, link 192.168.10.x); image `dsv41-tensorfold:tp4g19b` (the fork's `main` on G19, with `config/tp4.env.example`'s G19 block: 420K context, images, RDMA plan link, fused dense prefill) since 2026-10-07 00:06 (rollback: `/home/jun/tf4/pf/tp4.env.before-g19` for the G13 build `tp4m6`; older: `pf/tp4.env.before-m6`, `before-fix`, `before-pipeline`). `/v1/model_info` and the `vllm:` series on `/metrics` report the 4 request slots; sparkDash (`dgx-dash.service` on eva-core, DGX-dash `4d27fd1`) shows 4, and Eva's router sizes its concurrency from it |
-| keeper | `/home/jun/tf4/keeper.sh` from cron: starts 4 min after a reboot, restarts after 3 failed health checks; pauses while `/home/jun/tf4/maintenance` is newer than an hour or an SGLang head container runs |
+| launcher | `~/tf4/serve4.sh` with `~/tf4/tp4.env` (port 8000 on all interfaces, a private link subnet); image `dsv41-tensorfold:tp4g19b` (the fork's `main` on G19, with `config/tp4.env.example`'s G19 block: 420K context, images, RDMA plan link, fused dense prefill) since 2026-10-07 00:06 (rollback: `~/tf4/pf/tp4.env.before-g19` for the G13 build `tp4m6`; older: `pf/tp4.env.before-m6`, `before-fix`, `before-pipeline`). `/v1/model_info` and the `vllm:` series on `/metrics` report the 4 request slots; sparkDash (`dgx-dash.service` on eva-core, DGX-dash `4d27fd1`) shows 4, and Eva's router sizes its concurrency from it |
+| keeper | `~/tf4/keeper.sh` from cron: starts 4 min after a reboot, restarts after 3 failed health checks; pauses while `~/tf4/maintenance` is newer than an hour or an SGLang head container runs |
 | model names | `deepseek-v4.1-flash` (alias) and `DeepSeek-V4.1-Flash-TF`; thinking on by default (effort 75), `chat_template_kwargs.thinking=false` turns it off |
-| rollback to SGLang | `touch /home/jun/tf4/maintenance && /home/jun/tf4/serve4.sh stop && python3 /home/jun/tensorfold-native-20261002/restore_ep2.py` (the keeper stands down while SGLang runs) |
+| rollback to SGLang | `touch ~/tf4/maintenance && ~/tf4/serve4.sh stop && python3 ~/tensorfold-native-20261002/restore_ep2.py` (the keeper stands down while SGLang runs) |

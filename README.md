@@ -7,8 +7,8 @@
 
 <p align="center">
   <img alt="cluster: 4× DGX Spark" src="https://img.shields.io/badge/cluster-4%C3%97%20DGX%20Spark-76b900">
-  <img alt="serving: DeepSeek V4.1 Flash on TensorFold" src="https://img.shields.io/badge/serving-DeepSeek%20V4.1%20Flash%20%C2%B7%20TensorFold-2a78d6">
-  <img alt="updated 2026-10-11" src="https://img.shields.io/badge/updated-2026--10--11-8a8984">
+  <img alt="serving: Nemotron 3.5 Super VL on TensorFold" src="https://img.shields.io/badge/serving-Nemotron%203.5%20Super%20VL%20%C2%B7%20TensorFold-2a78d6">
+  <img alt="updated 2026-10-16" src="https://img.shields.io/badge/updated-2026--10--16-8a8984">
 </p>
 
 ## 🧭 Lanes
@@ -17,7 +17,8 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash · TensorFold (Zig engine)](models/deepseek-v4.1-flash/tensorfold-4x/README.md)** | 🟢 **live: Zig engine** since 2026-10-11 | **129** code tok/s (**218** for 4) · **66** prose (**138** for 4) · cold 154K prompt **30 s** |
+| 🟩 | **[Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold)** | 🟢 **live** since 2026-10-15 | **185** code tok/s · **95** prose · **16** conversations × 307K tokens · **214–230** tok/s for 16 |
+| 🐋 | [DeepSeek V4.1 Flash · TensorFold (Zig engine)](models/deepseek-v4.1-flash/tensorfold-4x/README.md) | 🟡 previous (live 2026-10-11 → 2026-10-15) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
 | 🐋 | [DeepSeek V4.1 Flash · SGLang](models/deepseek-v4.1-flash/README.md) | 🟡 rollback | 38 prose / 54–62 code tok/s · 1M context |
 | 🐋 | [DeepSeek V4.1 Flash · vLLM](docs/dsv41-vllm-tp4.md) | 🟡 fallback | 71 code tok/s · 109 tok/s for 4 users |
 | 🦄 | [Qwen 3.8 Flash Next](models/qwen-3.8-flash-next/README.md) | ⚪ archived | 91 code tok/s · 600 tok/s for 16 users |
@@ -56,9 +57,92 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 ---
 
+<a id="nemotron-tensorfold"></a>
+
+## 🟩 Nemotron 3.5 Super VL · TensorFold (Zig engine) · 🟢 live since 2026-10-15
+
+NVIDIA's [Nemotron 3.5 Super VL 120B-A12B](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4)
+(NVFP4 as shipped: 40 Mamba-2, 40 latent-MoE and 8 attention blocks, 12B active, MTP draft head, vision encoder) on
+TensorFold's Zig engine, our TP-4 port over RoCE. Same suites as the DeepSeek lane below, side by side.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-vs-deepseek-speed-dark.svg">
+  <img alt="Writing speed, one stream: code 185 tok/s Nemotron vs 155 DeepSeek, prose 95 vs 72; four streams 207 vs 172 tok/s aggregate; first token 43 ms vs 167 ms" src="docs/images/nemotron-vs-deepseek-speed-light.svg">
+</picture>
+
+**Serving capacity (live server):**
+
+- 🧵 **16 conversations at once**, each with a **307,200-token** window.
+- 🚀 **214–230 tok/s** total with all 16 streams busy; first token with 16 arriving together **0.8 s median, 1.9 s worst**.
+- ✍️ One stream: **185 tok/s** code, **95** prose, first token **43 ms** (MTP drafts sized by confidence: code 165 → 183, same text).
+- 🧠 **40 GiB prompt cache in memory on every rank + a disk tier:** 200 agents returning to a 10K-token history wait
+  **0.09 s** (200/200 hits); after a restart 8 × 30K-token conversations resume in **0.33 s** instead of 6.0 s.
+- 🖼️ Images: **~70 a minute** for images the server has seen (1.3 s first token at 16 at once), **~23 a minute** for
+  new ones (each new image is prepared one at a time, so 16 new images at once wait 25 s median). Accuracy is the
+  same under load: 98.9 % of text strings with 16 tiled reads at once vs 98.6 % on one stream.
+
+| Area | Result | DeepSeek V4.1 Flash, same suite |
+| --- | ---: | ---: |
+| Knowledge, MMLU-200 | **85.0 %** (170/200) | 88.5 % |
+| Math, GSM8K 0–29 | **96.7 %** (29/30) | 100 % |
+| Coding, 5 tasks | **80 %** (4/5) | 80 % |
+| Instruction following | **95 %** (19/20) | 90 % |
+| JSON schema · tools · long context to 299K · summary facts | **100 %** · **100 %** · **100 %** · **100 %** | 100 % · 100 % · 100 % · 100 % |
+| Vision: text read exactly (166 strings) | **100 %** | 100 % |
+| Vision: shapes (30) · objects counted (23) | **87 %** · **4 %** | 87 % · 96 % |
+| Cold 200K-token prompt | **48.3 s** | 36.8 s |
+
+Nemotron writes faster and holds 16 long conversations; DeepSeek is ahead on MMLU and math, reads a cold long prompt
+faster and counts objects in images far better. The shapes figure is with the live `NCCL_MAX_NCHANNELS=2` (faster
+long prompts): the shapes scene read 17/20 with it and 19/20 without.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-memory-dark.svg">
+  <img alt="Memory per Spark, 122 GiB: idle 25.7 GiB weights + 11.0 other, 85.0 GiB free; prompt cache full 25.7 + 39.8 + 9.4, 46.7 GiB free; with 16 full-window sequences (21.9 GiB) 24.8 GiB free" src="docs/images/nemotron-memory-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-vision-serving-dark.svg">
+  <img alt="Images under load: new images 18-24 a minute at 1-16 at once, first-token median 1.9 to 25.3 s; seen images 45-70 a minute, 0.1-1.3 s; one stream writes 140 tok/s on image prompts, 95 on prose, 185 on code" src="docs/images/nemotron-vision-serving-light.svg">
+</picture>
+
+<details>
+<summary>More charts: quality, cold prompts, vision accuracy, serving under load, drafting</summary>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-vs-deepseek-quality-dark.svg">
+  <img alt="Quality: MMLU 85.0% Nemotron vs 88.5% DeepSeek, math 96.7% vs 100%, coding 80% both, instruction following 95% vs 90%, JSON, tools, long context and summaries 100% both" src="docs/images/nemotron-vs-deepseek-quality-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-vs-deepseek-prefill-dark.svg">
+  <img alt="Cold prompt reading: Nemotron 32K 6.5 s, 131K 29.0 s, 200K 48.3 s (from 11.4, 49.6 and 79.9 s before staggered segments); DeepSeek 200K 36.8 s" src="docs/images/nemotron-vs-deepseek-prefill-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-vs-deepseek-vision-dark.svg">
+  <img alt="Vision: text read exactly 166/166 both; shapes 26/30 both; objects counted 22/23 DeepSeek vs 1/23 Nemotron; text position error 9.9 px Nemotron vs 16.3 px DeepSeek" src="docs/images/nemotron-vs-deepseek-vision-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-serving-dark.svg">
+  <img alt="16 conversations at once: first-token wait 0.8-0.9 s median with 16 slots vs 5.0-9.4 s with 4 slots; coming back to a long conversation 0.09 s with the 40 GiB cache vs 2.1 s, and 0.33 s after a restart with the disk tier vs 6.0 s" src="docs/images/nemotron-serving-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/nemotron-drafting-dark.svg">
+  <img alt="Drafts sized by confidence vs by running hit rate: code 165 to 183 tok/s with the same text, explain 117 to 127, prose 95 to 94, story 99 to 98, essay 112 to 111" src="docs/images/nemotron-drafting-light.svg">
+</picture>
+
+</details>
+
+📦 [Recipe, engine and how to run: tensorfold-4x-sparks](https://github.com/neko-legends/tensorfold-4x-sparks#nemotron-35-super-vl-120b-a12b-nvfp4) · 🗂️ [Result files](results/nemotron-supervl-tensorfold-20261016/README.md) · 🖼️ [Vision under load](results/nemotron-supervl-tensorfold-20261016/vision-serving/README.md) · 🧾 [Port log](https://github.com/neko-legends/tensorfold-4x-sparks/blob/main/engine/zig-nemotron/NEMOTRON-PORT-LOG.md)
+
+---
+
 <a id="dsv41-tensorfold"></a>
 
-## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🟢 live since 2026-10-11
+## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🟡 previous (live 2026-10-11 → 2026-10-15)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/lane-dsv41-tensorfold-dark.svg">
@@ -69,7 +153,7 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 ### 📊 Quality + speed baseline (2026-10-15)
 
-One frozen suite (`bench/qbench.py`) against the live TensorFold Zig engine (TP=4 over RoCE), thinking off, greedy decoding, 283 requests, 0 transport errors. Scores are plain percentages on fixed inputs.
+One frozen suite (`bench/qbench.py`) against the TensorFold Zig engine while it was live (TP=4 over RoCE), thinking off, greedy decoding, 283 requests, 0 transport errors. Scores are plain percentages on fixed inputs.
 
 | Area | What was asked | Result |
 | --- | --- | ---: |
@@ -95,7 +179,7 @@ One frozen suite (`bench/qbench.py`) against the live TensorFold Zig engine (TP=
 ---
 
 
-- 🟢 **The serving engine is Zig** (live since 2026-10-11, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
+- 🟢 **The serving engine was Zig** (live 2026-10-11 → 2026-10-15, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
 - 🏭 **Pipelined prompt reading is the big lever:** +75 % at 32K and **+102 % at 131K** prompt tok/s against the same build with it off (one window, controlled); the cold 154K-token prompt's first token halves, 60.5 → **30.0 s**. Decode unchanged (±1 %).
 - 🧪 **Long context, cold, measured 2026-10-14** — past the 131K the pipeline figure above tops out at: a **199,713-token** prompt returned its first token at **36.8 s** (~5,400 prompt tok/s), and a **332,847-token** prompt (79 % of the 420,096-token request slot) at **66.6 s** (~5,100 prompt tok/s). Both requests report `cached_tokens: 0`, so both reads are genuinely cold rather than prefix-cache hits. Thinking off for the clean timing run.
 
@@ -105,7 +189,7 @@ One frozen suite (`bench/qbench.py`) against the live TensorFold Zig engine (TP=
 - 📜 The Python engine's numbers stay in the [lane page](models/deepseek-v4.1-flash/tensorfold-4x/README.md) and [journal](models/deepseek-v4.1-flash/JOURNAL.md) (G19 on RoCE, live 2026-10-07 → 2026-10-11: 420K context, image input, prose 66.5 / code 104.1 tok/s over 1k–160k, cold 160k prompt 36 s); the 1k–160k depth sweep and `m2bench` steady runs have no Zig equivalent yet, so those rows end with the Python engine.
 - 🛠️ History: the bugs from Jay's review are fixed; a stale failure file once silently forced NCCL for two days (12–19 %). [Reports](artifacts/).
 
-📦 [Recipe: our four-Spark fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [Zig benchmark](artifacts/tensorfold-v41-zig-20261011/REPORT.md), [decode](artifacts/tensorfold-v41-roce-20261007/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
+📦 [Recipe: tensorfold-4x-sparks](https://github.com/neko-legends/tensorfold-4x-sparks#deepseek-v41-flash) · 📘 [Setup & limits](models/deepseek-v4.1-flash/tensorfold-4x/README.md) · 📓 [Journal](models/deepseek-v4.1-flash/JOURNAL.md) · 🧾 Reports: [Zig benchmark](artifacts/tensorfold-v41-zig-20261011/REPORT.md), [decode](artifacts/tensorfold-v41-roce-20261007/REPORT.md), [prompt reading](artifacts/tensorfold-v41-prefill-20261005/REPORT.md), [fixes](artifacts/tensorfold-v41-fixes-20261005/REPORT.md)
 
 <a id="dsv41-sglang"></a>
 
