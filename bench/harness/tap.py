@@ -168,7 +168,7 @@ class Tap:
 
     def _forward(self, h, body: bytes | None):
         headers = {k: v for k, v in h.headers.items() if k.lower() not in _DROP_REQ}
-        rec = {"path": h.path.split("?")[0], "t": time.time()}
+        rec = {"path": h.path.split("?")[0], "t": time.time(), "user_agent": h.headers.get("User-Agent")}
         parsed = None
         if body:
             try:

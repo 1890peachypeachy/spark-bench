@@ -148,22 +148,20 @@ def harness_claude(a, base: str, ws: Path, prompt: str, cfg: Path):
 
 
 def harness_dsh(a, base: str, ws: Path, prompt: str, cfg: Path):
-    """DeepSeek's harness CLI; the command template comes from --dsh-cmd (JSON argv, placeholders below)."""
-    if not a.dsh_cmd:
-        raise SystemExit("--dsh-cmd is required for --harness dsh")
-    subst = {"{base}": base, "{base_v1}": base + "/v1", "{model}": a.model, "{prompt}": prompt, "{ws}": str(ws),
-             "{cfg}": str(cfg)}
-    argv = []
-    for x in json.loads(a.dsh_cmd):
-        for k, v in subst.items():
-            x = x.replace(k, v)
-        argv.append(x)
-    env = json.loads(a.dsh_env) if a.dsh_env else {}
-    for k, v in list(env.items()):
-        for s, r in subst.items():
-            v = v.replace(s, r)
-        env[k] = v
-    return argv, env
+    """DeepSeek's harness through its SDK (bench/harness/dsh_session.py), Anthropic Messages route like Claude Code."""
+    argv = [a.dsh_python, str(HERE / "dsh_session.py"), "--base-url", base + "/v1", "--model", a.model,
+            "--workspace", str(ws), "--home", str(cfg / "dsh-home"),
+            "--effort", "high" if a.thinking else "off", "--max-tokens", "32768"]
+    if a.dsh_repo:  # the local checkout's CLI (node + tsx, as its `pnpm dsh` script), not the wheel's bundled runtime
+        repo = Path(a.dsh_repo).resolve()
+        wrapper = cfg / "dsh"
+        cfg.mkdir(parents=True, exist_ok=True)
+        wrapper.write_text(f"#!/bin/sh\nexec node --import {(repo / 'node_modules/tsx/dist/esm/index.mjs').as_uri()} "
+                           f"{repo / 'apps/cli/src/bin.ts'} \"$@\"\n")
+        wrapper.chmod(0o755)
+        argv += ["--dsh-bin", str(wrapper), "--runtime-cwd", str(repo)]  # tsx needs the checkout's tsconfig
+    argv.append(prompt)
+    return argv, {"DSH_CONTEXT_WINDOW": "262144", "DEEPSEEK_API_KEY": "sk-dummy-not-a-key"}
 
 
 HARNESSES = {"pi": harness_pi, "claude-shim": harness_claude_shim, "claude": harness_claude, "dsh": harness_dsh}
@@ -304,8 +302,9 @@ def harness_version(a) -> dict:
         if a.dsh_repo:
             v["tag"] = run(["git", "describe", "--tags"], a.dsh_repo)
             v["commit"] = run(["git", "rev-parse", "HEAD"], a.dsh_repo)
-        if a.dsh_version_cmd:
-            v["version"] = run(json.loads(a.dsh_version_cmd))
+        v["sdk"] = run([a.dsh_python, "-c", "import importlib.metadata as m; print(m.version('deepseek-harness-sdk'), "
+                        "m.version('deepseek-harness-runtime-bin'))"])
+        v["profile"] = "sdk-minimal"
         return v
     return {}
 
@@ -363,10 +362,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--pi-bin", default=shutil.which("pi") or "pi")
     ap.add_argument("--claude-bin", default=shutil.which("claude") or "claude")
-    ap.add_argument("--dsh-cmd", default=None, help="JSON argv with {base} {base_v1} {model} {prompt} {ws} {cfg}")
-    ap.add_argument("--dsh-env", default=None, help="JSON env object (same placeholders)")
-    ap.add_argument("--dsh-repo", default=None)
-    ap.add_argument("--dsh-version-cmd", default=None)
+    ap.add_argument("--dsh-python", default="python3", help="python of a venv with deepseek-harness-sdk")
+    ap.add_argument("--dsh-repo", default=None, help="the harness checkout (for tag/commit in the result)")
     a = ap.parse_args()
 
     tasks = build_tasks([x for x in a.areas.split(",") if x], a.limit)
