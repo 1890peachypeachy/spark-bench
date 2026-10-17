@@ -1,0 +1,80 @@
+{
+ "label": "dsv41-1017-zig",
+ "url": "http://spark1:8000/v1",
+ "model": "DeepSeek-V4.1-Flash-1017-TF",
+ "date": "2026-10-17T10:22:07-0700",
+ "rows": [
+  {
+   "target": 32768,
+   "rep": 0,
+   "prompt_tokens": 33065,
+   "cached_tokens": 0,
+   "wall_s": 6.222,
+   "server_ttft_s": 6.1902,
+   "server_prefill_s": 6.1136,
+   "prompt_tok_s_wall": 5314.5,
+   "prompt_tok_s_server": 5408.4,
+   "reply": "v",
+   "tensorfold": {
+    "prompt": 33065,
+    "cached": 0,
+    "ttft_s": 6.1902,
+    "finish": "done",
+    "completion": 1,
+    "prefill_s": 6.1136,
+    "decode_s": 0.076,
+    "rounds": 1,
+    "drafted": 1,
+    "accepted": 1
+   }
+  },
+  {
+   "target": 131072,
+   "rep": 0,
+   "prompt_tokens": 131823,
+   "cached_tokens": 0,
+   "wall_s": 22.773,
+   "server_ttft_s": 22.7258,
+   "server_prefill_s": 22.6702,
+   "prompt_tok_s_wall": 5788.5,
+   "prompt_tok_s_server": 5814.8,
+   "reply": "river",
+   "tensorfold": {
+    "prompt": 131823,
+    "cached": 0,
+    "ttft_s": 22.7258,
+    "finish": "done",
+    "completion": 1,
+    "prefill_s": 22.6702,
+    "decode_s": 0.0541,
+    "rounds": 1,
+    "drafted": 1,
+    "accepted": 0
+   }
+  },
+  {
+   "target": 200000,
+   "rep": 0,
+   "prompt_tokens": 200639,
+   "cached_tokens": 0,
+   "wall_s": 35.715,
+   "server_ttft_s": 35.6379,
+   "server_prefill_s": 35.5928,
+   "prompt_tok_s_wall": 5617.8,
+   "prompt_tok_s_server": 5637.1,
+   "reply": "t",
+   "tensorfold": {
+    "prompt": 200639,
+    "cached": 0,
+    "ttft_s": 35.6379,
+    "finish": "done",
+    "completion": 1,
+    "prefill_s": 35.5928,
+    "decode_s": 0.0431,
+    "rounds": 1,
+    "drafted": 1,
+    "accepted": 1
+   }
+  }
+ ]
+}
