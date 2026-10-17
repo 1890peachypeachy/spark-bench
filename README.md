@@ -46,7 +46,7 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine)](#dsv41-1017)** | 🟢 **live** since 2026-10-17 · [why](#now-serving) | 152 code tok/s (162 for 4) · 67 prose · cold 200K prompt 35.7 s · MMLU 89.5 % · 3D 98 + 108/180 |
+| 🐋 | **[DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine)](#dsv41-1017)** | 🟢 **live** since 2026-10-17 · [why](#now-serving) | 152 code tok/s (162 for 4) · 67 prose · cold 200K prompt 35.7 s · **512K context** (passkey at 520K) · MMLU 89.5 % · 3D 98 + 108/180 |
 | 🐋 | [DeepSeek V4.1 Flash · TensorFold (Zig engine)](#dsv41-tensorfold) | 🟡 previous (live 2026-10-11 → 2026-10-15 and 2026-10-16 → 2026-10-17) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
 | 🐉 | [GLM-5.3-Flash FP4 · vLLM](#glm53-fp4-vllm) | 🔵 compared 2026-10-17, not serving | 82 code tok/s · 37 prose · MMLU 88.0 % · 3D 103 + 98/180 |
 | 🟩 | [Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold) | 🟡 previous (live 2026-10-15 → 2026-10-16) · [why not now](#now-serving-20261016) | 185 code tok/s · 95 prose · 16 conversations × 307K tokens · 214–230 tok/s for 16 |
@@ -104,6 +104,18 @@ Three weight-derived inputs were rebuilt from the 1017 base checkpoint:
 - the **prepared layer folders** (written fresh on the first boot, 405 s).
 
 The engine's prompt renderer matches 1017's own `encoding.py` on every request shape this bench sends.
+
+**Context: 524,288 tokens (512K) a slot, 4 slots, tested with passkeys at 500K and 520K** (since 2026-10-17; before:
+420K). The model's own limit is 1,048,576 (yarn ×16). It took a longer `rope.bin` and 11 more AOT Triton variants a
+rank, no engine change ([how, for any context](https://github.com/neko-legends/tensorfold-4x-sparks/blob/main/deploy/dsv41-1017/RUN.md#choosing-the-context)).
+
+| Long prompt at 512K (2026-10-17, qbench's passkey filler and scoring, thinking off) | result | cold prompt reading |
+| --- | --- | ---: |
+| 500,006 tokens | passkey correct | 101 s (~4,950 tok/s) |
+| 520,006 tokens | passkey correct | 107 s (~4,880 tok/s) |
+| decode after a cached 520,000-token prefix | passkey and a count to 60 correct | 123 tokens in 1.3 s |
+| 530,000 tokens (over the limit) | clean HTTP 400, engine stays healthy | 2.3 s |
+| `verify.py` gates after the switch | 7/7 | |
 
 | Area | DeepSeek V4.1 Flash **1017** (TensorFold) | DeepSeek V4.1 Flash, uncensored pack (TensorFold) | GLM-5.3-Flash FP4 (vLLM) | DeepSeek V4.1 Flash full precision (Venice, hosted) |
 | --- | ---: | ---: | ---: | ---: |
