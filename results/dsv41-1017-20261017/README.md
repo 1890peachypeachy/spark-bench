@@ -21,7 +21,7 @@ Its effort map is already 1017's: low 50, high 75, max 100, default 75.
 | Math, GSM8K 0–29 | 100 % | 100 % | 100 % | 100 % |
 | Coding, 5 tasks | 80 % | 80 % | 80 % | 80 % |
 | Instruction following, 20 | 90 % | 90 % | 90 % | 95 % |
-| JSON schema / tools / long context to 299K | 100 / 100 / 100 % | 100 / 100 / 100 % | 100 / 100 / 100 % | 100 / 100 / 100 % |
+| JSON schema / tools / long context to 299K | 100 / 100 / 100 % | 100 / 100 / 100 % | 100 / 100 / 100 % ¹ | 100 / 100 / 100 % |
 | Summary: facts kept / stale / invented numbers | 100 / 0 / 0 % | 100 / 0 / 0 % | 100 / 0 / 4.2 % | 100 / 0 / 0 % |
 | Vision text, 166 strings | 166/166 | 166/166 | 166/166 | – |
 | Vision shapes 30 (a3 + a5) / objects counted 23 | 29/30 / 22/23 | – / 22/23 | 28/30 / 0/23 | – |
@@ -31,6 +31,8 @@ Its effort map is already 1017's: low 50, high 75, max 100, default 75.
 | Cold prompt 32K / 131K / 200K tokens | 6.2 / 22.8 / 35.7 s | – / – / 36.8 s | 12.3 / 50.8 / 79.4 s | – |
 
 Notes.
+- ¹ Not like-for-like (review correction): on GLM's run qbench's `/tokenize` call returned nothing, so its passkey
+  prompts were not calibrated and measured 26.7K / 106.8K / 243.5K tokens instead of 32K / 131K / 299K.
 - Speed is one sample per cell, as in the other rows. Single-stream prose is −6.5 % and the 4-stream aggregate is −5.6 %
   against the uncensored pack. Earlier rebenches put run-to-run noise at 1–2.5 %, so this gap is probably real but small.
   A likely cause is draft acceptance: the 1017 pack's drafter is a different, higher-bpw quant. Not isolated.

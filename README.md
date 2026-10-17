@@ -7,13 +7,226 @@
 
 <p align="center">
   <img alt="cluster: 4× DGX Spark" src="https://img.shields.io/badge/cluster-4%C3%97%20DGX%20Spark-76b900">
-  <img alt="serving: DeepSeek V4.1 Flash on TensorFold" src="https://img.shields.io/badge/serving-DeepSeek%20V4.1%20Flash%20%C2%B7%20TensorFold-2a78d6">
-  <img alt="updated 2026-10-16" src="https://img.shields.io/badge/updated-2026--10--16-8a8984">
+  <img alt="serving: DeepSeek V4.1 Flash 1017 on TensorFold" src="https://img.shields.io/badge/serving-DeepSeek%20V4.1%20Flash%201017%20%C2%B7%20TensorFold-2a78d6">
+  <img alt="updated 2026-10-17" src="https://img.shields.io/badge/updated-2026--10--17-8a8984">
 </p>
 
 <a id="now-serving"></a>
 
-## 📌 Now serving: DeepSeek V4.1 Flash, not Nemotron (2026-10-16)
+## 📌 Now serving: DeepSeek V4.1 Flash 1017 (2026-10-17)
+
+The Sparks now serve **DeepSeek V4.1 Flash 1017**, DeepSeek's official 1017 checkpoint, as a 2.9-bit EXL3 quant on our
+**TensorFold Zig engine** (TP=4 over RoCE). It is a **config-only drop-in**: the same engine, image and serving settings
+as the previous DeepSeek pack, with three weight-derived inputs rebuilt from the 1017 base (the Engram tables, the
+image-routing bias and the prepared layer folders). No code change, no new image.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-headline-dark-20261017.png">
+  <img alt="DeepSeek V4.1 Flash 1017: voxel 98 and Blender 108 of 180, code 152 and prose 67 tok/s, MMLU 89.5%. Previous DeepSeek: 87, 79, 155, 72, 88.5%. GLM-5.3-Flash FP4 on vLLM: 103, 98, 82, 36, 88.0%. Nemotron 3.5 Super VL: 60, 44, 185, 95, 85.0%" src="docs/images/3d-headline-light-20261017.png">
+</picture>
+
+**Why it stays:**
+- **It matches or beats the previous pack on every quality area.** MMLU-200 89.5 % vs 88.5 % (+9 / −7 items). Math, coding,
+  instruction following, JSON, tools, long context and summaries are equal.
+- **It has the top Blender 3D score of the four models we tested** (108/180, vs GLM 98, previous DeepSeek 79, Nemotron 44).
+  It is second on the voxel test (98, behind GLM's 103 and ahead of the previous DeepSeek's 87).
+- **Its cost is speed.** Decode is 2–7 % lower than the previous pack (code 151.8 vs 155.4 tok/s, prose 67.3 vs 72.0, four
+  streams 162.4 vs 172.1). Its 3D builds took 1.5–1.6× as long (voxel 26 m 51 s vs 16 m 39 s). Cold prompt reading is
+  unchanged (200K tokens in 35.7 s vs 36.8 s).
+- **Caveats:** every speed cell and every 3D score is a single sample. The 3D scores come from one judge.
+
+Details: [the 1017 lane](#dsv41-1017) · [the 3D tests](#3d-tests) · [harness effect](#dsv41-1017-harness) ·
+[the GLM-5.3-Flash comparison](#glm53-fp4-vllm) · [the previous note: back on DeepSeek, not Nemotron (2026-10-16)](#now-serving-20261016)
+
+---
+
+## 🧭 Lanes
+
+One cluster, one model at a time. Click a lane for its recipe.
+
+| | Lane | Status | Best numbers |
+| :-: | --- | --- | --- |
+| 🐋 | **[DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine)](#dsv41-1017)** | 🟢 **live** since 2026-10-17 · [why](#now-serving) | 152 code tok/s (162 for 4) · 67 prose · cold 200K prompt 35.7 s · MMLU 89.5 % · 3D 98 + 108/180 |
+| 🐋 | [DeepSeek V4.1 Flash · TensorFold (Zig engine)](#dsv41-tensorfold) | 🟡 previous (live 2026-10-11 → 2026-10-15 and 2026-10-16 → 2026-10-17) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
+| 🐉 | [GLM-5.3-Flash FP4 · vLLM](#glm53-fp4-vllm) | 🔵 compared 2026-10-17, not serving | 82 code tok/s · 37 prose · MMLU 88.0 % · 3D 103 + 98/180 |
+| 🟩 | [Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold) | 🟡 previous (live 2026-10-15 → 2026-10-16) · [why not now](#now-serving-20261016) | 185 code tok/s · 95 prose · 16 conversations × 307K tokens · 214–230 tok/s for 16 |
+| 🐋 | [DeepSeek V4.1 Flash · SGLang](models/deepseek-v4.1-flash/README.md) | 🟡 rollback | 38 prose / 54–62 code tok/s · 1M context |
+| 🐋 | [DeepSeek V4.1 Flash · vLLM](docs/dsv41-vllm-tp4.md) | 🟡 fallback | 71 code tok/s · 109 tok/s for 4 users |
+| 🦄 | [Qwen 3.8 Flash Next](models/qwen-3.8-flash-next/README.md) | ⚪ archived | 91 code tok/s · 600 tok/s for 16 users |
+| 🐉 | [GLM 5.3 Flash](models/glm-5.3-flash/README.md) | ⚪ archived | 129 tok/s for 4 users · 1M context |
+| 🐳 | [DeepSeek V4 Flash](models/deepseek-v4-flash/README.md) | ⚪ archived | 136 tok/s, one user (record) · 182 for 4 |
+
+<sub>tok/s = writing speed. Rulers differ between lanes; each lane page says how its numbers were measured.</sub>
+
+## 🧠 Why this repo exists
+
+This repo is about **four Sparks working as one machine**, and it keeps **every optimization we tried**: what we changed, what it measured, what failed and why, all dated.
+
+That history is the point. When a new model comes out, the next engineer (or the next **AI agent**) should start from the best known config and the known traps, not find them again. Old lanes stay here on purpose: their lessons carry over to new models.
+
+## 🤖 For AI agents
+
+1. **Pick a lane** above. Its page is the recipe: image, flags, setup, rollback.
+2. **Read the lane's journal** (`models/<model>/JOURNAL.md`) for every dated change, A/B result and dead end.
+3. **Check the evidence.** Raw runs are in `artifacts/` and `results/`, linked from each entry.
+4. **Wire the fabric first** ([docs/FABRIC.md](docs/FABRIC.md)), then follow the operator rules in [models/README.md](models/README.md).
+5. **Write down what you learn**: a dated journal entry with its numbers, how they were measured, and its config. Never overwrite old evidence.
+
+### Lessons that carry over
+
+- 🔌 **Fix the network first.** One IPv4 address per NCCL port. A leftover address alone cost 30% ([V4](models/deepseek-v4-flash/JOURNAL.md)). Getting RoCE right was worth 2.5× ([GLM](models/glm-5.3-flash/JOURNAL.md)).
+- 📏 **Measure decode from the stream:** count usage tokens from the first delta to the last. Wall time includes prompt reading, and chunk counts undercount speculative decoding.
+- 🎲 **Boots vary.** Compare A/B/A with a same-night control. `vm.compaction_proactiveness=0` ended a 50/50 slow-boot lottery ([V4.1](models/deepseek-v4.1-flash/JOURNAL.md#dsv41-2026-09-13)).
+- 🔥 **Warm up before you trust a number.** JIT kernels and draft acceptance start cold (acceptance went from 2.6 at first boot to 7.95 an hour later). Warm the kernels at boot.
+- 🧮 **Unified memory is GPU memory.** Leave headroom (GLM crashed at 0.85 and is stable at 0.80) and drop the page cache before a start.
+- 💾 **No bulk disk writes on a serving node.** Engram reads NVMe on every step, so one slow rank stalls all four.
+- 🕵️ **Fallbacks are silent.** Check the boot log for the transport you expect (`over RoCE`, not NCCL) after every start. A leftover failure file cost TensorFold 12–19% for two days ([report](artifacts/tensorfold-v41-roce-20261007/REPORT.md)).
+- ⏳ **Busy is not wedged.** Check the queue before restarting. A server is alive only if it answers a real 1-token completion.
+- ✍️ **Speculative decoding depends on the text.** Code and math run about 2× faster than prose. Always quote task, prompt length and thinking mode.
+- 🪶 **Fewer bytes per token, faster decode.** 2.9-bit EXL3 gave 1.7× over FP8 on the same four Sparks.
+- 🧩 **Uneven splits hide bugs.** Test the request shapes that stress them, like `top_k` above one rank's vocabulary slice.
+
+---
+
+<a id="dsv41-1017"></a>
+
+## 🐋 DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine) · 🟢 live since 2026-10-17
+
+DeepSeek's official `deepseek-ai/DeepSeek-V4.1-Flash-1017`, as the third-party 2.9 bpw EXL3 quant
+`LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw` (rev `afc7aa0a`), on the same engine, image and serving settings as the
+[previous DeepSeek lane](#dsv41-tensorfold). Same frozen bench, same harnesses, same scoring.
+
+**A config-only drop-in.** The config, tokenizer and every tensor name and shape are unchanged. The 1017 pack adds 43
+`gate.bias_vl` tensors, and its MTP drafter matrices are 6 bpw instead of 4 (the loader reads the width from the weights).
+Three weight-derived inputs were rebuilt from the 1017 base checkpoint:
+- the **Engram tables** (they changed in 1017);
+- the **image-routing bias** (34 of its 43 tensors differ from the old V4.1);
+- the **prepared layer folders** (written fresh on the first boot, 405 s).
+
+The engine's prompt renderer matches 1017's own `encoding.py` on every request shape this bench sends.
+
+| Area | DeepSeek V4.1 Flash **1017** (TensorFold) | DeepSeek V4.1 Flash, uncensored pack (TensorFold) | GLM-5.3-Flash FP4 (vLLM) | DeepSeek V4.1 Flash full precision (Venice, hosted) |
+| --- | ---: | ---: | ---: | ---: |
+| Knowledge, MMLU-200 | 89.5 % (179/200) | 88.5 % | 88.0 % | 90.0 % |
+| Math, GSM8K 0–29 | 100 % | 100 % | 100 % | 100 % |
+| Coding, 5 tasks | 80 % | 80 % | 80 % | 80 % |
+| Instruction following, 20 | 90 % | 90 % | 90 % | 95 % |
+| JSON schema / tools / long context to 299K | 100 / 100 / 100 % | 100 / 100 / 100 % | 100 / 100 / 100 % ¹ | 100 / 100 / 100 % |
+| Summary: facts kept / stale / invented numbers | 100 / 0 / 0 % | 100 / 0 / 0 % | 100 / 0 / 4.2 % | 100 / 0 / 0 % |
+| Vision text, 166 strings | 166/166 | 166/166 | 166/166 | – |
+| Vision shapes 30 (a3 + a5) / objects counted 23 | 29/30 / 22/23 | – / 22/23 | 28/30 / 0/23 | – |
+| Code / prose, 1 stream (tok/s) | 151.8 / 67.3 | 155.4 / 72.0 | 82.0 / 36.5 | – |
+| 4 streams, aggregate (tok/s) | 162.4 | 172.1 | 81.2 | – |
+| TTFT, short prompt (code / prose) | 0.17 / 0.19 s | 0.17 / 0.14 s | 0.25 s | – |
+| Cold prompt 32K / 131K / 200K tokens | 6.2 / 22.8 / 35.7 s | – / – / 36.8 s | 12.3 / 50.8 / 79.4 s | – |
+
+- ¹ Not like-for-like (review correction): on GLM's run qbench's `/tokenize` call returned nothing, so its passkey
+  prompts were not calibrated and measured 26.7K / 106.8K / 243.5K tokens instead of 32K / 131K / 299K.
+- Speed is one sample per cell. Earlier rebenches put run-to-run noise at 1–2.5 %, so the −2 to −7 % gap is probably
+  real but small. A likely cause is the 1017 pack's drafter, a different, higher-bpw quant (not isolated).
+- The GLM column is vLLM, its best engine today ([lane](#glm53-fp4-vllm)). The last column is the old V4.1 at full
+  precision on a hosted API, as a compression check: 90.0 % vs 88.5 % for our older 2.9-bit pack, which mixes the
+  uncensoring of that pack with the quantization cost. 1017 at 2.9 bits is within 0.5 points of it.
+- Vision text reading is exact; text box positions are 8–63 px off (GLM: 1–2 px).
+
+📈 [qbench chart vs the previous pack](results/dsv41-1017-20261017/qbench-dsv41-vs-1017.png) · 🧾 [Results and notes](results/dsv41-1017-20261017/README.md) ·
+raw: [`qbench-dsv41-1017-zig-20261017.json`](results/dsv41-1017-20261017/qbench-dsv41-1017-zig-20261017.json)
+
+<a id="dsv41-1017-harness"></a>
+
+### 🧰 Harness effect: the same 1017 weights under four agent harnesses
+
+111 tasks from the same bench (coding 5, GSM8K-30, a fixed 50-item MMLU subset, IF 20, JSON 6), each a fresh agent
+session that writes its answer to a file, graded by qbench's own graders. Rows A–D1 use the same 1017 weights on the
+Sparks. Row D2 is Claude Code with its own model, as a reference point.
+
+| row | harness | version | model | coding | math | MMLU-50 | IF | JSON | total | wall | LLM calls | tool calls | engine tokens |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| A | raw API, no harness (qbench) | qbench v1 | 1017 | 4/5 | 30/30 | 43/50 | 18/20 | 6/6 | **101/111** | 85 s (incl. all 200 MMLU) | 1 per task | – | – |
+| B | pi coding agent | 0.99.1 | 1017 | 4/5 | 30/30 | 41/50 | 20/20 | 6/6 | **101/111** | 264 s | 234 | 123 | prompt 406,146 (cached 205,792) / completion 14,012 |
+| C | DeepSeek harness (dsh), sdk-minimal | dsh-v0.2.1-rc.2 (687f282e86) | 1017 | 4/5 | 30/30 | 41/50 | 20/20 | 6/6 | **101/111** | 214 s | 261 | 135 | prompt 231,650 (cached 130,688) / completion 12,293 |
+| D1 | Claude Code + our Anthropic shim | 2.1.301 | 1017 | 4/5 | 30/30 | 39/50 | 18/20 | 6/6 | **97/111** | 1101 s | 762 | 652 | prompt 33,737,373 (cached 31,946,896) / completion 70,375 |
+| D2 | Claude Code, native (reference) | 2.1.301 | Claude Opus | 4/5 | 30/30 | 46/50 | 20/20 | 6/6 | **106/111** | 166 s | – | 113 | (not on the Sparks) prompt 3,395,314 / completion 23,086, as Claude Code reports them |
+
+- **The harness barely matters for this model:** the raw API, pi and DeepSeek's own harness all score **101/111**. Claude
+  Code through our engine's Anthropic route scores **97**: two correct MMLU answers stayed in chat instead of the file, and
+  one IF task looped 542 self-check turns into the timeout. It also used 4–5× the wall time and 80–150× the prompt tokens.
+  Native Claude Code with Claude Opus scores **106**.
+- ⚠️ **Sampling differs by harness.** qbench and pi send temperature 0. DeepSeek's harness and Claude Code send none, and
+  the engine's default then behaves like temperature 1. Part of the C/D1 difference can be sampling. The control run with
+  temperature forced to 0 was not done.
+- Tools are not scored here (a harness brings its own tools), and JSON is an instruction, not `response_format`.
+
+🧾 [Method, caveats and per-task results](results/dsv41-1017-20261017/harness/README.md)
+
+<a id="3d-tests"></a>
+
+### 🏗️ 3D tests: four models build a garage from one reference image
+
+Each model ran as a coding agent with the same prompt file (sha256 `f88e8390…` voxel, `91540b15…` Blender), the same
+reference image, starter, tools and caps. It saw the reference only through its own vision. **Voxel:** write the
+garage as a three.js scene in code. **Blender:** build it by driving Blender over MCP. A neutral judge (GPT-6 Astra)
+compared six zoomed regions of each build with the reference, in both presentation orders, and kept the lower score
+(seed 20261016).
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-scores-dark-20261017.png">
+  <img alt="Referee totals out of 180. Voxel: DeepSeek 1017 98, previous DeepSeek 87, GLM 103, Nemotron 60. Blender: 108, 79, 98, 44" src="docs/images/3d-scores-light-20261017.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-regions-dark-20261017.png">
+  <img alt="Per-region referee scores out of 30. 1017 leads voxel cabinet/plant/lamps (24) and car (17) and leads or ties five Blender regions at 15-19; GLM leads voxel window (19) and Blender pegboard (18)" src="docs/images/3d-regions-light-20261017.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-renders-voxel-dark-20261017.png">
+  <img alt="Reference and the four final voxel scenes, labelled with model, score and wall time" src="docs/images/3d-renders-voxel-light-20261017.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-renders-blender-dark-20261017.png">
+  <img alt="Reference and the four final Blender renders, labelled with model, score and wall time" src="docs/images/3d-renders-blender-light-20261017.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-wall-time-dark-20261017.png">
+  <img alt="Wall time per build. Voxel: 1017 26m51s, previous DeepSeek 16m39s, GLM 82m31s, Nemotron 23m31s. Blender: 34m44s, 23m01s, 47m49s, 15m54s" src="docs/images/3d-wall-time-light-20261017.png">
+</picture>
+
+- **Single samples:** one build per model per test, scored once by one judge. A gap of a few points is not significant.
+- The previous DeepSeek's Blender build ran on a hosted endpoint in a two-model race, not on the Sparks. Nemotron's
+  Blender build is its solo rerun. GLM's voxel window also carried other jobs' short requests on the same engine (under
+  1 % of its tokens). 1017's and GLM's runs reconcile exactly against the engine's request counters otherwise.
+- None of the four garages meets the "recreated" bar: the best region scores 24/30, and fine detail scores 1–2 everywhere.
+
+---
+
+<a id="glm53-fp4-vllm"></a>
+
+## 🐉 GLM-5.3-Flash FP4 · vLLM · 🔵 compared 2026-10-17, not serving
+
+`nvidia/GLM-5.3-Flash-FP4-Local` on vLLM (the community b12x image the model card requires), TP=4 across the four Sparks,
+benched with the same harnesses on 2026-10-17. Two launch fixes were needed on our fabric (the RoCE GID index and a
+thinking-off switch in the chat template); both are documented in the results page.
+
+- **Quality is level with DeepSeek** on the frozen bench: MMLU-200 88.0 %, and equal elsewhere, except 4.2 % invented
+  numbers in summaries. **3D:** top voxel score of the four (103/180) and second on Blender (98), single samples.
+- **It is about half the speed:** code 82.0 / prose 36.5 tok/s for one stream, 81.2 for four; cold 200K-token prompt 79.4 s.
+  Its 3D builds took 82.5 and 47.8 minutes.
+- **Corrections from an independent review:** its long-context passkey prompts were never calibrated on this run
+  (26.7K / 106.8K / 243.5K tokens, not the other rows' sizes; qbench now fails loudly instead), and the 3D scores are
+  single samples from one judge.
+- A port of GLM to our TensorFold engine is **work in progress** (not merged, not serving): same quality, slower decode
+  so far. [Its bench page](results/glm53-fp4-tf-20261017/README.md) carries the review's corrections.
+
+🧾 [Results, launcher and notes](results/glm53-fp4-vllm-20261017/README.md) · 📈 [qbench chart vs DeepSeek](results/glm53-fp4-vllm-20261017/qbench-dsv41-vs-glm53.png)
+
+---
+
+<a id="now-serving-20261016"></a>
+
+## 📌 Previous note: back on DeepSeek V4.1 Flash, not Nemotron (2026-10-16)
 
 The Sparks are back on **DeepSeek V4.1 Flash** (TensorFold Zig engine, TP=4) as of 2026-10-16. We moved off
 **Nemotron 3.5 Super VL** after two real-world agent tests, despite Nemotron's promising speed numbers. Its speed
@@ -62,59 +275,13 @@ it writes the scene itself or drives an editor to build it.
 
 ---
 
-## 🧭 Lanes
-
-One cluster, one model at a time. Click a lane for its recipe.
-
-| | Lane | Status | Best numbers |
-| :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash · TensorFold (Zig engine)](#dsv41-tensorfold)** | 🟢 **live** again since 2026-10-16 (also 2026-10-11 → 2026-10-15) · [why](#now-serving) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
-| 🟩 | [Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold) | 🟡 previous (live 2026-10-15 → 2026-10-16) · [why not now](#now-serving) | 185 code tok/s · 95 prose · 16 conversations × 307K tokens · 214–230 tok/s for 16 |
-| 🐋 | [DeepSeek V4.1 Flash · SGLang](models/deepseek-v4.1-flash/README.md) | 🟡 rollback | 38 prose / 54–62 code tok/s · 1M context |
-| 🐋 | [DeepSeek V4.1 Flash · vLLM](docs/dsv41-vllm-tp4.md) | 🟡 fallback | 71 code tok/s · 109 tok/s for 4 users |
-| 🦄 | [Qwen 3.8 Flash Next](models/qwen-3.8-flash-next/README.md) | ⚪ archived | 91 code tok/s · 600 tok/s for 16 users |
-| 🐉 | [GLM 5.3 Flash](models/glm-5.3-flash/README.md) | ⚪ archived | 129 tok/s for 4 users · 1M context |
-| 🐳 | [DeepSeek V4 Flash](models/deepseek-v4-flash/README.md) | ⚪ archived | 136 tok/s, one user (record) · 182 for 4 |
-
-<sub>tok/s = writing speed. Rulers differ between lanes; each lane page says how its numbers were measured.</sub>
-
-## 🧠 Why this repo exists
-
-This repo is about **four Sparks working as one machine**, and it keeps **every optimization we tried**: what we changed, what it measured, what failed and why, all dated.
-
-That history is the point. When a new model comes out, the next engineer (or the next **AI agent**) should start from the best known config and the known traps, not find them again. Old lanes stay here on purpose: their lessons carry over to new models.
-
-## 🤖 For AI agents
-
-1. **Pick a lane** above. Its page is the recipe: image, flags, setup, rollback.
-2. **Read the lane's journal** (`models/<model>/JOURNAL.md`) for every dated change, A/B result and dead end.
-3. **Check the evidence.** Raw runs are in `artifacts/` and `results/`, linked from each entry.
-4. **Wire the fabric first** ([docs/FABRIC.md](docs/FABRIC.md)), then follow the operator rules in [models/README.md](models/README.md).
-5. **Write down what you learn**: a dated journal entry with its numbers, how they were measured, and its config. Never overwrite old evidence.
-
-### Lessons that carry over
-
-- 🔌 **Fix the network first.** One IPv4 address per NCCL port. A leftover address alone cost 30% ([V4](models/deepseek-v4-flash/JOURNAL.md)). Getting RoCE right was worth 2.5× ([GLM](models/glm-5.3-flash/JOURNAL.md)).
-- 📏 **Measure decode from the stream:** count usage tokens from the first delta to the last. Wall time includes prompt reading, and chunk counts undercount speculative decoding.
-- 🎲 **Boots vary.** Compare A/B/A with a same-night control. `vm.compaction_proactiveness=0` ended a 50/50 slow-boot lottery ([V4.1](models/deepseek-v4.1-flash/JOURNAL.md#dsv41-2026-09-13)).
-- 🔥 **Warm up before you trust a number.** JIT kernels and draft acceptance start cold (acceptance went from 2.6 at first boot to 7.95 an hour later). Warm the kernels at boot.
-- 🧮 **Unified memory is GPU memory.** Leave headroom (GLM crashed at 0.85 and is stable at 0.80) and drop the page cache before a start.
-- 💾 **No bulk disk writes on a serving node.** Engram reads NVMe on every step, so one slow rank stalls all four.
-- 🕵️ **Fallbacks are silent.** Check the boot log for the transport you expect (`over RoCE`, not NCCL) after every start. A leftover failure file cost TensorFold 12–19% for two days ([report](artifacts/tensorfold-v41-roce-20261007/REPORT.md)).
-- ⏳ **Busy is not wedged.** Check the queue before restarting. A server is alive only if it answers a real 1-token completion.
-- ✍️ **Speculative decoding depends on the text.** Code and math run about 2× faster than prose. Always quote task, prompt length and thinking mode.
-- 🪶 **Fewer bytes per token, faster decode.** 2.9-bit EXL3 gave 1.7× over FP8 on the same four Sparks.
-- 🧩 **Uneven splits hide bugs.** Test the request shapes that stress them, like `top_k` above one rank's vocabulary slice.
-
----
-
 <a id="nemotron-tensorfold"></a>
 
 ## 🟩 Nemotron 3.5 Super VL · TensorFold (Zig engine) · 🟡 previous (live 2026-10-15 → 2026-10-16)
 
 > 📌 **Not serving since 2026-10-16.** We went back to DeepSeek V4.1 Flash after a real-world agent test: building a
 > 3D garage from one reference image, a blinded referee scored DeepSeek 79/180 and Nemotron 44/180
-> ([details and images](#now-serving)). The numbers below are still accurate. The reason is result quality, not speed.
+> ([details and images](#now-serving-20261016)). The numbers below are still accurate. The reason is result quality, not speed.
 
 NVIDIA's [Nemotron 3.5 Super VL 120B-A12B](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4)
 (NVFP4 as shipped: 40 Mamba-2, 40 latent-MoE and 8 attention blocks, 12B active, MTP draft head, vision encoder) on
@@ -197,7 +364,10 @@ long prompts): the shapes scene read 17/20 with it and 19/20 without.
 
 <a id="dsv41-tensorfold"></a>
 
-## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🟢 live again since 2026-10-16 (also 2026-10-11 → 2026-10-15)
+## 🐋 DeepSeek V4.1 Flash · TensorFold (Zig engine) · 🟡 previous (live 2026-10-11 → 2026-10-15 and 2026-10-16 → 2026-10-17)
+
+> 📌 **Replaced by [DeepSeek V4.1 Flash 1017](#dsv41-1017) on 2026-10-17**, on the same engine and settings. This lane
+> served the uncensored V4.1 2.9-bit pack. Its numbers below stay accurate.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/lane-dsv41-tensorfold-dark.svg">
@@ -234,7 +404,7 @@ One frozen suite (`bench/qbench.py`) against the TensorFold Zig engine while it 
 ---
 
 
-- 🟢 **The serving engine is Zig** (live 2026-10-11 → 2026-10-15 and again since 2026-10-16, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
+- 🟢 **The serving engine is Zig** (live 2026-10-11 → 2026-10-15 and 2026-10-16 → 2026-10-17, TP=4 over RoCE with pipelined prompt reading): code **129** tok/s for one stream, **218** for four; prose **66** / **138**. [Report](artifacts/tensorfold-v41-zig-20261011/REPORT.md).
 - 🏭 **Pipelined prompt reading is the big lever:** +75 % at 32K and **+102 % at 131K** prompt tok/s against the same build with it off (one window, controlled); the cold 154K-token prompt's first token halves, 60.5 → **30.0 s**. Decode unchanged (±1 %).
 - 🧪 **Long context, cold, measured 2026-10-14** — past the 131K the pipeline figure above tops out at: a **199,713-token** prompt returned its first token at **36.8 s** (~5,400 prompt tok/s), and a **332,847-token** prompt (79 % of the 420,096-token request slot) at **66.6 s** (~5,100 prompt tok/s). Both requests report `cached_tokens: 0`, so both reads are genuinely cold rather than prefix-cache hits. Thinking off for the clean timing run.
 

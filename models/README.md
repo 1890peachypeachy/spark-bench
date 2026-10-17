@@ -1,12 +1,14 @@
 # Model lanes — start here
 
 One shared four-DGX-Spark cluster. **These deployments are mutually exclusive.**
-Status below is dated 2026-10-16, not a live health signal. Each model folder has a recipe (`README.md`) and a dated history of every change and measurement (`JOURNAL.md`).
+Status below is dated 2026-10-17, not a live health signal. Each model folder has a recipe (`README.md`) and a dated history of every change and measurement (`JOURNAL.md`).
 
 | Model | Status | Entry point |
 |---|---|---|
-| Nemotron 3.5 Super VL 120B-A12B | Served on TensorFold (Zig engine), four Sparks (TP-4 over RoCE), NVFP4, 2026-10-15 → 2026-10-16: 16 conversations × 307K tokens, 185 code tok/s one stream; stopped after a real-world agent test went to DeepSeek ([why](../README.md#now-serving)) | [lane](../README.md#nemotron-tensorfold) · [recipe](https://github.com/neko-legends/tensorfold-4x-sparks#nemotron-35-super-vl-120b-a12b-nvfp4) · [results](../results/nemotron-supervl-tensorfold-20261016/README.md) |
-| DeepSeek V4.1 Flash | **Serving** on TensorFold (Zig engine), four Sparks (TP=4), 2.9-bit EXL3, again since 2026-10-16 (before: 2026-10-04 → 2026-10-15, Zig engine from 2026-10-11); SGLang TP4/EP2 kept as rollback | [TensorFold guide](deepseek-v4.1-flash/tensorfold-4x/README.md) · [recipe (our fork)](https://github.com/neko-legends/tensorfold-4x-sparks) · [V4.1 guide](deepseek-v4.1-flash/README.md) · [journal](deepseek-v4.1-flash/JOURNAL.md) |
+| Nemotron 3.5 Super VL 120B-A12B | Served on TensorFold (Zig engine), four Sparks (TP-4 over RoCE), NVFP4, 2026-10-15 → 2026-10-16: 16 conversations × 307K tokens, 185 code tok/s one stream; stopped after a real-world agent test went to DeepSeek ([why](../README.md#now-serving-20261016)) | [lane](../README.md#nemotron-tensorfold) · [recipe](https://github.com/neko-legends/tensorfold-4x-sparks#nemotron-35-super-vl-120b-a12b-nvfp4) · [results](../results/nemotron-supervl-tensorfold-20261016/README.md) |
+| DeepSeek V4.1 Flash 1017 | **Serving** since 2026-10-17 on TensorFold (Zig engine), four Sparks (TP=4), 2.9-bit EXL3: the official 1017 checkpoint as a config-only drop-in for the pack below (rebuilt Engram tables, image-routing bias, prepared layer folders) | [lane](../README.md#dsv41-1017) · [results](../results/dsv41-1017-20261017/README.md) |
+| GLM-5.3-Flash FP4 | Compared 2026-10-17 on vLLM (TP-4), not serving; a TensorFold port is work in progress | [lane](../README.md#glm53-fp4-vllm) · [results](../results/glm53-fp4-vllm-20261017/README.md) |
+| DeepSeek V4.1 Flash | Previous: served on TensorFold (Zig engine), four Sparks (TP=4), 2.9-bit EXL3 (uncensored pack), 2026-10-16 → 2026-10-17 (before: 2026-10-04 → 2026-10-15, Zig engine from 2026-10-11); SGLang TP4/EP2 kept as rollback | [TensorFold guide](deepseek-v4.1-flash/tensorfold-4x/README.md) · [recipe (our fork)](https://github.com/neko-legends/tensorfold-4x-sparks) · [V4.1 guide](deepseek-v4.1-flash/README.md) · [journal](deepseek-v4.1-flash/JOURNAL.md) |
 | Qwen 3.8 Flash Next | Stopped; archived recipe | [Qwen guide](qwen-3.8-flash-next/README.md) · [journal](qwen-3.8-flash-next/JOURNAL.md) |
 | GLM 5.3 Flash | Stopped; archived recipes | [GLM guide](glm-5.3-flash/README.md) · [journal](glm-5.3-flash/JOURNAL.md) |
 | DeepSeek V4 Flash | Not serving; archived recipe | [DeepSeek guide](deepseek-v4-flash/README.md) · [journal](deepseek-v4-flash/JOURNAL.md) |
