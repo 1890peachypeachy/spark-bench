@@ -628,7 +628,11 @@ def area_longctx(eng: Engine, workers: int) -> dict:
             if abs(counted - target) <= max(8, target * 0.02):
                 break
             ratio = target / max(1, counted)
-            text = build_filler(int(len(text.split()) * ratio))
+            # build_filler(n) emits ~0.765 words per token argument (0.75*1.02), so resize in
+            # measured token space: words needed = target / (tokens per word actually measured),
+            # then convert to build_filler's token argument.
+            tokens_per_word = counted / max(1, len(text.split()))
+            text = build_filler(int(target / tokens_per_word / 0.765))
             counted = tokenize_or_die(eng, text)
         if abs(counted - target) > target * 0.05:
             raise RuntimeError(f"long-context calibration did not converge: {counted} tokens vs target {target}")
