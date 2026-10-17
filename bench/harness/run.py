@@ -207,7 +207,8 @@ def run_task(a, task: dict, ws_root: Path, cfg: Path) -> dict:
     ws.mkdir(parents=True)
     rec = {"area": task["area"], "id": task["id"], "file": task["file"]}
     use_tap = a.harness != "claude"
-    tap = tapmod.Tap(a.base_url, venice=a.venice, api_key=a.api_key, timeout=a.timeout) if use_tap else None
+    tap = tapmod.Tap(a.base_url, venice=a.venice, api_key=a.api_key, timeout=a.timeout,
+                     force_temperature=a.force_temperature) if use_tap else None
     try:
         if tap:
             tap.__enter__()
@@ -356,6 +357,8 @@ def main():
     ap.add_argument("--only", default=None, help="comma list of task ids")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--timeout", type=float, default=600.0, help="per task (session) seconds, identical per row")
+    ap.add_argument("--force-temperature", type=float, default=None,
+                    help="control runs: the tap sets this temperature in every request (default: change nothing)")
     ap.add_argument("--metrics-url", default=None, help="engine /metrics, scraped before and after the row")
     ap.add_argument("--go-file", default=None, help="start a task only while this file exists")
     ap.add_argument("--ws-root", default=None)
@@ -378,7 +381,7 @@ def main():
     result = {"bench": "qbench-harness", "row": a.row, "harness": a.harness, "harness_version": harness_version(a),
               "model": a.model, "thinking": a.thinking, "timeout_s": a.timeout, "workers": a.workers,
               "mmlu_subset": f"mmlu200.jsonl items 0,{MMLU_STRIDE},...,196 (every {MMLU_STRIDE}th, 50 items)",
-              "instruction": INSTRUCTION, "venice_dry_run": a.venice, "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+              "instruction": INSTRUCTION, "venice_dry_run": a.venice, "force_temperature": a.force_temperature, "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
               "tasks": []}
     print(f"harness row {a.row}: {a.harness} model={a.model} thinking={a.thinking} tasks={len(tasks)} ws={ws_root}",
           flush=True)

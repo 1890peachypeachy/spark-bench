@@ -120,14 +120,17 @@ def parse_reply(raw: bytes, ctype: str) -> dict:
 class Tap:
     """``upstream``: base URL the harness's ``/v1/...`` paths map onto (e.g. ``http://engine:8000/v1``).
 
+    ``force_temperature``: control runs — set ``temperature`` in every request (else nothing is changed).
     ``venice``: dry-run mode for a hosted endpoint — replaces ``chat_template_kwargs`` by the same switch in
     ``venice_parameters`` (thinking as the request asked, no injected system prompt) and the auth by ``api_key``.
     """
 
-    def __init__(self, upstream: str, *, venice: bool = False, api_key: str | None = None, timeout: float = 900.0):
+    def __init__(self, upstream: str, *, venice: bool = False, api_key: str | None = None, timeout: float = 900.0,
+                 force_temperature: float | None = None):
         u = urllib.parse.urlsplit(upstream.rstrip("/"))
         self.scheme, self.netloc, self.prefix = u.scheme, u.netloc, u.path  # prefix replaces the incoming "/v1"
         self.venice, self.api_key, self.timeout = venice, api_key, timeout
+        self.force_temperature = force_temperature  # control runs only: the one field the tap then changes
         self.requests: list[dict] = []
         self.lock = threading.Lock()
         tap = self
@@ -185,6 +188,10 @@ class Tap:
             rec["system_chars"] = len(json.dumps(parsed.get("system") or [m for m in parsed.get("messages") or []
                                                                          if isinstance(m, dict) and m.get("role") == "system"]))
             rec["model"] = parsed.get("model")
+            rec["sampling"] = {k: parsed.get(k) for k in ("temperature", "top_p", "top_k", "max_tokens") if k in parsed}
+            if self.force_temperature is not None and "messages" in parsed:
+                parsed["temperature"] = self.force_temperature
+                body = json.dumps(parsed).encode()
             if self.venice and "messages" in parsed:
                 kw = parsed.pop("chat_template_kwargs", None) or {}
                 think = bool(kw.get("enable_thinking")) if isinstance(kw, dict) else False
@@ -200,8 +207,8 @@ class Tap:
         status = None
         with _slots:
             t0 = time.time()
+            c = conn_cls(self.netloc, timeout=self.timeout)
             try:
-                c = conn_cls(self.netloc, timeout=self.timeout)
                 c.request(h.command, self._upstream_path(h.path), body=body, headers=headers)
                 r = c.getresponse()
                 status = r.status
@@ -221,7 +228,6 @@ class Tap:
                     h.wfile.flush()
                     if len(captured) < 8 << 20:
                         captured += chunk
-                c.close()
             except Exception as e:  # upstream or client gone: a data point, the harness sees a closed socket
                 rec["error"] = f"{type(e).__name__}: {e}"
                 ctype = ""
@@ -230,6 +236,8 @@ class Tap:
                         h.send_error(502, "tap: upstream error")
                     except Exception:
                         pass
+            finally:
+                c.close()  # a session killed mid-reply also cancels its request at the engine
             rec["seconds"] = round(time.time() - t0, 3)
         rec["status"] = status
         if rec["path"].endswith(("/chat/completions", "/messages")) and captured:

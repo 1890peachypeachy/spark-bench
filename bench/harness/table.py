@@ -39,9 +39,11 @@ def row_h(path: str) -> dict:
     t = s["totals"]
     tools = t.get("tap_tool_calls", t["harness_tool_calls"])
     em = d.get("engine_metrics_delta") or {}
-    eng = {k: v for k, v in em.items() if "token" in k and "bucket" not in k}
-    if eng:
-        tokens = ", ".join(f"{k.split('{')[0].split(':')[-1]} {v:,.0f}" for k, v in sorted(eng.items())[:4])
+    eng = {k.split("{")[0]: v for k, v in em.items()}
+    if "tensorfold_prompt_tokens_total" in eng:
+        tokens = (f"prompt {eng['tensorfold_prompt_tokens_total']:,.0f} (cached {eng.get('tensorfold_cached_tokens_total', 0):,.0f})"
+                  f" / completion {eng.get('tensorfold_completion_tokens_total', 0):,.0f} (engine; "
+                  f"{eng.get('tensorfold_requests_total', 0):.0f} requests)")
     elif "tap_prompt_tokens" in t:
         tokens = f"prompt {t['tap_prompt_tokens']:,} / completion {t['tap_completion_tokens']:,} (tap)"
     else:  # no tap (the subscription row): Claude Code's own usage report
