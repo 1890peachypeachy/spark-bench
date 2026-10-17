@@ -132,6 +132,12 @@ The engine's prompt renderer matches 1017's own `encoding.py` on every request s
 📈 [qbench chart vs the previous pack](results/dsv41-1017-20261017/qbench-dsv41-vs-1017.png) · 🧾 [Results and notes](results/dsv41-1017-20261017/README.md) ·
 raw: [`qbench-dsv41-1017-zig-20261017.json`](results/dsv41-1017-20261017/qbench-dsv41-1017-zig-20261017.json)
 
+🔁 **How to reproduce.** Serve the model with [tensorfold-4x-sparks' RUN.md](https://github.com/neko-legends/tensorfold-4x-sparks/blob/main/deploy/dsv41-1017/RUN.md), then, with `E=http://<rank0>:8000/v1` and `M=DeepSeek-V4.1-Flash-1017-TF`:
+quality + speed `python3 bench/qbench.py --base-url $E --model $M --areas all --workers 4 --out q.json` (the Venice row: the same with the hosted endpoint, its model id, `--api-key` and `--venice`) ·
+cold prefill `python3 bench/prefill-ladder.py $E $M prefill.json 32768,131072,200000` ·
+vision `SPARK_VISION=<spark-vision checkout> python3 bench/window-vision.py $E $M vision.json a1_poster,a2_dashboard,a3_shapes,a4_table_chart,a5_big4096,k_f_counts` ·
+harness rows `python3 bench/harness/run.py --harness pi|dsh|claude-shim --row B|C|D1 --base-url $E --model $M --out row.json`, table `bench/harness/table.py`.
+
 <a id="dsv41-1017-harness"></a>
 
 ### 🧰 Harness effect: the same 1017 weights under four agent harnesses
