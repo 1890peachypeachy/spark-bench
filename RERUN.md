@@ -14,7 +14,7 @@ model id/endpoint — e.g. another model on TensorFold — and the numbers compa
 
 ```bash
 cd ~/git/spark-bench
-python3 bench/qbench.py --base-url http://forge:8000/v1 --model deepseek-v4.1-flash \
+python3 bench/qbench.py --base-url http://ENGINE_HOST:8000/v1 --model deepseek-v4.1-flash \
     --areas all --workers 4 --tag dsv41-zig-20261015 \
     --out results/qbench-dsv41-zig-20261015.json
 ```
@@ -57,13 +57,13 @@ is simply not drawn. Percentages only, no pricing.
 
 | area | harness | exact command (retargeted by argument) |
 |---|---|---|
-| worker roles (builder / reviewer / synthesis / IF / batch) | `nest/scripts/model-role-bench/run_bench.py` | `cd ~/nest/scripts/model-role-bench && python3 run_bench.py --candidate-base http://forge:8000/v1 --candidate-no-thinking --models <served-id> --date <date>-<tag> --roles builder,reviewer,synthesis,if,batch --runs 2 --workers 4 --budget 15 --no-allowlist` |
+| worker roles (builder / reviewer / synthesis / IF / batch) | `nest/scripts/model-role-bench/run_bench.py` | `cd ~/nest/scripts/model-role-bench && python3 run_bench.py --candidate-base http://ENGINE_HOST:8000/v1 --candidate-no-thinking --models <served-id> --date <date>-<tag> --roles builder,reviewer,synthesis,if,batch --runs 2 --workers 4 --budget 15 --no-allowlist` |
 | long-context **speed** (cold prefill ladder, C1/C4 decode) | fork `deepseek-v41-tensorfold-spark/bench/` (`m2bench`, `stress.py`, `soak.py`) + `spark-bench/scripts/` lane harnesses | see `spark-bench/scripts/README-bench.md` and the fork's `docs/BENCHMARKS.md`; the lane harnesses are lane-specific (hardcoded host/port) — the model-agnostic speed numbers come from `qbench --areas speed` |
 | structured output + tools (xgrammar gates) | fork `bench/structured.py`, `bench/tooleval/chains.py` | `python3 bench/structured.py --base http://forge:8000 --model <id> --out R.json` · `python3 bench/tooleval/chains.py --base http://forge:8000 --model <id> --mode off --out R.json` |
 | MMLU-200 + needle, through the serving path | fork `bench/quality.py` | `python3 bench/quality.py mmlu --base http://forge:8000 --model <id> --data bench/data/mmlu200.jsonl --out R.json` · `... needle --sizes 32768,131072,299000 --out N.json` |
 | compaction / summarization (private corpus) | `eva-core/extensions/nekocompact/eval/compaction-ab-2026-09-10/` | one arm per script (`bench-sparks.mjs` for the Sparks serve); a **new model needs a copied script with its own model id** — the file hardcodes `deepseek-v4.1-flash`. Private corpus, never committed. |
 | long-context quality (LCD degradation curve) | `eva-core/docs/benchmarks/2026-09-08-long-context-degradation/run-arm.mjs` | endpoint/key resolved from `~/.pi/agent/models.json`; the sparks arm today is `results-sparks-auto.json` (**qwen3.8-flash-next on the old vLLM world**, not DeepSeek) |
-| vision | `nest/scripts/spark-vision.py` (+ the bench harness in `nest/tmp/spark-vision/`) | now model-agnostic: `python3 nest/scripts/spark-vision.py --url http://forge:8000/v1 --model <id> read IMG` (defaults unchanged) |
+| vision | `nest/scripts/spark-vision.py` (+ the bench harness in `nest/tmp/spark-vision/`) | now model-agnostic: `python3 nest/scripts/spark-vision.py --url http://ENGINE_HOST:8000/v1 --model <id> read IMG` (defaults unchanged) |
 
 Judge routing rules still apply: a model is never judged by its own family, and `synthesis`/`batch` slots are
 private-tier only.
@@ -93,7 +93,7 @@ with the Sparks column: role suite `nest/scripts/model-role-bench/results/2026-0
 
 ## 4. Order for a new model
 
-1. Confirm the served id: `curl -s http://forge:8000/v1/models`.
+1. Confirm the served id: `curl -s http://ENGINE_HOST:8000/v1/models`.
 2. `qbench` (all areas) → `results/qbench-<tag>.json` (~3 min).
 3. Worker-role suite against the same endpoint (`--candidate-base`), same fixtures, judge must be another
    family (~10 min; cells are the slow part).
