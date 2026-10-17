@@ -123,7 +123,7 @@ rank, no engine change ([how, for any context](https://github.com/neko-legends/t
 | Math, GSM8K 0–29 | 100 % | 100 % | 100 % | 100 % |
 | Coding, 5 tasks | 80 % | 80 % | 80 % | 80 % |
 | Instruction following, 20 | 90 % | 90 % | 90 % | 95 % |
-| JSON schema / tools / long context to 299K | 100 / 100 / 100 % | 100 / 100 / 100 % | 100 / 100 / 100 % ¹ | 100 / 100 / 100 % |
+| JSON schema / tools / long context (25K/100K/229K-token prompts) | 100 / 100 / 100 % | 100 / 100 / 100 % | 100 / 100 / 100 % ¹ | 100 / 100 / 100 % |
 | Summary: facts kept / stale / invented numbers | 100 / 0 / 0 % | 100 / 0 / 0 % | 100 / 0 / 4.2 % | 100 / 0 / 0 % |
 | Vision text, 166 strings | 166/166 | 166/166 | 166/166 | – |
 | Vision shapes 30 (a3 + a5) / objects counted 23 | 29/30 / 22/23 | – / 22/23 | 28/30 / 0/23 | – |
@@ -327,7 +327,7 @@ TensorFold's Zig engine, our TP-4 port over RoCE. Same suites as the DeepSeek la
 | Math, GSM8K 0–29 | **96.7 %** (29/30) | 100 % |
 | Coding, 5 tasks | **80 %** (4/5) | 80 % |
 | Instruction following | **95 %** (19/20) | 90 % |
-| JSON schema · tools · long context to 299K · summary facts | **100 %** · **100 %** · **100 %** · **100 %** | 100 % · 100 % · 100 % · 100 % |
+| JSON schema · tools · long context (25K/100K/229K-token prompts) · summary facts | **100 %** · **100 %** · **100 %** · **100 %** | 100 % · 100 % · 100 % · 100 % |
 | Vision: text read exactly (166 strings) | **100 %** | 100 % |
 | Vision: shapes (30) · objects counted (23) | **87 %** · **4 %** | 87 % · 96 % |
 | Cold 200K-token prompt | **48.3 s** | 36.8 s |
@@ -406,7 +406,7 @@ One frozen suite (`bench/qbench.py`) against the TensorFold Zig engine while it 
 | Instruction following | 20 items, programmatic checkers | **90 %** (18/20) |
 | Structured output | 6 JSON-Schema tasks, validated client-side | **100 %** (6/6) |
 | Tool use | 8 single calls + 2 dependent chains | **100 %** (10/10) |
-| Long context | passkey at 32K / 131K / 299K tokens | **100 %** (3/3) |
+| Long context | passkey at 25K / 100K / 229K tokens | **100 %** (3/3) |
 | Summarization | 20-fact log → summary: facts kept / stale returned / invented numbers | **100 %** / **0 %** / **0 %** |
 | Vision: text | code-rendered images read in tiles, strings matched exactly | **98.5 %** (259/263; 7 of 8 text images at 100 %) |
 | Vision: counts, shapes, colour | region counts · shape matching · measured hex | counts **100 %** exact (39/39, 23/23, 11/11) · shapes **100 %** (20/20) · flat-fill colour ΔE 0.0 |
