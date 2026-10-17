@@ -45,12 +45,13 @@ AREAS = ["speed", "mmlu", "math", "coding", "if", "json", "tools", "longctx", "s
 
 class Engine:
     def __init__(self, base_url: str, model: str, api_key: str = "none", thinking: bool = False,
-                 timeout: float = 1800.0):
+                 timeout: float = 1800.0, venice: bool = False):
         self.base = base_url.rstrip("/")
         self.model = model
         self.key = api_key
         self.thinking = thinking
         self.timeout = timeout
+        self.venice = venice
         self.calls = 0
         self.errors = 0
 
@@ -59,6 +60,10 @@ class Engine:
         body = {"model": self.model, "messages": messages, "max_tokens": max_tokens,
                 "temperature": temperature, "stream": stream,
                 "chat_template_kwargs": {"enable_thinking": bool(self.thinking)}}
+        if self.venice:
+            # Venice refuses chat_template_kwargs; the same switch there, and no injected system prompt
+            del body["chat_template_kwargs"]
+            body["venice_parameters"] = {"disable_thinking": not self.thinking, "include_venice_system_prompt": False}
         if tools:
             body["tools"] = tools
         if tool_choice:
@@ -636,6 +641,8 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=4, help="max requests in flight (tailnet limit is 4)")
     ap.add_argument("--thinking", action="store_true", help="leave thinking ON (default OFF)")
     ap.add_argument("--timeout", type=float, default=1800.0)
+    ap.add_argument("--venice", action="store_true",
+                    help="hosted Venice API: thinking switch via venice_parameters, no Venice system prompt")
     a = ap.parse_args()
 
     names = AREAS if a.areas.strip() == "all" else [x.strip() for x in a.areas.split(",") if x.strip()]
@@ -646,12 +653,12 @@ def main() -> None:
     out = Path(a.out) if a.out else (HERE.parent / "results" / f"qbench-{tag}.json")
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    eng = Engine(a.base_url, a.model, a.api_key, thinking=a.thinking, timeout=a.timeout)
+    eng = Engine(a.base_url, a.model, a.api_key, thinking=a.thinking, timeout=a.timeout, venice=a.venice)
     started = time.strftime("%Y-%m-%dT%H:%M:%S%z")
     print(f"qbench {tag}: {a.base_url} model={a.model} thinking={a.thinking} areas={names} workers={a.workers}")
 
     result = {"bench": "qbench", "version": 1, "tag": tag, "base_url": a.base_url, "model": a.model,
-              "thinking": a.thinking, "started": started, "areas": {}}
+              "thinking": a.thinking, "venice": a.venice, "started": started, "areas": {}}
     for name in names:
         res = run_area(name, eng, a.workers)
         result["areas"][name] = res
