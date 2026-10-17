@@ -148,14 +148,38 @@ class Engine:
 
 
 def tokenize(eng: Engine, text: str) -> int | None:
-    body = json.dumps({"model": eng.model, "messages": [{"role": "user", "content": text}]}).encode()
-    req = urllib.request.Request(eng.base + "/tokenize", data=body,
-                                 headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return int(json.loads(r.read())["count"])
-    except Exception:
-        return None
+    """Token count from the server's /tokenize, or None if no endpoint answered.
+
+    vLLM serves /tokenize at the server root, not under /v1, so a --base-url ending in /v1 needs the
+    root URL; both are tried, with the chat-messages body first and the plain prompt body second.
+    """
+    roots = [eng.base]
+    if eng.base.endswith("/v1"):
+        roots.append(eng.base[:-3])
+    bodies = [{"model": eng.model, "messages": [{"role": "user", "content": text}]},
+              {"model": eng.model, "prompt": text}]
+    for root in roots:
+        for payload in bodies:
+            req = urllib.request.Request(root + "/tokenize", data=json.dumps(payload).encode(),
+                                         headers={"Content-Type": "application/json"})
+            try:
+                with urllib.request.urlopen(req, timeout=120) as r:
+                    out = json.loads(r.read())
+                if out.get("count") is not None:
+                    return int(out["count"])
+                if isinstance(out.get("tokens"), list):
+                    return len(out["tokens"])
+            except Exception:
+                continue
+    return None
+
+
+def tokenize_or_die(eng: Engine, text: str) -> int:
+    n = tokenize(eng, text)
+    if not n:
+        raise RuntimeError(f"/tokenize returned no count from {eng.base} (tried {eng.base} and its server root); "
+                           "refusing to run long-context prompts uncalibrated")
+    return n
 
 
 def load(name: str):
@@ -566,13 +590,15 @@ def area_longctx(eng: Engine, workers: int) -> dict:
         target = item["size"]
         text = build_filler(target)
         # size to the server's tokenizer, then place the passkey at the requested depth
-        counted = tokenize(eng, text) or 0
+        counted = tokenize_or_die(eng, text)
         for _ in range(8):
-            if not counted or abs(counted - target) <= max(8, target * 0.02):
+            if abs(counted - target) <= max(8, target * 0.02):
                 break
             ratio = target / max(1, counted)
             text = build_filler(int(len(text.split()) * ratio))
-            counted = tokenize(eng, text) or 0
+            counted = tokenize_or_die(eng, text)
+        if abs(counted - target) > target * 0.05:
+            raise RuntimeError(f"long-context calibration did not converge: {counted} tokens vs target {target}")
         words = text.split()
         at = int(len(words) * item["depth"])
         words.insert(at, f"\nIMPORTANT: the passkey is {item['passkey']}.\n")

@@ -52,7 +52,7 @@ def series(path: Path) -> dict:
 
 
 def svg(sets: list[dict], title: str) -> str:
-    pad_l, pad_r, pad_t = 250, 60, 76
+    pad_l, pad_r, pad_t = 250, 60, 92
     row_h, bar_h, gap = 30, 26, 3
     n_rows = len(QUALITY) + 3 + len(SPEED) + 1  # quality + summary row + spacer + speed + spacer
     width = 1120
@@ -64,11 +64,12 @@ def svg(sets: list[dict], title: str) -> str:
              f'<text x="24" y="58" font-size="13" fill="#666">Quality = % correct (higher is better). '
              f'Speed = decode tok/s on fixed prompts (thinking off). Same frozen inputs for every model.</text>']
     # legend
+    x = 24
     for i, s in enumerate(sets):
-        x = 24 + i * 220
         parts.append(f'<rect x="{x}" y="{pad_t - 20}" width="12" height="12" fill="{COLORS[i % len(COLORS)]}"/>')
         parts.append(f'<text x="{x + 18}" y="{pad_t - 9}" font-size="13" fill="#333">'
                      f'{s["tag"]} ({s.get("model") or "?"})</text>')
+        x += 18 + int(7.2 * len(f'{s["tag"]} ({s.get("model") or "?"})')) + 28  # next entry clears this label
     y = pad_t
     plot_l = pad_l
     plot_r = width - pad_r

@@ -80,5 +80,36 @@ class Timing(unittest.TestCase):
                          {k: v for k, v in o.items() if k != "wall_s"})
 
 
+class Tokenize(unittest.TestCase):
+    """/tokenize lives at the server root on vLLM (not under /v1); a dead endpoint must fail loudly."""
+
+    def serve(self, handler):
+        srv = http.server.HTTPServer(("127.0.0.1", 0), handler)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.shutdown)
+        return f"http://127.0.0.1:{srv.server_port}"
+
+    def test_falls_back_to_server_root(self):
+        class H(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a): pass
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"]))
+                code, out = (200, b'{"count": 123}') if self.path == "/tokenize" else (404, b"{}")
+                self.send_response(code); self.end_headers(); self.wfile.write(out)
+        eng = qbench.Engine(self.serve(H) + "/v1", "m", "k", False, 30)
+        self.assertEqual(qbench.tokenize_or_die(eng, "hello"), 123)
+
+    def test_dead_endpoint_raises(self):
+        class H(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a): pass
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"]))
+                self.send_response(404); self.end_headers(); self.wfile.write(b"{}")
+        eng = qbench.Engine(self.serve(H) + "/v1", "m", "k", False, 30)
+        self.assertIsNone(qbench.tokenize(eng, "hello"))
+        with self.assertRaises(RuntimeError):
+            qbench.tokenize_or_die(eng, "hello")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
