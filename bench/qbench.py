@@ -230,15 +230,25 @@ def area_speed(eng: Engine, workers: int) -> dict:
 LETTERS = "ABCD"
 
 
+# prompt and grader are separate functions so bench/harness/ grades agent sessions exactly the same way
+
+def mmlu_prompt(it: dict) -> str:
+    return (it["question"] + "\n" + "\n".join(f"{LETTERS[i]}. {c}" for i, c in enumerate(it["choices"]))
+            + "\nAnswer with a single letter (A, B, C or D) and nothing else.")
+
+
+def grade_mmlu(reply: str, it: dict) -> tuple[bool, int]:
+    m = re.search(r"[ABCD]", reply.strip().upper())
+    got = LETTERS.index(m.group(0)) if m else -1
+    return got == it["answer"], got
+
+
 def area_mmlu(eng: Engine, workers: int) -> dict:
     items = load("mmlu200.jsonl")
     def one(it):
-        prompt = (it["question"] + "\n" + "\n".join(f"{LETTERS[i]}. {c}" for i, c in enumerate(it["choices"]))
-                  + "\nAnswer with a single letter (A, B, C or D) and nothing else.")
-        r = eng.chat([{"role": "user", "content": prompt}], max_tokens=8)
-        m = re.search(r"[ABCD]", r["content"].strip().upper())
-        got = LETTERS.index(m.group(0)) if m else -1
-        return {"subject": it["subject"], "ok": got == it["answer"], "got": got, "answer": it["answer"],
+        r = eng.chat([{"role": "user", "content": mmlu_prompt(it)}], max_tokens=8)
+        ok, got = grade_mmlu(r["content"], it)
+        return {"subject": it["subject"], "ok": ok, "got": got, "answer": it["answer"],
                 "finish": r.get("finish"), "reply": r["content"][:12]}
     with cf.ThreadPoolExecutor(workers) as ex:
         rows = list(ex.map(one, items))
@@ -251,20 +261,28 @@ def area_mmlu(eng: Engine, workers: int) -> dict:
 NUM = re.compile(r"-?\$?\d[\d,]*\.?\d*")
 
 
-def area_math(eng: Engine, workers: int) -> dict:
-    items = load("math.jsonl")
+def math_prompt(it: dict) -> str:
+    return it["question"] + "\nEnd your reply with: 'ANSWER: <number>'"
+
+
+def grade_math(reply: str, it: dict) -> tuple[bool, str, str]:
     def norm(s: str) -> str:
         return s.replace(",", "").replace("$", "").rstrip(".").strip()
+    nums = NUM.findall(reply.replace("**", ""))
+    got = norm(nums[-1]) if nums else ""
+    want = norm(it["answer"])
+    try:
+        ok = abs(float(got) - float(want)) < 1e-6
+    except ValueError:
+        ok = got == want
+    return ok, got, want
+
+
+def area_math(eng: Engine, workers: int) -> dict:
+    items = load("math.jsonl")
     def one(it):
-        r = eng.chat([{"role": "user", "content": it["question"] +
-                       "\nEnd your reply with: 'ANSWER: <number>'"}], max_tokens=1024)
-        nums = NUM.findall(r["content"].replace("**", ""))
-        got = norm(nums[-1]) if nums else ""
-        want = norm(it["answer"])
-        try:
-            ok = abs(float(got) - float(want)) < 1e-6
-        except ValueError:
-            ok = got == want
+        r = eng.chat([{"role": "user", "content": math_prompt(it)}], max_tokens=1024)
+        ok, got, want = grade_math(r["content"], it)
         return {"id": it["id"], "ok": ok, "got": got, "want": want, "finish": r.get("finish"),
                 "reasoning_tokens": (r.get("usage") or {}).get("completion_tokens")}
     with cf.ThreadPoolExecutor(workers) as ex:
@@ -283,22 +301,28 @@ def extract_code(reply: str) -> str:
     return m[0] if m else reply
 
 
+def grade_coding(code: str, t: dict) -> tuple[bool, str]:
+    """``code``: the solution.py text (already extracted); runs the task's hidden tests on it."""
+    ok, detail = False, ""
+    with tempfile.TemporaryDirectory(prefix="qbench-") as d:
+        (Path(d) / "solution.py").write_text(code)
+        (Path(d) / "test_hidden.py").write_text(t["test"])
+        try:
+            p = subprocess.run([sys.executable, "test_hidden.py"], cwd=d, capture_output=True,
+                               text=True, timeout=120)
+            ok = p.returncode == 0
+            detail = (p.stderr or p.stdout).strip().splitlines()[-1][:200] if not ok else ""
+        except subprocess.TimeoutExpired:
+            detail = "timeout"
+    return ok, detail
+
+
 def area_coding(eng: Engine, workers: int) -> dict:
     tasks = load("coding.json")["tasks"]
     def one(t):
         r = eng.chat([{"role": "user", "content": t["prompt"]}], max_tokens=2048)
         code = extract_code(r["content"])
-        ok, detail = False, ""
-        with tempfile.TemporaryDirectory(prefix="qbench-") as d:
-            (Path(d) / "solution.py").write_text(code)
-            (Path(d) / "test_hidden.py").write_text(t["test"])
-            try:
-                p = subprocess.run([sys.executable, "test_hidden.py"], cwd=d, capture_output=True,
-                                   text=True, timeout=120)
-                ok = p.returncode == 0
-                detail = (p.stderr or p.stdout).strip().splitlines()[-1][:200] if not ok else ""
-            except subprocess.TimeoutExpired:
-                detail = "timeout"
+        ok, detail = grade_coding(code, t)
         return {"id": t["id"], "ok": ok, "detail": detail, "finish": r.get("finish"),
                 "code_lines": len(code.splitlines())}
     with cf.ThreadPoolExecutor(workers) as ex:
@@ -427,6 +451,14 @@ def validate(value, schema, path="$") -> list[str]:
     return errs
 
 
+def grade_json(text: str, t: dict) -> list[str]:
+    """Schema errors of the reply text (empty = pass); unparsable text is one error."""
+    try:
+        return validate(json.loads(text), t["schema"])
+    except Exception as e:
+        return [f"unparsable: {e}"]
+
+
 def area_json(eng: Engine, workers: int) -> dict:
     data = load("json_tasks.json")
     def one(t):
@@ -435,11 +467,7 @@ def area_json(eng: Engine, workers: int) -> dict:
         r = eng.chat([{"role": "user", "content": t["prompt"]}], max_tokens=768, response_format=rf)
         text = r["content"].strip()
         leaked = bool(r.get("reasoning")) or "```" in text or "<" in text[:1]
-        try:
-            val = json.loads(text)
-            errs = validate(val, t["schema"])
-        except Exception as e:
-            val, errs = None, [f"unparsable: {e}"]
+        errs = grade_json(text, t)
         return {"name": t["name"], "ok": not errs, "errors": errs[:3], "finish": r.get("finish"),
                 "markup_leak": leaked, "content": text[:160]}
     with cf.ThreadPoolExecutor(workers) as ex:
