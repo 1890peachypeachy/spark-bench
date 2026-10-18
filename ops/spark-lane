@@ -55,6 +55,10 @@ TP4_KIT="/home/spark3/dsv41-4x"
 TP4_REPO_URL="https://github.com/1890peachypeachy/DeepSeek-V4.1-Flash-1017-4x-GB10-TP4.git"
 TP4_REPO_BRANCH="fleet-1017"
 TP4_MODEL_DIR="/var/tmp/models/DeepSeek-V4.1-Flash-1017"
+# 2026-10-17: TP3 lane = Mia's MiaAI-Lab 3-Spark recipe via our fork (main pins DeepSeek-V4.1-Flash-1017 @1bae0e1).
+# It shares the TP4 lane's checkpoint; only the Engram packs and profile differ.
+TP3_REPO_URL="https://github.com/1890peachypeachy/DeepSeek-v4.1-Flash-DGX-Sparks.git"
+TP3_REPO_BRANCH="main"
 # GLM-5.3-Flash EXL3 TP3 lane (Mia's recipe, single self-contained start-tp3.sh)
 GLM53_ENDPOINT="${GLM53_ENDPOINT:-http://100.99.120.29:8888/v1}"
 GLM53_MODEL="GLM-5.3-Flash-EXL3"
@@ -1980,37 +1984,43 @@ glm53_gr8_down() {
 }
 
 # ── stage (TP4 kit deploy, idempotent) ───────────────────────────────────────
-stage_tp4() {
+stage_dsv41() {
+  local lane="$1" kit repo branch envf builder
+  case "$lane" in
+    dsv41-tp3) kit="$TP3_KIT"; repo="$TP3_REPO_URL"; branch="$TP3_REPO_BRANCH"; envf=".env";     builder="build-dsv41-tp3-env.py" ;;
+    dsv41-tp4) kit="$TP4_KIT"; repo="$TP4_REPO_URL"; branch="$TP4_REPO_BRANCH"; envf=".env.tp4"; builder="build-dsv41-tp4-env.py" ;;
+    *) echo "stage: unknown lane $lane" >&2; return 2 ;;
+  esac
   STEPS=4; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
-  step "clone" "$TP4_REPO_URL@$TP4_REPO_BRANCH -> $TP4_KIT"
-  if sshx "$DSV41_HEAD_HOST" "test -d $TP4_KIT/.git"; then
+  step "clone" "$repo@$branch -> $kit"
+  if sshx "$DSV41_HEAD_HOST" "test -d $kit/.git"; then
     ok "already cloned (leaving it in place)"
   else
-    if ! sshx "$DSV41_HEAD_HOST" "git clone -q -b $TP4_REPO_BRANCH $TP4_REPO_URL $TP4_KIT"; then
+    if ! sshx "$DSV41_HEAD_HOST" "git clone -q -b $branch $repo $kit"; then
       note_fail "clone" "git clone failed on $DSV41_HEAD_HOST"
-      NEXT_CMD="ssh $DSV41_HEAD_HOST 'git clone -b $TP4_REPO_BRANCH $TP4_REPO_URL $TP4_KIT'"
-      result "dsv41-tp4" "stage" "-" "-"; return 1
+      NEXT_CMD="ssh $DSV41_HEAD_HOST 'git clone -b $branch $repo $kit'"
+      result "$lane" "stage" "-" "-"; return 1
     fi
     ok "cloned"
   fi
 
-  step "profile" ".env.tp4 = upstream example + our fleet deltas (deterministic builder)"
-  if sshx "$DSV41_HEAD_HOST" "test -f $TP4_KIT/.env.tp4"; then
+  step "profile" "$envf = upstream example + our fleet deltas (deterministic builder)"
+  if sshx "$DSV41_HEAD_HOST" "test -f $kit/$envf"; then
     info "profile already present — NOT overwritten (rm it to rebuild deliberately)"
   else
     local prof
-    if [[ ! -f "$HERE/lane-profiles/build-dsv41-tp4-env.py" ]]; then
-      note_fail "profile" "builder missing: $HERE/lane-profiles/build-dsv41-tp4-env.py"
-      NEXT_CMD="spark-lane stage dsv41-tp4"
-      result "dsv41-tp4" "stage" "-" "-"; return 1
+    if [[ ! -f "$HERE/lane-profiles/$builder" ]]; then
+      note_fail "profile" "builder missing: $HERE/lane-profiles/$builder"
+      NEXT_CMD="spark-lane stage $lane"
+      result "$lane" "stage" "-" "-"; return 1
     fi
-    scp -q -o ConnectTimeout=10 "$HERE/lane-profiles/build-dsv41-tp4-env.py" "$DSV41_HEAD_HOST:$TP4_KIT/"
-    prof="$(sshx "$DSV41_HEAD_HOST" "cd $TP4_KIT && python3 build-dsv41-tp4-env.py ." 2>&1)"
+    scp -q -o ConnectTimeout=10 "$HERE/lane-profiles/$builder" "$DSV41_HEAD_HOST:$kit/"
+    prof="$(sshx "$DSV41_HEAD_HOST" "cd $kit && python3 $builder ." 2>&1)"
     printf '%s\n' "$prof" | sed 's/^/        /'
     if ! printf '%s' "$prof" | grep -q '^RESULT: PASS'; then
-      note_fail "profile" "builder refused to produce a valid .env.tp4 (see output above)"
-      NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $TP4_KIT && python3 build-dsv41-tp4-env.py .'"
-      result "dsv41-tp4" "stage" "-" "-"; return 1
+      note_fail "profile" "builder refused to produce a valid $envf (see output above)"
+      NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $kit && python3 $builder .'"
+      result "$lane" "stage" "-" "-"; return 1
     fi
     ok "profile built and self-verified"
   fi
@@ -2028,12 +2038,12 @@ stage_tp4() {
   if ! sshx "$DSV41_HEAD_HOST" "test -f $TP4_MODEL_DIR/config.json"; then
     note_fail "weights" "model dir missing on head ($DSV41_HEAD_HOST) -- this one actually needs a local copy"
     NEXT_CMD="spark-lane status   # stage weights on $DSV41_HEAD_HOST first (fabric transfer, not LAN)"
-    result "dsv41-tp4" "stage" "-" "-"; return 1
+    result "$lane" "stage" "-" "-"; return 1
   fi
   ok "head has the checkpoint; workers will mount it over NFS during 'up' (no local copy needed)"
 
-  result "dsv41-tp4" "stage" "-" "-"
-  NEXT_CMD="spark-lane up dsv41-tp4   # doctor -> build -> share/pack -> serve (detached). A cold build needs github.com + pypi.org and takes a long while; watch it with: spark-lane logs dsv41-tp4"
+  result "$lane" "stage" "-" "-"
+  NEXT_CMD="spark-lane up $lane   # doctor -> build -> share/pack -> serve (detached). A cold build needs github.com + pypi.org and takes a long while; watch it with: spark-lane logs $lane"
   return 0
 }
 
@@ -2119,7 +2129,7 @@ spark-lane — one-shot lane bring-up / teardown / rotation (DGX Spark fleet)
   spark-lane down  <lane>        park a lane       (verifies it really stopped)
   spark-lane verify <lane>       health only, changes nothing
   spark-lane rotate <lane>       park conflicting lanes, then bring this one up
-  spark-lane stage dsv41-tp4     clone + fleet profile + weight check (no serve)
+  spark-lane stage dsv41-tp3|dsv41-tp4   clone + fleet profile + weight check (no serve)
 
 lanes:
   comfy-engine      spark2        ComfyUI music/image/design/video -> $COMFY_URL
@@ -2199,8 +2209,8 @@ case "$ACT" in
     echo "${B}newest bring-up log on $host${N} (tail ${TAIL:-40})"
     sshx "$host" "f=\$(ls -1t $kit/lane-up-*.log 2>/dev/null | head -1); if [[ -n \"\$f\" ]]; then echo \"--- \$f\"; tail -${TAIL:-40} \"\$f\"; else echo 'no lane-up log yet'; fi" ;;
   stage)
-    [[ "$LANE" == "dsv41-tp4" ]] || { echo "only 'stage dsv41-tp4' is supported" >&2; exit 2; }
-    stage_tp4 ;;
+    [[ "$LANE" == "dsv41-tp3" || "$LANE" == "dsv41-tp4" ]] || { echo "only 'stage dsv41-tp3|dsv41-tp4' is supported" >&2; exit 2; }
+    stage_dsv41 "$LANE" ;;
   help|-h|--help) usage ;;
   *) echo "unknown action: $ACT" >&2; usage; exit 2 ;;
 esac
