@@ -1,4 +1,4 @@
-# dsv41-tp4: thinking on by default at effort 100 — STAGED, NOT DEPLOYED
+# dsv41-tp4: thinking on by default at effort 100 — DEPLOYED 2026-10-17 ~21:05 PDT
 
 Victor 2026-10-17: "Lane wide. But don't take it down yet. I got work happening. Max thinking...
 but look online to see what others are saying is better for this model."
@@ -46,3 +46,26 @@ Revert: `THINK_DEFAULT_EFFORT = "75"` in the builder, rerun, redeploy.
 3. `spark-lane up dsv41-tp4`, then confirm the three env vars are inside the container:
    `docker exec dsv41-head env | grep -E 'SGLANG_DEFAULT_THINKING|REASONING_EFFORT'`.
 4. Re-run the canary and a silent (no thinking flag) request: it must now return reasoning.
+
+
+---
+## DEPLOYED + the bug the first flip exposed
+First flip (env only) left silent requests broken: SGLang reads SGLANG_DEFAULT_THINKING only in the
+prompt encoder (serving_chat.py:1409); the reasoning-parser gate `_get_reasoning_from_request`
+(line 2807) never does. Silent request = encoded as thinking, parsed as chat -> the whole trace landed
+in `content`, `reasoning_content` empty.
+Fix: `apply_default_thinking()` in adapter/encoding_compat.py (fork branch fleet-1017, commit 830e970),
+wired into the existing `_process_messages` wrapper so it runs before both consumers. Explicit
+`thinking`/`enable_thinking` (either value) always wins. 4 new tests, 10/10 pass. The adapter is COPYed
+into the image, so shipping it needs a rebuild (down + build + up, ~13 min warm; the first env-only flip was 4 min).
+
+Verified live after the rebuild (all 4 ranks have the code; env inside head = DEFAULT_THINKING=1, EFFORT=100, MAX_NEW=65536):
+- silent request: reasoning_content 125 chars, clean answer (was: 0 chars + reasoning in content)
+- thinking:true / +max: identical; thinking:false: reasoning off (442-char plain answer)
+- streaming silent: reasoning and content arrive in separate fields
+- tools silent: tool call returned; tool round-trip answered; no reasoning_content echo required
+- hard proof, no max_tokens: 25 s, 2,633 tokens, finish=stop, 3,911 reasoning chars (cap 65,536 not near)
+Note: a silent tool-call turn returned empty reasoning (rc=0); with explicit effort it returned ~100 chars. Not a failure, not explained.
+
+Rollback: `dsv41-4x-spark:canary-roce-pre-adapterfix` on all 4 nodes (env-only image); `.env.tp4.pre-maxthink-20261017-2012` on spark3.
+`down` path now exercised twice on the 1017 kit: PASS both times, dsv41-nfs exporter survived.
