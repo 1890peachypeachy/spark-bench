@@ -136,6 +136,33 @@ def main():
         lines[live],
     )
 
+    # 2b-bis. THINKING, LANE-WIDE (Victor, 2026-10-17). Profile edit only — this
+    #     builder never restarts anything. Two independent switches are required:
+    #       SGLANG_DEFAULT_THINKING=1 — SGLang's OpenAI path reads
+    #           request.chat_template_kwargs["thinking"], else this env
+    #           (serving_chat.py:1409). Unset means False, so a client that does
+    #           not send the flag gets NO reasoning at all. This is the switch that
+    #           makes thinking the lane default instead of a per-request opt-in.
+    #       SGLANG_DSV41_REASONING_EFFORT=100 — the budget written into the prompt
+    #           (upstream pins 75: their measured choice, see the comment there).
+    #     Both ride in EXTRA_CONTAINER_ENV because that is what every rank gets.
+    #     DSV41_MAX_NEW_TOKENS is raised with them: effort 100 spends many more
+    #     completion tokens and the 32768 cap truncates long traces mid-answer.
+    #     Revert: set THINK_DEFAULT_EFFORT back to "75" and rerun the builder.
+    THINK_DEFAULT_EFFORT = "100"
+    THINK_MAX_NEW_TOKENS = "65536"
+    for key in ("SGLANG_DEFAULT_THINKING", "SGLANG_DSV41_REASONING_EFFORT"):
+        lines = [l for l in lines if not re.match(rf"^{key}=", l)]
+    # Re-find the live line by prefix: the filter above shifts indices, so the
+    # `live` index computed before it is stale.
+    live = next(i for i, l in enumerate(lines) if l.startswith("EXTRA_CONTAINER_ENV="))
+    lines[live] = lines[live].rstrip('"') + (
+        f' SGLANG_DEFAULT_THINKING=1 SGLANG_DSV41_REASONING_EFFORT={THINK_DEFAULT_EFFORT}"'
+    )
+    for i, l in enumerate(lines):
+        if re.match(r"^DSV41_MAX_NEW_TOKENS=", l):
+            lines[i] = f"DSV41_MAX_NEW_TOKENS={THINK_MAX_NEW_TOKENS}"
+
     # 2c. v2.4 production block (README "Current results"): measured ONLY together with the
     #     canary-roce production line above. Uncomment it and drop the live defaults it replaces.
     for key in ("CHUNKED_PREFILL_SIZE", "MEM_FRACTION_STATIC", "HEAD_MEM_FRACTION_STATIC", "EXTRA_SGLANG_ARGS"):
@@ -189,6 +216,14 @@ def main():
         if needle.rstrip("=") not in line:
             bad.append(f"production EXTRA_CONTAINER_ENV lacks {needle}")
     print(f"  {'OK  ' if not bad else 'FAIL'} production line contains the EP1/b12x_next knobs")
+    for needle in ("SGLANG_DEFAULT_THINKING=1",
+                   f"SGLANG_DSV41_REASONING_EFFORT={THINK_DEFAULT_EFFORT}"):
+        if needle not in line:
+            bad.append(f"production EXTRA_CONTAINER_ENV lacks {needle}")
+    print(f"  {'OK  ' if not bad else 'FAIL'} thinking is on by default at effort {THINK_DEFAULT_EFFORT}")
+    if active.get("DSV41_MAX_NEW_TOKENS") != THINK_MAX_NEW_TOKENS:
+        bad.append(f"DSV41_MAX_NEW_TOKENS={active.get('DSV41_MAX_NEW_TOKENS')} "
+                   f"(want {THINK_MAX_NEW_TOKENS} for effort {THINK_DEFAULT_EFFORT})")
 
     # ── fleet identity contract ────────────────────────────────────────────────
     # A TP3<->TP4 rotation must not move the URL, the served name, or the auth
