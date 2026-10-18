@@ -28,7 +28,7 @@ OUT = os.path.join(KIT, ".env.tp4")
 # ── 1. fleet identity / topology / paths ─────────────────────────────────────
 # The consumer-facing endpoint. It must read the same before and after a rotation:
 # spark3 is the head in both profiles and PORT is pinned to 8000 below.
-ENDPOINT_NOTE = "http://100.99.120.29:8000/v1 (spark3 head, tailnet) — same URL and same served name on TP3 and TP4"
+ENDPOINT_NOTE = "http://100.99.120.29:8888/v1 (spark3 head, tailnet) — same URL and same served name (GLM-5.3-Flash-EXL3) as every fleet lane"
 # Head is spark3. Workers are spark1, spark2, spark4. Usernames differ per node on
 # our fleet, so WORKER_HOSTS carries user@host and the launcher must NOT prepend
 # WORKER_USER (see cmd_build in start.sh).
@@ -40,10 +40,22 @@ OVER = {
     "WORKER_USER_MAP": "10.73.0.1=spark,10.73.0.2=spark2,10.73.0.3=spark3,10.73.0.4=spark4",
     "SSH_IDENTITY": "$HOME/.ssh/id_ed25519_shared",
     "WORKER_DIR": "/var/tmp/dsv41-4x-spark",
-    "MODEL_DIR": "/var/tmp/models/DeepSeek-V4.1-Flash",
-    "COMMON_MODEL": "/var/tmp/models/DeepSeek-V4.1-Flash",
+    "MODEL_DIR": "/var/tmp/models/DeepSeek-V4.1-Flash-1017",
+    # COMMON_MODEL must NOT equal MODEL_DIR: start.sh runs `ln -sfn MODEL_DIR COMMON_MODEL`,
+    # which on an existing real dir drops a self-link INSIDE the checkpoint.
+    "COMMON_MODEL": "/var/tmp/DeepSeek-V4.1-Flash-1017",
+    # Pin the base image by digest, as the deployed kit did. The bare dev-dsv41 tag moves, and
+    # a tag-only ref is absent locally, so build would pull over the (starved) WAN. The digest
+    # is already present on all four nodes (verified 2026-10-17).
+    "BASE_IMAGE": "lmsysorg/sglang:dev-dsv41@sha256:3dbc313030a6ef2c5d7de8ecf48e9aece722694a82182cb618cc82b588816349",
+    "HF_REPO": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+    "HF_REVISION": "1bae0e1088993b9b82de08f59de5be5a34e42170",
+    # Engram shards are weight-dependent (all 48 shards changed in 1017): fresh dirs, never the old pack.
+    "ENGRAM_DIR": "$HOME/dsv41-engram-1017",
+    "WORKER_ENGRAM_DIR": "/var/tmp/dsv41-engram-1017",
+    "SERVED_MODEL_NAME": "GLM-5.3-Flash-EXL3",
     # ── 2. stable endpoint: clients keep using :8000/v1 across TP3<->TP4 swaps ──
-    "PORT": "8000",
+    "PORT": "8888",
     # ── 3. CX7 RoCE fabric (mirrors the proven values in the TP3 profile) ──────
     "FABRIC_IFACE": "enp1s0f1np1",
     "GLOO_SOCKET_IFNAME": "enp1s0f1np1",
@@ -66,7 +78,7 @@ OVER = {
     # weights served from the head over NFSv4 on the fabric
     "NFS_SHARE": "1",
     "NFS_VOLUME": "dsv41-weights-4x",
-    "NFS_EXPORT_NAME": "dsv41-native-4x",
+    "NFS_EXPORT_NAME": "DeepSeek-V4.1-Flash-1017",
     "NFS_SERVER_IPS": "10.73.0.3",
     "NFS_SERVER_IP_1": "10.73.0.3",
     "NFS_SERVER_IP_2": "10.73.0.3",
@@ -124,6 +136,17 @@ def main():
         lines[live],
     )
 
+    # 2c. v2.4 production block (README "Current results"): measured ONLY together with the
+    #     canary-roce production line above. Uncomment it and drop the live defaults it replaces.
+    for key in ("CHUNKED_PREFILL_SIZE", "MEM_FRACTION_STATIC", "HEAD_MEM_FRACTION_STATIC", "EXTRA_SGLANG_ARGS"):
+        cm = [i for i, l in enumerate(lines) if re.match(rf"^#{key}=", l)]
+        lv = [i for i, l in enumerate(lines) if re.match(rf"^{key}=", l)]
+        if not cm:
+            sys.exit(f"v2.4 block: no commented {key}= line in the example")
+        for i in lv:
+            lines[i] = "#" + lines[i]
+        lines[cm[-1]] = lines[cm[-1]][1:]
+
     out = "\n".join(lines).rstrip() + "\n"
     with open(OUT, "w") as fh:
         fh.write(out)
@@ -140,7 +163,7 @@ def main():
         ("HEAD_IP", "10.73.0.3"),
         ("WORKER_IPS", '"10.73.0.1 10.73.0.2 10.73.0.4"'),
         ("WORKER_HOSTS", '"spark@10.73.0.1 spark2@10.73.0.2 spark4@10.73.0.4"'),
-        ("PORT", "8000"),
+        ("PORT", "8888"),
         ("TP_SIZE", "4"),
         ("EP_SIZE", "1"),
         ("IMAGE", "dsv41-4x-spark:canary-roce"),
@@ -152,6 +175,8 @@ def main():
           f"({len(extra_live)} live, must be 1)")
     if len(extra_live) != 1:
         bad.append(f"expected exactly 1 live EXTRA_CONTAINER_ENV, found {len(extra_live)}")
+    checks += [("CHUNKED_PREFILL_SIZE", "8192"), ("MEM_FRACTION_STATIC", "0.78"), ("HEAD_MEM_FRACTION_STATIC", "0.78"),
+               ("SERVED_MODEL_NAME", "GLM-5.3-Flash-EXL3"), ("HF_REVISION", "1bae0e1088993b9b82de08f59de5be5a34e42170")]
     for k, want in checks:
         got = active.get(k, "<missing>")
         flag = "OK  " if got == want else "FAIL"
@@ -170,7 +195,7 @@ def main():
     # story for any client. The URL is pinned by PORT (checked above) and the head
     # is spark3 in both profiles; the served name and the absence of auth are
     # launcher defaults that these files must not override.
-    IDENTITY = "deepseek-v4.1-flash"
+    IDENTITY = "GLM-5.3-Flash-EXL3"
     served = active.get("SERVED_MODEL_NAME", IDENTITY) or IDENTITY
     if served != IDENTITY:
         bad.append(f"SERVED_MODEL_NAME={served} — must stay {IDENTITY}, or clients get repointed")
