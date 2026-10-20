@@ -46,7 +46,7 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine)](#dsv41-1017)** | 🟢 **live** since 2026-10-17 · [why](#now-serving) | 152 code tok/s (162 for 4) · 67 prose · cold 200K prompt 35.7 s · **512K context** (passkey at 520K) · MMLU 89.5 % · 3D 98 + 108/180 |
+| 🐋 | **[DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine)](#dsv41-1017)** | 🟢 **live** since 2026-10-17 · [why](#now-serving) | 152 code tok/s (162 for 4) · **296 tok/s aggregate with 8 streams** · 67 prose · cold 200K prompt 35.7 s · **512K context** (passkey at 520K) · MMLU 89.5 % · 3D 98 + 108/180 |
 | 🐋 | [DeepSeek V4.1 Flash · TensorFold (Zig engine)](#dsv41-tensorfold) | 🟡 previous (live 2026-10-11 → 2026-10-15 and 2026-10-16 → 2026-10-17) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
 | 🐉 | [GLM-5.3-Flash FP4 · vLLM](#glm53-fp4-vllm) | 🔵 compared 2026-10-17, not serving | 82 code tok/s · 37 prose · MMLU 88.0 % · 3D 103 + 98/180 |
 | 🟩 | [Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold) | 🟡 previous (live 2026-10-15 → 2026-10-16) · [why not now](#now-serving-20261016) | 185 code tok/s · 95 prose · 16 conversations × 307K tokens · 214–230 tok/s for 16 |
@@ -140,6 +140,54 @@ rank, no engine change ([how, for any context](https://github.com/neko-legends/t
   precision on a hosted API, as a compression check: 90.0 % vs 88.5 % for our older 2.9-bit pack, which mixes the
   uncensoring of that pack with the quantization cost. 1017 at 2.9 bits is within 0.5 points of it.
 - Vision text reading is exact; text box positions are 8–63 px off (GLM: 1–2 px).
+
+<a id="dsv41-1017-slots"></a>
+
+#### 🧵 Concurrency: 8 slots — 296 tok/s aggregate (2026-10-20)
+
+Four slots were a scheduling choice, not a limit. Serving `TF_DSV41_SLOTS=8` on the **same** pack, **same** rebased
+engine and the **same** 512K asset fill needed **no new kernels**: the 8-slot `aot-needs` sweep enumerates exactly the
+specialization set the 4-slot fill already had — 166 keys, **0 added, 0 gone**, `compiled: 0, failed: []` on all four
+ranks. Boot reports `"max": 8`, four ranks, 0 errors.
+
+Rows per round = live slots. Same 5,284-token prompt on every stream, warm, greedy:
+
+| live slots (rows/round) | one stream (tok/s) | aggregate (tok/s) | × a solo stream | what one extra row buys |
+|---:|---:|---:|---:|---:|
+| 1 (idle) | 65.5 | 65.5 | 1.00× | — |
+| 4 | 51.3 | **201** | 3.07× | 69 % of a solo stream |
+| 8 | 38.9 | **296–301** | 4.53× | 36 % of a solo stream |
+
+Mixed workload (2× short chat + code + prose per pass, every request salted):
+
+| load | 4 slots | 8 slots |
+|---|---:|---:|
+| 4 streams, aggregate | 143.8 | 142.8 (unchanged) |
+| 8 streams, aggregate | – | **181** (+26 %) |
+| 8 streams, per stream | – | 41 / 16–20 (by case) |
+
+Single stream and prompt reading are untouched, which is the point of a slot change:
+
+| case | 4 slots | 8 slots |
+|---|---:|---:|
+| short chat · code · prose, 1 stream | 69.5 / 127.2 / 63.7 | 69.7 / 125.9 / 63.8 |
+| prefill 5,296 tok | 2,907 tok/s | 2,919 |
+| prefill 21,058 tok | 5,028 tok/s | 5,023 |
+| KV pool | 1,201,152 tokens = 2.00 GiB (1,790 B/token) | **same** — slots don't multiply the pool |
+| memory headroom, tightest rank | — | 20.5 GiB free |
+
+**What the numbers say.** Doubling the rows per round buys +47 %, not +100 %: the round's own cost grows with the rows
+it carries (attention over more rows, MoE gather/sort, TP all-gather payload), so a round returns more tokens but not
+proportionally more. The ceiling here is **round synchronisation, not slot count** — if slots were the limit, one
+stream would have stayed at ~65 tok/s while aggregate scaled, and instead it falls 65.5 → 51.3 → 38.9. Two thirds of
+the remaining gap is the round barrier, and the largest single component inside it is expert imbalance: ranks 0 and 1
+own 640 of 2,304 expert columns while ranks 2 and 3 own 512, so every round waits on the same two ranks.
+
+<sub>Ruler: protocol v3 — temperature 0, greedy, warmup, median of 3 per cell, prefills salted with `cached_tokens: 0`
+verified. This is **not** the single-sample 320-token speed test behind the 151.8 / 162.4 rows above, so the two do not
+compare across; compare this table only with itself.</sub>
+
+🧾 Raw: `~/neko-mmlu-bench/perf-sweep/*slot8*.jsonl` on rank 0, sweeping script `perf_sweep.py` + `parallel_sweep.py`.
 
 📈 [qbench chart vs the previous pack](results/dsv41-1017-20261017/qbench-dsv41-vs-1017.png) · 🧾 [Results and notes](results/dsv41-1017-20261017/README.md) ·
 raw: [`qbench-dsv41-1017-zig-20261017.json`](results/dsv41-1017-20261017/qbench-dsv41-1017-zig-20261017.json)
