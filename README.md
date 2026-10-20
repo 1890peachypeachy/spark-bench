@@ -179,9 +179,14 @@ Single stream and prompt reading are untouched, which is the point of a slot cha
 **What the numbers say.** Doubling the rows per round buys +47 %, not +100 %: the round's own cost grows with the rows
 it carries (attention over more rows, MoE gather/sort, TP all-gather payload), so a round returns more tokens but not
 proportionally more. The ceiling here is **round synchronisation, not slot count** — if slots were the limit, one
-stream would have stayed at ~65 tok/s while aggregate scaled, and instead it falls 65.5 → 51.3 → 38.9. Two thirds of
-the remaining gap is the round barrier, and the largest single component inside it is expert imbalance: ranks 0 and 1
-own 640 of 2,304 expert columns while ranks 2 and 3 own 512, so every round waits on the same two ranks.
+stream would have stayed at ~65 tok/s while aggregate scaled, and instead it falls 65.5 → 51.3 → 38.9.
+
+Expert placement is *not* the lever inside that barrier, and we checked rather than assumed. Ranks 0 and 1 hold 640 of
+the 2,304 expert columns and ranks 2 and 3 hold 512, which looks like an obvious 10 % tax on the gating rank — but the
+split is on whole 128-value Hadamard blocks, and 18 blocks do not divide by four, so an even 576/576/576/576 plan is
+not expressible (padding to 640 each leaves the gating rank at 640 and adds 11 % expert bytes for nothing). The
+achievable variant, per-expert rotation of the two spare blocks, measures ~1–1.5 % at four streams on our previous
+engine — about 0.9 ms inside a ~45 ms round here. Reported as small, because it is small.
 
 <sub>Ruler: protocol v3 — temperature 0, greedy, warmup, median of 3 per cell, prefills salted with `cached_tokens: 0`
 verified. This is **not** the single-sample 320-token speed test behind the 151.8 / 162.4 rows above, so the two do not
