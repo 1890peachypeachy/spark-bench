@@ -60,10 +60,10 @@ OVER = {
     "FABRIC_IFACE": "enp1s0f1np1",
     "GLOO_SOCKET_IFNAME": "enp1s0f1np1",
     "NCCL_SOCKET_IFNAME": "enp1s0f1np1",
-    "IB_HCA": "rocep1s0f1",
-    "NCCL_IB_HCA": "rocep1s0f1",
+    "IB_HCA": "rocep1s0f1,roceP2p1s0f1",
+    "NCCL_IB_HCA": "rocep1s0f1,roceP2p1s0f1",
     "NCCL_IB_GID_INDEX": "3",
-    "NCCL_IB_ADDR_RANGE": "10.73.0.0/24",
+    "NCCL_IB_ADDR_RANGE": "10.72.0.0/14",  # covers 10.73 (rail 0) and 10.74 (rail 1)
     "NCCL_NET": "IB",
     "NCCL_IB_DISABLE": "0",
     "NCCL_P2P_DISABLE": "1",
@@ -132,7 +132,7 @@ def main():
     #     in the live EXTRA_CONTAINER_ENV line rather than leave upstream's value.
     lines[live] = re.sub(
         r"B12X_ROCE_HCA=[^ ]+",
-        "B12X_ROCE_HCA=rocep1s0f1",
+        "B12X_ROCE_HCA=rocep1s0f1,roceP2p1s0f1",
         lines[live],
     )
 
@@ -149,7 +149,7 @@ def main():
     #     DSV41_MAX_NEW_TOKENS is raised with them: effort 100 spends many more
     #     completion tokens and the 32768 cap truncates long traces mid-answer.
     #     Revert: set THINK_DEFAULT_EFFORT back to "75" and rerun the builder.
-    THINK_DEFAULT_EFFORT = "100"
+    THINK_DEFAULT_EFFORT = "75"
     THINK_MAX_NEW_TOKENS = "65536"
     for key in ("SGLANG_DEFAULT_THINKING", "SGLANG_DSV41_REASONING_EFFORT"):
         lines = [l for l in lines if not re.match(rf"^{key}=", l)]

@@ -1,0 +1,27 @@
+{
+  "ts": "2026-10-20T16:52:38.240333",
+  "endpoint": "http://100.99.120.29:8888/v1",
+  "model": "GLM-5.3-Flash-EXL3",
+  "agents": 1,
+  "max_tokens": 1500,
+  "thinking": "off",
+  "label": "tp3-c1-r3",
+  "runs": [
+    {
+      "wall_s": 35.368,
+      "ttft_s": 0.247,
+      "completion_tokens": 1500,
+      "decode_s": 35.121,
+      "tok_s": 42.68,
+      "err": null
+    }
+  ],
+  "wall_s": 35.38,
+  "total_completion_tokens": 1500,
+  "aggregate_tok_s": 42.4,
+  "per_agent_tok_s": [
+    42.68
+  ],
+  "per_agent_median_tok_s": 42.7,
+  "per_agent_min_tok_s": 42.7
+}

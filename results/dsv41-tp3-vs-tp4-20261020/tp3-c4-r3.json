@@ -1,0 +1,54 @@
+{
+  "ts": "2026-10-20T16:55:47.127191",
+  "endpoint": "http://100.99.120.29:8888/v1",
+  "model": "GLM-5.3-Flash-EXL3",
+  "agents": 4,
+  "max_tokens": 1500,
+  "thinking": "off",
+  "label": "tp3-c4-r3",
+  "runs": [
+    {
+      "wall_s": 69.636,
+      "ttft_s": 0.358,
+      "completion_tokens": 1500,
+      "decode_s": 69.278,
+      "tok_s": 21.64,
+      "err": null
+    },
+    {
+      "wall_s": 51.297,
+      "ttft_s": 0.358,
+      "completion_tokens": 1500,
+      "decode_s": 50.94,
+      "tok_s": 29.43,
+      "err": null
+    },
+    {
+      "wall_s": 49.585,
+      "ttft_s": 0.357,
+      "completion_tokens": 1500,
+      "decode_s": 49.227,
+      "tok_s": 30.45,
+      "err": null
+    },
+    {
+      "wall_s": 69.105,
+      "ttft_s": 0.672,
+      "completion_tokens": 1500,
+      "decode_s": 68.433,
+      "tok_s": 21.9,
+      "err": null
+    }
+  ],
+  "wall_s": 69.64,
+  "total_completion_tokens": 6000,
+  "aggregate_tok_s": 86.2,
+  "per_agent_tok_s": [
+    21.64,
+    29.43,
+    30.45,
+    21.9
+  ],
+  "per_agent_median_tok_s": 25.7,
+  "per_agent_min_tok_s": 21.6
+}

@@ -1,0 +1,10 @@
+# measured
+prose c1 {'concurrency': 1, 'totalPrefillTokens': 32, 'totalDecodeTokens': 255, 'totalCompletionTokens': 256}
+prose c1 {'concurrency': 1, 'totalPrefillTokens': 32, 'totalDecodeTokens': 255, 'totalCompletionTokens': 256}
+prose c1 {'concurrency': 1, 'totalPrefillTokens': 32, 'totalDecodeTokens': 255, 'totalCompletionTokens': 256}
+prose c4 {'concurrency': 4, 'totalPrefillTokens': 156, 'totalDecodeTokens': 1020, 'totalCompletionTokens': 1024}
+prose c4 {'concurrency': 4, 'totalPrefillTokens': 156, 'totalDecodeTokens': 1020, 'totalCompletionTokens': 1024}
+prose c8 {'concurrency': 8, 'totalPrefillTokens': 312, 'totalDecodeTokens': 2040, 'totalCompletionTokens': 2048}
+prose c16 {'concurrency': 16, 'totalPrefillTokens': 624, 'totalDecodeTokens': 4080, 'totalCompletionTokens': 4096}
+code c1 {'concurrency': 1, 'totalPrefillTokens': 59, 'totalDecodeTokens': 255, 'totalCompletionTokens': 256}
+json c1 {'concurrency': 1, 'totalPrefillTokens': 52, 'totalDecodeTokens': 255, 'totalCompletionTokens': 256}
