@@ -47,7 +47,8 @@ One cluster, one model at a time. Click a lane for its recipe.
 
 | | Lane | Status | Best numbers |
 | :-: | --- | --- | --- |
-| 🐋 | **[DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine)](#dsv41-1017)** | 🟢 **live** since 2026-10-17 · [why](#now-serving) | 152 code tok/s (162 for 4) · **296 tok/s aggregate with 8 streams** · 67 prose · cold 200K prompt 35.7 s · **512K context** (passkey at 520K) · MMLU 89.5 % · 3D 98 + 108/180 |
+| 🐋 | **[DeepSeek V4.1 Flash 1017 · our TensorFold 1.1.2 rebase (Zig engine)](#dsv41-1017-tf112)** | 🟢 **live** since 2026-10-22 · [why](#dsv41-1017-tf112) | **313 tok/s aggregate with 8 streams** · 212 with 4 · warm boot 166 s · 15/15 determinism hashes unchanged · same pack, **512K context** · single-stream code/prose not yet re-measured on this build |
+| 🐋 | [DeepSeek V4.1 Flash 1017 · TensorFold 1.1.0-era engine (Zig)](#dsv41-1017) | 🟡 previous (live 2026-10-17 → 2026-10-22) | 152 code tok/s (162 for 4) · 296 tok/s aggregate with 8 streams · 67 prose · cold 200K prompt 35.7 s · 512K context (passkey at 520K) · MMLU 89.5 % · 3D 98 + 108/180 |
 | 🐋 | [DeepSeek V4.1 Flash · TensorFold (Zig engine)](#dsv41-tensorfold) | 🟡 previous (live 2026-10-11 → 2026-10-15 and 2026-10-16 → 2026-10-17) | 129 code tok/s (218 for 4) · 66 prose (138 for 4) · cold 154K prompt 30 s |
 | 🐉 | [GLM-5.3-Flash FP4 · vLLM](#glm53-fp4-vllm) | 🔵 compared 2026-10-17, not serving | 82 code tok/s · 37 prose · MMLU 88.0 % · 3D 103 + 98/180 |
 | 🟩 | [Nemotron 3.5 Super VL · TensorFold (Zig engine)](#nemotron-tensorfold) | 🟡 previous (live 2026-10-15 → 2026-10-16) · [why not now](#now-serving-20261016) | 185 code tok/s · 95 prose · 16 conversations × 307K tokens · 214–230 tok/s for 16 |
@@ -91,7 +92,9 @@ That history is the point. When a new model comes out, the next engineer (or the
 
 <a id="dsv41-1017"></a>
 
-## 🐋 DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine) · 🟢 live since 2026-10-17
+## 🐋 DeepSeek V4.1 Flash 1017 · TensorFold (Zig engine) · live 2026-10-17 → 2026-10-22
+
+> Since 2026-10-22 this lane serves on our **TensorFold 1.1.2 rebase** — see [the 1.1.2 entry](#dsv41-1017-tf112) for its numbers. The figures in this section were measured on the earlier engine and are kept as the record.
 
 DeepSeek's official `deepseek-ai/DeepSeek-V4.1-Flash-1017`, as the third-party 2.9 bpw EXL3 quant
 `LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-2.9bpw` (rev `afc7aa0a`), on the same engine, image and serving settings as the
