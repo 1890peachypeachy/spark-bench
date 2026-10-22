@@ -198,6 +198,14 @@ compare across; compare this table only with itself.</sub>
 
 #### 🔁 Engine: the 1.1.2 rebase on 4× Spark, and what 1.1.1 cost on the way (2026-10-22)
 
+> **The engine is part of the recipe, and ours is not the upstream release.** Every number below comes from our own
+> build: a rebase of TensorFold 1.1.2 (upstream `4ff78441`) plus our TP=4 delta, on our four Sparks and our 2.9 bpw
+> pack. Upstream 1.1.2 on its own does **not** run DeepSeek-V4.1 at four ranks — it refuses the uneven expert shard at
+> boot and plans no prefill segment at world 4 (both still open upstream, tracked in
+> [neko-legends/TensorFold](https://github.com/neko-legends/TensorFold)). We have tested only this build and this pack.
+> Another TensorFold version may behave differently, or may not run at all, so treat these figures as belonging to this
+> exact engine, not to TensorFold in general.
+
 The 1017 lane now serves on our rebase of **TensorFold 1.1.2** (upstream `4ff78441` + our TP=4 delta, branch
 [`tf112-rebase-20261022`](https://github.com/neko-legends/tensorfold-4x-sparks/tree/tf112-rebase-20261022)). Same pack,
 same cells, clean boots for every row:
