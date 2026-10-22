@@ -8,17 +8,18 @@
 <p align="center">
   <img alt="cluster: 4× DGX Spark" src="https://img.shields.io/badge/cluster-4%C3%97%20DGX%20Spark-76b900">
   <img alt="serving: DeepSeek V4.1 Flash 1017 on TensorFold" src="https://img.shields.io/badge/serving-DeepSeek%20V4.1%20Flash%201017%20%C2%B7%20TensorFold-2a78d6">
-  <img alt="updated 2026-10-17" src="https://img.shields.io/badge/updated-2026--10--17-8a8984">
+  <img alt="updated 2026-10-22" src="https://img.shields.io/badge/updated-2026--10--22-8a8984">
 </p>
 
 <a id="now-serving"></a>
 
-## 📌 Now serving: DeepSeek V4.1 Flash 1017 (2026-10-17)
+## 📌 Now serving: DeepSeek V4.1 Flash 1017 on our TensorFold 1.1.2 rebase (2026-10-22)
 
 The Sparks now serve **DeepSeek V4.1 Flash 1017**, DeepSeek's official 1017 checkpoint, as a 2.9-bit EXL3 quant on our
-**TensorFold Zig engine** (TP=4 over RoCE). It is a **config-only drop-in**: the same engine, image and serving settings
-as the previous DeepSeek pack, with three weight-derived inputs rebuilt from the 1017 base (the Engram tables, the
-image-routing bias and the prepared layer folders). No code change, no new image.
+**TensorFold Zig engine** (TP=4 over RoCE), now on our **TensorFold 1.1.2 rebase** — 313 tok/s aggregate at 8 streams,
+166 s warm boot, all 15 determinism hashes unchanged from the engine it replaced (details in
+[the 1.1.2 entry below](#dsv41-1017-tf112)). Serving the 1017 pack is a **config-only drop-in**: three weight-derived
+inputs rebuilt from the 1017 base (the Engram tables, the image-routing bias and the prepared layer folders).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/3d-headline-dark-20261017.png">
