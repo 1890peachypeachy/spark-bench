@@ -194,6 +194,48 @@ compare across; compare this table only with itself.</sub>
 
 🧾 Raw: `~/neko-mmlu-bench/perf-sweep/*slot8*.jsonl` on rank 0, sweeping script `perf_sweep.py` + `parallel_sweep.py`.
 
+<a id="dsv41-1017-tf112"></a>
+
+#### 🔁 Engine: the 1.1.2 rebase on 4× Spark, and what 1.1.1 cost on the way (2026-10-22)
+
+The 1017 lane now serves on our rebase of **TensorFold 1.1.2** (upstream `4ff78441` + our TP=4 delta, branch
+[`tf112-rebase-20261022`](https://github.com/neko-legends/tensorfold-4x-sparks/tree/tf112-rebase-20261022)). Same pack,
+same cells, clean boots for every row:
+
+| engine | 8 streams busy (tok/s) | 4 streams busy (tok/s) | boot (s) | what the step cost or recovered |
+|---|---:|---:|---:|---|
+| 1.1.0 (previous live engine, control) | 315.9 / 316.1 / 317.0 | – | 166–174 | – |
+| 1.1.1 rebase, as first booted | 277.8 | – | **713–721** | −12 % throughput, boot 4.3× the control |
+| 1.1.1 after fixes (boot 9) | 310.58 / 313.27 | 209–212 | 162–167 (ready 161) | throughput back within ~1–2 %, boot back to the control |
+| **1.1.2 rebase (now serving)** | **313.48** | 209.43 / 211.61 | **166** wall (ready after 161) | nothing lost vs 1.1.1 fixed |
+
+![TensorFold 1.1.0 → 1.1.1 → 1.1.2 on 4× DGX Spark: 8-stream throughput and boot time](results/dsv41-tf112-rebase-20261022/versions-112.png)
+
+**The 717 s boot.** The 1.1.1 rebase, as first booted, hashed the pack's digest **three times** at boot and read
+**717.8 GB** from disk to do it. After the fix the boot reads 86.5 GB (`rchar`) and is ready in 161 s. On 1.1.2 it
+reads 86.55 GB and the digest record is accepted as is (0 built, 44 read). The lesson: when boot time jumps after a
+rebase, check the bytes read before you profile anything; a boot that reads the pack several times shows up there
+first.
+
+**What upstream 1.1.2 changed for DeepSeek: nothing.** Not one of the 201 upstream commits from 1.1.1 to 1.1.2
+touches the DeepSeek family (`git rev-list --count d1018b31..4ff78441 -- zig/src/families/deepseek_v41` = 0). The measured proof
+matches: against 1.1.1 (fixed), prefill 32K −0.6 % and 8K −0.6 %; **all 15 determinism hashes identical**; a JSON
+request returns 200 and parses; the picture check answers "Blue and red"; 0 panics on all four ranks; 0 `BadBlob`.
+So 1.1.2 does **not** fix four-rank prefill. Our own world-4 fixes are still needed. The rebase needed one fix of its
+own: upstream changed the generic text render to return `Rendered`, which our DeepSeek renderer did not, so the
+CPU server tests did not compile until it did.
+
+**Open findings (not fixed):**
+- `TF_DSV41_TXN_KEEP_SKIP=1` changes the restored continuation at deep restore (hash `7891662f` vs `bcf55924` at
+  `=0`). It is our flag, not the rebase's; the serving config ships `=0`.
+- Cross-restart NVMe session restore never runs: nothing calls `Store.reconcile` / `disk.scan` at boot, so the disk
+  tier does nothing in production unless `SESSION_RAM_MIB` / `SESSION_RESIDENT` are set. Inherited, not a
+  regression.
+
+<sub>8 / 4 streams busy = steady aggregate decode with every stream on an identical prompt, clean boot. Boot = start to
+the engine's `ready after` line. Two or three samples where shown, otherwise one; use this table to compare engine
+versions, not other rulers in this lane.</sub>
+
 📈 [qbench chart vs the previous pack](results/dsv41-1017-20261017/qbench-dsv41-vs-1017.png) · 🧾 [Results and notes](results/dsv41-1017-20261017/README.md) ·
 raw: [`qbench-dsv41-1017-zig-20261017.json`](results/dsv41-1017-20261017/qbench-dsv41-1017-zig-20261017.json)
 
