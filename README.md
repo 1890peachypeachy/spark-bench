@@ -166,6 +166,26 @@ Mixed workload (2× short chat + code + prose per pass, every request salted):
 | 8 streams, aggregate | – | **181** (+26 %) |
 | 8 streams, per stream | – | 41 / 16–20 (by case) |
 
+#### 🧵 Same 8 slots on the 1.1.2 rebase — 313 tok/s aggregate (2026-10-22)
+
+The table above was measured on the engine we ran before the rebases. Re-running the same shape on the **1.1.2 rebase**
+(our `tf112-rebase-20261022` build, same pack, same 8 slots) moves the aggregate up and keeps every check clean. Warm,
+greedy, identical prompts per cell:
+
+| load | aggregate (tok/s) | notes |
+|---|---:|---|
+| 8 streams, steady | **313.48** | fairness 1.0, ttft 0.766 s, wall 130.66 s for the cell |
+| 8 streams, cold first cell | 163.29 | first pass after boot, still warming |
+| 4 streams, steady | 209.43 / 211.61 | two runs, fairness 1.0 |
+| one stream | *not re-measured* | the 65.5 tok/s single-stream figure above is from the pre-rebase engine |
+
+Against the same-day control (the engine we shipped before this work, 315.9 / 316.1 / 317.0 at 8 streams) the rebase is
+**within ~1 %**, and boot stays at 166 s (ready after 161 s) with a digest record that is read, not rebuilt. All 15
+determinism hashes matched the previous engine on the same prompts, `BadBlob` count 0, and panics 0 on all four ranks.
+
+Single-stream and mixed-workload cells for this build were not re-run, so the "one stream" and mixed rows above still
+describe the pre-rebase engine. Treat the aggregate as the like-for-like number and the rest as older context.
+
 Single stream and prompt reading are untouched, which is the point of a slot change:
 
 | case | 4 slots | 8 slots |
