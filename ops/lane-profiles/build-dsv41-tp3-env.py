@@ -68,6 +68,21 @@ OVER = {
 FORBIDDEN = ("NFS_DEVICE", "NFS_REUSE_EXPORT")
 
 
+def ensure_metrics_flag(lines):
+    """Fleet rule (2026-10-21): every lane serves Prometheus /metrics. sparkDash's token ledger
+    diffs the engine's cumulative counters; without --enable-metrics SGLang has no /metrics and
+    the ledger silently records nothing. Appends the flag to the ACTIVE EXTRA_SGLANG_ARGS line
+    (idempotent); adds the line if the example has none."""
+    for i, l in enumerate(lines):
+        m = re.match(r'^EXTRA_SGLANG_ARGS="(.*)"\s*$', l)
+        if m:
+            if "--enable-metrics" not in m.group(1):
+                lines[i] = 'EXTRA_SGLANG_ARGS="%s --enable-metrics"' % m.group(1).strip()
+            return lines
+    lines.append('EXTRA_SGLANG_ARGS="--enable-metrics"')
+    return lines
+
+
 def main():
     with open(EXAMPLE) as fh:
         lines = fh.read().splitlines()
@@ -84,6 +99,7 @@ def main():
         lines.append("# -- fleet overrides added by spark-bench build-dsv41-tp3-env.py --")
         lines.extend(f"{k}={OVER[k]}" for k in missing)
 
+    lines = ensure_metrics_flag(lines)
     with open(OUT, "w") as fh:
         fh.write("\n".join(lines).rstrip() + "\n")
 

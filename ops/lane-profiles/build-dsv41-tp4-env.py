@@ -102,6 +102,21 @@ def activate_last_extra_container_env(lines):
     return lines, live
 
 
+def ensure_metrics_flag(lines):
+    """Fleet rule (2026-10-21): every lane serves Prometheus /metrics. sparkDash's token ledger
+    diffs the engine's cumulative counters; without --enable-metrics SGLang has no /metrics and
+    the ledger silently records nothing. Appends the flag to the ACTIVE EXTRA_SGLANG_ARGS line
+    (idempotent); adds the line if the example has none."""
+    for i, l in enumerate(lines):
+        m = re.match(r'^EXTRA_SGLANG_ARGS="(.*)"\s*$', l)
+        if m:
+            if "--enable-metrics" not in m.group(1):
+                lines[i] = 'EXTRA_SGLANG_ARGS="%s --enable-metrics"' % m.group(1).strip()
+            return lines
+    lines.append('EXTRA_SGLANG_ARGS="--enable-metrics"')
+    return lines
+
+
 def main():
     with open(EXAMPLE) as fh:
         text = fh.read()
@@ -174,6 +189,7 @@ def main():
             lines[i] = "#" + lines[i]
         lines[cm[-1]] = lines[cm[-1]][1:]
 
+    lines = ensure_metrics_flag(lines)
     out = "\n".join(lines).rstrip() + "\n"
     with open(OUT, "w") as fh:
         fh.write(out)
