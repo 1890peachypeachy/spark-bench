@@ -8,11 +8,21 @@ against the manifest built from the pinned revision's tree API.
 Writes VERIFIED.txt with a pass/fail line per file and a final summary.
 usage: m31_verify.py <model-dir> <manifest.json> <state-dir> <landing-tag> <helper1> [<helper2> ...]
 """
-import hashlib, json, os, sys, time
+import hashlib, json, os, subprocess, sys, time
 
 dest, manifest_path, state = sys.argv[1:4]
 landing = sys.argv[4]
 helpers = sys.argv[5:]
+
+# helper tag -> fabric address (nodes cannot resolve the Mac's ssh aliases)
+FABRIC = {"spark1": "10.73.0.1", "spark2": "10.73.0.2",
+          "spark3": "10.73.0.3", "spark4": "10.73.0.4"}
+HELPER_USER = {"spark1": "spark", "spark2": "spark2",
+               "spark3": "spark3", "spark4": "spark4"}
+
+
+def fabric_addr(tag):
+    return f"{HELPER_USER.get(tag, tag)}@{FABRIC.get(tag, tag)}"
 entries = json.load(open(manifest_path))
 
 def need(path, timeout_h):
@@ -23,6 +33,27 @@ def need(path, timeout_h):
         time.sleep(60)
     return True
 
+
+def remote_marker(host, marker, timeout_h):
+    """Helper half-markers are written ON the helper, never replicated to the landing
+    node. Waiting for them locally deadlocks the verifier forever.
+    Addresses go over the CX7 fabric (10.73.0.x) — the nodes do NOT resolve the Mac's
+    spark1/spark4 ssh aliases."""
+    t0 = time.time()
+    while True:
+        try:
+            r = subprocess.run(
+                ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", host,
+                 f"test -f ~/m31-state/{marker} && echo yes"],
+                capture_output=True, text=True, timeout=60)
+            if "yes" in r.stdout:
+                return True
+        except Exception:
+            pass
+        if time.time() - t0 > timeout_h * 3600:
+            return False
+        time.sleep(60)
+
 out_path = os.path.join(state, "VERIFIED.txt")
 log = open(out_path, "w")
 
@@ -31,12 +62,22 @@ def w(msg):
 
 w(f"=== verify start {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} ===")
 
-for tag in [landing] + helpers:
-    mk = os.path.join(state, f"HALF_DONE_{tag}")
-    if not need(mk, 24):
-        w(f"TIMEOUT waiting for HALF_DONE_{tag}")
-        w("RESULT: FAIL (missing half marker)"); log.close(); sys.exit(1)
-    w(f"marker ok: HALF_DONE_{tag}")
+# Landing node's own half-marker is LOCAL.
+mk = os.path.join(state, f"HALF_DONE_{landing}")
+if need(mk, 24):
+    w(f"marker ok: HALF_DONE_{landing} (local)")
+else:
+    w(f"TIMEOUT waiting for HALF_DONE_{landing} (local)")
+    w("RESULT: FAIL (missing landing half marker)"); log.close(); sys.exit(1)
+
+# Helper half-markers live ON the helper; only FANIN_DONE_<helper> reaches this node.
+for tag in helpers:
+    if remote_marker(fabric_addr(tag), f"HALF_DONE_{tag}", 12):
+        w(f"marker ok: HALF_DONE_{tag} (on {tag})")
+    else:
+        w(f"TIMEOUT waiting for HALF_DONE_{tag} on {tag}")
+        w("RESULT: FAIL (missing helper half marker)"); log.close(); sys.exit(1)
+
 for tag in helpers:
     mk = os.path.join(state, f"FANIN_DONE_{tag}")
     if not need(mk, 6):

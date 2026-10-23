@@ -45,9 +45,33 @@ after the chat session ends.
 
 ## State
 
+**COMPLETE — `RESULT: PASS` 2026-10-23T09:0xZ.** 50/50 LFS files sha256-verified, 22 plain
+git blobs size-checked, 235.11 GiB exact, 48 shards + `dspark/` drafter on spark2.
+`spark2:/home/spark2/models/MiniMax-M3.1-Flash` finished first, then the helper
+slices were rsynced in over the fabric (FANIN_DONE_spark1 / FANIN_DONE_spark4).
+
+Measured: ~20-28 MB/s aggregate across three nodes, 7-8 MB/s per node with chunkdl
+(single-stream `snapshot_download` had collapsed to 1-3 MB/s). ~2 h wall clock.
+
+Helper staging dirs on spark1 (`/var/tmp/m31`, 80G) and spark4 (81G) are now
+verified duplicates of the landing copy — reclaimable, not yet removed.
+
 - spark1 `~/m31-state/`, spark2 `~/m31-state/`, spark4 `~/m31-state/`
 - logs: `~/logs/m31-chunk-<node>.log`, `~/logs/m31-verify.log`
 - helpers stage in `/var/tmp/m31/MiniMax-M3.1-Flash` (outside the dsv41-nfs export)
+
+## Two bugs found and fixed in the tooling (a re-run needs the fixed copy)
+
+1. **Verifier deadlock.** `m31_verify.py` waited for `HALF_DONE_<helper>` *on the landing
+   node*, but helpers only ever replicate `FANIN_DONE_<helper>`. It would hang the full
+   24 h timeout on a fully-downloaded, fully-validated set. Fixed: landing marker checked
+   locally, helper half-markers checked **on the helper over the CX7 fabric**
+   (`spark@10.73.0.1`, `spark4@10.73.0.4`) — the Spark nodes do NOT resolve the Mac's
+   `spark1`/`spark4` ssh aliases.
+2. **Watchdog false alarm.** It reported "STOPPED" because it gated on chunkdl being
+   alive, but chunkdl EXITS on success. Fixed: silent when the verifier is running, when
+   downloaders are running, or when all 5 markers exist; speaks only on a verdict or a
+   genuine stall (nothing running, markers absent).
 
 ## Re-running
 
