@@ -53,8 +53,11 @@ slices were rsynced in over the fabric (FANIN_DONE_spark1 / FANIN_DONE_spark4).
 Measured: ~20-28 MB/s aggregate across three nodes, 7-8 MB/s per node with chunkdl
 (single-stream `snapshot_download` had collapsed to 1-3 MB/s). ~2 h wall clock.
 
-Helper staging dirs on spark1 (`/var/tmp/m31`, 80G) and spark4 (81G) are now
-verified duplicates of the landing copy — reclaimable, not yet removed.
+Helper staging dirs on spark1 (`/var/tmp/m31`, 80G) and spark4 (81G) held verified
+duplicates of the landing copy. **Cleared 2026-10-23:** every staged slice was first
+proven size-identical to the hash-verified canonical (16/16 spark1, 17/17 spark4,
+0 mismatches), then the weight trees were removed — ~79 GiB spark1, ~80 GiB spark4.
+Marker + log record kept in `~/m31-state` on each node.
 
 - spark1 `~/m31-state/`, spark2 `~/m31-state/`, spark4 `~/m31-state/`
 - logs: `~/logs/m31-chunk-<node>.log`, `~/logs/m31-verify.log`
