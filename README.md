@@ -187,6 +187,27 @@ Against the same-day control (the engine we shipped before this work, 315.9 / 31
 **within ~1 %**, and boot stays at 166 s (ready after 161 s) with a digest record that is read, not rebuilt. All 15
 determinism hashes matched the previous engine on the same prompts, `BadBlob` count 0, and panics 0 on all four ranks.
 
+#### 🧵 Real workload, one hour on the 1.1.2 engine (2026-10-22)
+
+Synthetic cells answer "what can it do"; this answers "what did it do". One hour of our own agent's chat traffic on the
+same engine and pack — 291 requests, serial (max concurrency 1), zero errors:
+
+| metric | value |
+|---|---:|
+| decode, sustained over the wall hour | **120.65 tok/s** |
+| per-request decode, median / p90 / max | 133.8 / 162.3 / 230.0 tok/s |
+| prompt cache hit | **93.9 %** (4.59 M of 4.89 M prompt tokens) |
+| prefill, median / p90 / max | 53.9 / 1,367 / 4,000 tok/s |
+| inter-request gap, median / p90 | 1.8 s / 5.6 s |
+| errors | 0 |
+
+Two things this shows that the sweeps cannot: the prompt cache is doing almost all the work (93.9 % of prompt tokens
+came from a reused prefix, so the prefill medians are small by design), and this workload never used more than one
+stream — so it is a single-stream truth, not a concurrency one.
+
+Method: aggregates computed from the engine's request log on the serving node. That log records token counts, hashes and
+timings, not prompt or reply text; the numbers above are all that leaves the host.
+
 Single-stream and mixed-workload cells for this build were not re-run, so the "one stream" and mixed rows above still
 describe the pre-rebase engine. Treat the aggregate as the like-for-like number and the rest as older context.
 
