@@ -32,7 +32,17 @@ for f in diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors \
   fetch "$HEADDIR/video-models/minimax-h3/$f" "$T/h3/$f" || exit 1
 done
 
-# 1b. YuE2 music (5.3 GB). The container mounts /models/yue2 on every node, but the mount is
+# 1b. Ming-Image-0.1 design (25 GB). Not used by any Studios recipe graph, so it was never
+# staged -- but it is the design lane: TextEncodeMingImageEdit takes zero reference images, so
+# t2i works. Without these three files a design job fails validation ("value not in list"),
+# which reads like a broken graph but is a missing file.
+for f in diffusion_models/ming_image_0.1_design_int8_convrot.safetensors \
+         text_encoders/ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors \
+         vae/ming_image_vae_bf16.safetensors; do
+  fetch "$HEADDIR/comfy-models/$f" "$T/models/$f" || exit 1
+done
+
+# 1c. YuE2 music (5.3 GB). The container mounts /models/yue2 on every node, but the mount is
 # EMPTY unless these two files are staged -- the folder alone makes CheckpointLoaderSimple show
 # no yue2 checkpoint, and a song graph then fails at load instead of rendering.
 for f in checkpoints/yue2_3b_int8_convrot.safetensors \
