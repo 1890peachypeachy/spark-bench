@@ -49,16 +49,17 @@ Run per node: `python3 ming_probe.py http://127.0.0.1:8188`
 
 Measured on spark4 2026-10-25: 24.0 s cold, 3.0 s warm. If this fails with
 "Value not in list", the Ming weights are missing from that node's
-`diffusion_models`, `text_encoders` or `vae` — they are only staged on spark2
-and spark4 by default.
+`diffusion_models`, `text_encoders` or `vae`.
 
 ## Staging requirement
 
-`stage_node.sh` stages Qwen-Image and MiniMax H3. It does NOT stage Ming. A node
-running the design job needs these three files copied from spark2:
+`stage_node.sh` now stages Ming along with Qwen-Image, MiniMax H3 and YuE2. As of
+2026-10-25 all four nodes carry the full set, verified by byte size against
+spark2 and by an actual design render on each:
 
     diffusion_models/ming_image_0.1_design_int8_convrot.safetensors   (5.8 GB)
     text_encoders/ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors  (19 GB)
     vae/ming_image_vae_bf16.safetensors                              (243 MB)
 
-Add them to `stage_node.sh` before treating spark1/spark3 as design-capable.
+Disk cost per node is ~94 GB for models plus ~27 GB for the image. spark1 was
+at 93% after the Ming copy, so check `df` before adding another model set there.
