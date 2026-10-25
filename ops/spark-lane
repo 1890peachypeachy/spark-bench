@@ -22,6 +22,7 @@
 #   comfy-engine      spark2        ComfyUI (music/image/design/video) -> :8188 (no LLM lane)
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8888/v1 (served as GLM-5.3-Flash-EXL3)
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8888/v1 (served as GLM-5.3-Flash-EXL3; Mia's fast line)
+#   dsv41-tf4         spark1-4      DeepSeek V4.1-Flash TP4 TensorFold (tonyd2wild recipe v0.3.5, LibertAI EXL3 3.5bpw) -> :8888/v1, same name, ctx 256K
 # NOTE 2026-10-12: dsv41 lanes are PARKED-INVENTORY per Victor 2026-10-05 (GLM = main).
 # Not an open decision; restore only on explicit request. See GBrain
 # dsv41-g19-lane-parked-inventory.
@@ -225,6 +226,7 @@ docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/nu
 lane_container_names() {
   case "$1" in
     dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
+    dsv41-tf4)           echo "tp4-lane" ;;
     glm53-tp3)           echo "glm53-tf3" ;;
     glm53-tp4|glm53-tp4-ablit) echo "glm53-tf4" ;;
     glm53-gr8)           echo "gr8" ;;
@@ -288,10 +290,11 @@ timeout_run() {
 # NOTHING serving. Order matters: the first entry is what node_occupant reports.
 node_occupants() {
   local node="$1" out lanes=""
-  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^glm53[|]|^gr8[|]' || true)"
+  out="$(docker_names "$node" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^tp4-lane[|]|^glm53[|]|^gr8[|]' || true)"
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
   echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
+  echo "$out" | grep -qE '^tp4-lane[|]'         && lanes="$lanes dsv41-tf4"
   # glm family stays mutually exclusive (an image string can match both arms).
   if   echo "$out" | grep -qE '^gr8[|]'; then
     lanes="$lanes glm53-gr8"
@@ -421,7 +424,7 @@ census() {
   echo "  per-node containers (authoritative for occupancy):"
   local n o
   for n in spark1 spark2 spark3 spark4; do
-    o="$(docker_names "$n" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53|^gr8[|]' || true)"
+    o="$(docker_names "$n" | grep -E 'spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|^tp4-lane[|]|sglang|glm53|^gr8[|]' || true)"
     if [[ -z "$o" ]]; then printf '    %-8s %s(free)%s\n' "$n" "$D" "$N"
     else printf '    %-8s %s\n' "$n" "$(echo "$o" | paste -sd' ' -)"; fi
   done
@@ -447,6 +450,7 @@ lane_nodes() {
     comfy-engine)    echo "spark2" ;;
     dsv41-tp3)       echo "spark1 spark3 spark4" ;;
     dsv41-tp4)       echo "spark1 spark2 spark3 spark4" ;;
+    dsv41-tf4)       echo "spark1 spark2 spark3 spark4" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
     glm53-tp4|glm53-tp4-ablit) echo "spark1 spark2 spark3 spark4" ;;
     glm53-gr8)       echo "spark1 spark2 spark3 spark4" ;;
@@ -460,7 +464,7 @@ lane_endpoint() { case "$1" in comfy-engine) echo "$COMFY_URL" ;; glm53-tp3|glm5
 lane_model_id() { case "$1" in comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
-ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tp4-ablit glm53-gr8 glm53-vllm4 glm53-tf2"
+ALL_LANE_IDS="comfy-engine dsv41-tp3 dsv41-tp4 dsv41-tf4 glm53-tp3 glm53-tp4 glm53-tp4-ablit glm53-gr8 glm53-vllm4 glm53-tf2"
 
 # Minimal JSON string escape (values here are ids/hosts/models — no control chars).
 json_str() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"; }
@@ -836,6 +840,90 @@ except Exception: print("")' 2>/dev/null)"
 
   result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL" "(chat verified)"
   NEXT_CMD="nothing — lane is serving. To put the comfy engine back: spark-lane rotate comfy-engine"
+  return 0
+}
+
+
+# ── dsv41-tf4: TensorFold TP4, LibertAI EXL3 3.5bpw pack (added 2026-10-24) ───────────────────────
+# Source of truth: ~/recipe-db/DeepSeek-V4.1-Flash-TP2-and-TP4-DGX-Sparks (tonyd2wild) @ v0.3.5 (b88fae2),
+# engine 0a0b69a + TF_RDMA_GID / TF_SEED_RANDOM patches. Our adapted config: models/dsv41-exl3-3.5bpw-tf/config.spark-fleet.env.
+# Serves the SAME endpoint and model name as dsv41-tp4 (Hermes needs no change); context capped at 262144 (Victor, 2026-10-24).
+TF4_ROOT="${TF4_ROOT:-/var/tmp/tf1017}"
+TF4_CONFIG="${TF4_CONFIG:-$TF4_ROOT/config.spark-fleet.env}"
+TF4_RECIPE="${TF4_RECIPE:-$TF4_ROOT/recipe}"
+
+dsv41_tf4_up() {
+  local lane="dsv41-tf4"
+  STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "occupancy" "$(lane_nodes "$lane")"
+  local conflict; conflict="$(occupancy_conflict "$lane")"
+  if [[ -n "$conflict" ]]; then
+    note_fail "occupancy" "nodes already taken:$conflict"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
+    result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"; return 1
+  fi
+  ok "all required nodes free"
+
+  step "cleanup" "removing any dead tp4-lane containers"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
+
+  step "preflight" "serve.sh preflight on $DSV41_HEAD_HOST (every file rank 0 opens)"
+  if ! timeout_run 120 ssh $SSH_OPTS "$DSV41_HEAD_HOST" "cd $TF4_RECIPE && DSV41_CONFIG=$TF4_CONFIG bash scripts/serve.sh preflight" >/dev/null 2>&1; then
+    note_fail "preflight" "rank 0 is missing files (weights/cache/kit/engine) — nothing was started"
+    NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $TF4_RECIPE && DSV41_CONFIG=$TF4_CONFIG bash scripts/serve.sh preflight'"
+    result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"; return 1
+  fi
+  ok "preflight clean"
+
+  step "start" "serve.sh start (ranks 3,2,1 then 0; waits for /v1/models and a 4-token chat)"
+  if ! timeout_run 900 ssh $SSH_OPTS "$DSV41_HEAD_HOST" "cd $TF4_RECIPE && DSV41_CONFIG=$TF4_CONFIG bash scripts/serve.sh start" >/dev/null 2>&1; then
+    note_fail "start" "serve.sh start failed or timed out (900s)"
+    NEXT_CMD="ssh $DSV41_HEAD_HOST 'tail -40 $TF4_ROOT/logs/tp4-lane.log'   # then: spark-lane down $lane"
+    result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"; return 1
+  fi
+  ok "ranks up, endpoint answering"
+
+  step "identity" "served model name must be $DSV41_MODEL"
+  if ! curl -s -m 10 "$DSV41_ENDPOINT/models" | grep -q "$DSV41_MODEL"; then
+    note_fail "identity" "endpoint does not list $DSV41_MODEL"
+    NEXT_CMD="curl -s $DSV41_ENDPOINT/models"
+    result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"; return 1
+  fi
+  ok "serving $DSV41_MODEL"
+
+  canary_tf2 "$DSV41_ENDPOINT" "$DSV41_MODEL" || { result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"; return 1; }
+  result "$lane" "up" "$DSV41_ENDPOINT" "$DSV41_MODEL"
+  return $FAILED
+}
+
+dsv41_tf4_down() {
+  local lane="dsv41-tf4"
+  STEPS=2; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "stop" "serve.sh stop (removes tp4-lane on all four nodes, bounded ${DSV41_STOP_TIMEOUT:-180}s)"
+  if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$DSV41_HEAD_HOST" "cd $TF4_RECIPE && DSV41_CONFIG=$TF4_CONFIG bash scripts/serve.sh stop" >/dev/null 2>&1; then
+    note_fail "stop" "serve.sh stop failed or timed out — verify the head node with 'ssh $DSV41_HEAD_HOST uptime'"
+    NEXT_CMD="ssh $DSV41_HEAD_HOST 'cd $TF4_RECIPE && DSV41_CONFIG=$TF4_CONFIG bash scripts/serve.sh stop'"
+    result "$lane" "down" "-" "-"; return 1
+  fi
+  ok "stop issued"
+
+  step "verify torn down" "no tp4-lane containers left on $(lane_nodes "$lane")"
+  local n left="" c
+  for n in $(lane_nodes "$lane"); do
+    c="$(docker_names "$n" | grep -E '^tp4-lane[|]' || true)"
+    [[ -n "$c" ]] && left="$left $n:$c"
+  done
+  if [[ -n "$left" ]]; then
+    note_fail "torn-down" "containers still present:$left"
+    NEXT_CMD="spark-lane status   # inspect, then re-run down"
+    result "$lane" "down" "-" "-"; return 1
+  fi
+  ok "all required nodes released"
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — nodes released. Weights, rank caches and images were NOT deleted."
   return 0
 }
 
@@ -2111,7 +2199,7 @@ print(" ".join(k if v in files else k.upper()+"-MISSING" for k,v in want.items()
   # budget returns content=None on it. Use the enable_thinking:false variant for real proof.
   case "$lane" in
     glm53-gr8|glm53-vllm4)         canary_gr8 "$ep" "$model" ;;
-    glm53-tf2|glm53-tp3|glm53-tp4|glm53-tp4-ablit) canary_tf2 "$ep" "$model" ;;
+    glm53-tf2|glm53-tp3|glm53-tp4|glm53-tp4-ablit|dsv41-tf4) canary_tf2 "$ep" "$model" ;;
     *)                             canary "$ep" "$model" ;;
   esac
   result "$lane" "verify" "$ep" "$model"
@@ -2135,6 +2223,7 @@ lanes:
   comfy-engine      spark2        ComfyUI music/image/design/video -> $COMFY_URL
   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3 -> $DSV41_ENDPOINT
   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4 -> $DSV41_ENDPOINT  (fast line)
+  dsv41-tf4         spark1-4      DeepSeek V4.1-Flash TP4 TensorFold, EXL3 3.5bpw -> $DSV41_ENDPOINT  (ctx 256K)
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
   glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, standard weights, thinking max)
   glm53-tp4-ablit   spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, Ablit weights, thinking max)
@@ -2164,11 +2253,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-tf4) dsv41_tf4_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-tf4) dsv41_tf4_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -2182,7 +2271,7 @@ case "$ACT" in
       o="$(node_occupants "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in comfy-engine dsv41-tp3 dsv41-tp4 glm53-tp3 glm53-tp4 glm53-tp4-ablit glm53-gr8 glm53-vllm4 glm53-tf2; do
+    for other in comfy-engine dsv41-tp3 dsv41-tp4 dsv41-tf4 glm53-tp3 glm53-tp4 glm53-tp4-ablit glm53-gr8 glm53-vllm4 glm53-tf2; do
       [[ "$other" == "$LANE" ]] && continue
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done
@@ -2204,6 +2293,7 @@ case "$ACT" in
       glm53-vllm4) kit="$GLM53_TP4_KIT"; host="$GLM53_HEAD_HOST" ;;
       glm53-tf2) kit="$GLM53_TF2_KIT"; host="$GLM53_TF2_HEAD" ;;
       dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
+      dsv41-tf4) echo "${B}tf4 head log on $DSV41_HEAD_HOST${N} (tail ${TAIL:-40})"; sshx "$DSV41_HEAD_HOST" "tail -${TAIL:-40} $TF4_ROOT/logs/tp4-lane.log"; exit 0 ;;
       *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2>" >&2; exit 2 ;;
     esac
     echo "${B}newest bring-up log on $host${N} (tail ${TAIL:-40})"
