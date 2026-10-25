@@ -298,9 +298,57 @@ timeout_run() {
 # comfy-engine reported `down` while serving, and rotate's park loop could not see it to
 # park it, so `rotate dsv41-tp4` would tear down glm53-tp4, then refuse on comfy, leaving
 # NOTHING serving. Order matters: the first entry is what node_occupant reports.
+# ── occupancy census cache ────────────────────────────────────────────────────
+# WHY: lanes_json/status_json ask node_occupants() once per lane per node (12 lanes x 4
+# nodes). Uncached, each ask is its own SSH round trip, and `lanes`/`status` took 49-55 s.
+# sparkDash's Lane Control polls every 20 s, so every poll overran the previous one and
+# the panel sat on "Reading lanes…" (reported as "failed to load").
+# FIX: prime ONE ssh per node, all four in parallel, with the docker census and the two
+# container-inspect probes in a single call. The panel then reads a local file instead of
+# re-probing the fleet 48 times, and answers in ~1.5 s.
+CENSUS_DIR=""
+CENSUS_ON=0
+
+_census_remote_probe() {  # prints all three sections for one node in ONE ssh
+  sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/null
+echo '@@CACHEM@@'
+docker inspect tp4-lane --format '{{range .Mounts}}{{if eq .Destination \"/cache\"}}{{.Source}}{{end}}{{end}}' 2>/dev/null
+echo '@@GLMCMD@@'
+docker inspect glm53-tf4 --format '{{join .Config.Cmd \" \"}} {{join .Args \" \"}}' 2>/dev/null" 2>/dev/null
+}
+
+census_prime() {
+  [[ $CENSUS_ON -eq 1 ]] && return 0
+  CENSUS_DIR="$(mktemp -d 2>/dev/null)" || { CENSUS_ON=0; return 0; }
+  local n
+  for n in spark1 spark2 spark3 spark4; do
+    ( _census_remote_probe "$n" > "$CENSUS_DIR/$n" 2>/dev/null ) &
+  done
+  wait
+  CENSUS_ON=1
+}
+
+# Read one section of a primed node record; empty when absent (falls back to live probe).
+census_section() {
+  local n="$1" sec="$2"
+  [[ $CENSUS_ON -eq 1 && -s "$CENSUS_DIR/$n" ]] || return 0
+  awk -v want="$sec" '
+    $0=="@@CACHEM@@" {cur="CACHEM"; next}
+    $0=="@@GLMCMD@@"  {cur="GLMCMD"; next}
+    cur==""            {print; next}
+    cur==want          {print}
+  ' "$CENSUS_DIR/$n"
+}
+
+census_reset() { [[ -n "$CENSUS_DIR" ]] && rm -rf "$CENSUS_DIR" 2>/dev/null; CENSUS_DIR=""; CENSUS_ON=0; }
+
 node_occupants() {
   local node="$1" out lanes=""
-  out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^tp4-lane[|]|^glm53[|]|^gr8[|]' || true)"
+  if [[ $CENSUS_ON -eq 1 ]]; then
+    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^tp4-lane[|]|^glm53[|]|^gr8[|]' || true)"
+  else
+    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^tp4-lane[|]|^glm53[|]|^gr8[|]' || true)"
+  fi
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
   echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
@@ -1867,7 +1915,9 @@ glm53_tp4_ablit_up()  { glm53_tp4_core_up glm53-tp4-ablit; }
 glm53_tp4_ablit_down(){ glm53_tp4_core_down glm53-tp4-ablit; }
 # Which weights a running glm53-tf4 rank serves (reads the container command; empty if not running).
 tf4_variant() {
-  local v; v="$(sshx "$1" "docker inspect glm53-tf4 --format '{{join .Config.Cmd \" \"}} {{join .Args \" \"}}' 2>/dev/null" 2>/dev/null)"
+  local v
+  if [[ $CENSUS_ON -eq 1 ]]; then v="$(census_section "$1" GLMCMD)"
+  else v="$(sshx "$1" "docker inspect glm53-tf4 --format '{{join .Config.Cmd \" \"}} {{join .Args \" \"}}' 2>/dev/null" 2>/dev/null)"; fi
   [[ -z "$v" ]] && return 0
   [[ "$v" == *Ablit* ]] && echo ablit || echo std
 }
@@ -1879,7 +1929,8 @@ tf4_variant() {
 # cache directory, so that is what this asks for. Unknown/absent container => stock (the default lane).
 tf4_lane_variant() {
   local src
-  src="$(sshx "$1" "docker inspect tp4-lane --format '{{range .Mounts}}{{if eq .Destination \"/cache\"}}{{.Source}}{{end}}{{end}}' 2>/dev/null" 2>/dev/null)"
+  if [[ $CENSUS_ON -eq 1 ]]; then src="$(census_section "$1" CACHEM)"
+  else src="$(sshx "$1" "docker inspect tp4-lane --format '{{range .Mounts}}{{if eq .Destination \"/cache\"}}{{.Source}}{{end}}{{end}}' 2>/dev/null" 2>/dev/null)"; fi
   case "$src" in
     */cache-ablit) echo ablit ;;
     *)             echo stock ;;
@@ -2560,15 +2611,19 @@ LANE="${2:-}"
 
 case "$ACT" in
   status|census)
-    if [[ "$LANE" == "--json" ]]; then status_json; else census; fi ;;
+    census_prime
+    if [[ "$LANE" == "--json" ]]; then status_json; else census; fi
+    census_reset ;;
   lanes)
+    census_prime
     if [[ "$LANE" == "--json" ]]; then
       lanes_json
     else
       for l in $ALL_LANE_IDS; do
         printf '%-16s nodes: %-26s endpoint: %s\n' "$l" "$(lane_nodes "$l")" "$(lane_endpoint "$l")"
       done
-    fi ;;
+    fi
+    census_reset ;;
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
