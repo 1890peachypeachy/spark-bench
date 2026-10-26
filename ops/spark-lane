@@ -160,7 +160,7 @@ COMFY_DIR="/home/spark2/comfy-build"
 # Not a replacement for comfy-engine (which owns spark2 alone when no LLM lane is up).
 COMFY_STUDIO_CTN="${COMFY_STUDIO_CTN:-comfy-studio}"
 COMFY_STUDIO_ROOT="${COMFY_STUDIO_ROOT:-/var/tmp/comfy}"      # per-node model/weights root
-COMFY_STUDIO_TOOLS="${COMFY_STUDIO_TOOLS:-$HOME/studio-tools}" # up.sh + guard, deployed per node
+COMFY_STUDIO_TOOLS="${COMFY_STUDIO_TOOLS:-\$HOME/studio-tools}" # up.sh + guard, deployed per node
 COMFY_STUDIO_FLOOR_GB="${COMFY_STUDIO_FLOOR_GB:-30}"           # refuse to start below this (26 GB picture + 4 GB guard)
 REPO_URL="https://github.com/1890peachypeachy/DeepSeek-v4.1-Flash-DGX-Sparks.git"
 # Resolve through the ~/.local/bin/spark-lane symlink -- a bare dirname on
@@ -526,7 +526,8 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
 # RETIRED 2026-10-25 (Victor): dsv41-tp3, dsv41-tp4 (SGLang), dsv41-tf4, dsv41-tf4-ablit (EXL3). Replaced by dsv41-native.
 # Their up/down functions below are kept as dead code for archaeology; they are no longer reachable.
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-native glm53-tp3 glm53-tp4 glm53-tp4-ablit glm53-gr8 glm53-vllm4 glm53-tf2"
+# RETIRED 2026-10-25 (Victor): glm53-tp3, glm53-tp4, glm53-tp4-ablit, glm53-gr8, glm53-vllm4, glm53-tf2 (code kept, unreachable).
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-native"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -2724,7 +2725,7 @@ case "$ACT" in
       o="$(node_occupants "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in comfy-engine comfy-studio-4x dsv41-native glm53-tp3 glm53-tp4 glm53-tp4-ablit glm53-gr8 glm53-vllm4 glm53-tf2; do
+    for other in comfy-engine comfy-studio-4x dsv41-native; do
       [[ "$other" == "$LANE" ]] && continue
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done
