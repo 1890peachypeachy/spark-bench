@@ -30,7 +30,7 @@
 # NOTE 2026-10-12: dsv41 lanes are PARKED-INVENTORY per Victor 2026-10-05 (GLM = main).
 # Not an open decision; restore only on explicit request. See GBrain
 # dsv41-g19-lane-parked-inventory.
-#   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.5, CONTAINER glm53-tf3)
+#   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tp3) — MAIN GLM LANE (reinstated 2026-10-30)
 #   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tf4)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
 #   glm53-gr8         spark1-4      GLM-5.3 full (gr8 engine, kindlingai/gr8 f4d1d4e, CONTAINER gr8) -> :8888/v1
@@ -238,7 +238,7 @@ lane_container_names() {
     dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
     dsv41-native) echo "dsv41-1017-tf" ;;
     dsv41-tf4|dsv41-tf4-ablit) echo "tp4-lane" ;;
-    glm53-tp3)           echo "glm53-tf3" ;;
+    glm53-tp3)           echo "glm53-tp3" ;;
     glm53-tp4|glm53-tp4-ablit) echo "glm53-tf4" ;;
     glm53-gr8)           echo "gr8" ;;
     glm53-vllm4)         echo "${GLM53_TP4_CTN}-r0 ${GLM53_TP4_CTN}-r1 ${GLM53_TP4_CTN}-r2 ${GLM53_TP4_CTN}-r3" ;;
@@ -530,8 +530,11 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 # dsv41-native (Mia, original FP8/MXFP4 weights) is kept but is EXCLUSIVE: it will not start while comfy-studio runs.
 # RETIRED: dsv41-tp3, dsv41-tp4 (SGLang).
 # Their up/down functions below are kept as dead code for archaeology; they are no longer reachable.
-# RETIRED 2026-10-25 (Victor): glm53-tp3, glm53-tp4, glm53-tp4-ablit, glm53-gr8, glm53-vllm4, glm53-tf2 (code kept, unreachable).
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native"
+# RETIRED 2026-10-25 (Victor): glm53-tp4, glm53-tp4-ablit, glm53-hy, glm53-vllm4, glm53-tf2 (code kept, unreachable).
+# glm53-tp3 REINSTATED 2026-10-30 (Victor) as the main GLM lane after a successful
+# fabric-NFS TP3 flip. The kit's NFS_SERVER must point at the HEAD's FABRIC address
+# (10.73.0.3), NOT its Tailscale IP — dsv41-nfs only exports to 10.73.0.0/24.
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native glm53-tp3"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -1687,14 +1690,31 @@ glm53_tf3_up() {
   fi
   ok "rank 2 configured"
 
-  step "nfs" "dsv41-nfs export alive on $GLM53_TP3_HEAD (both workers read weights through it)"
+  step "nfs" "dsv41-nfs running + kit NFS_SERVER is a FABRIC addr (10.73.0.0/24) that dsv41-nfs actually exports"
   if ! sshx "$GLM53_TP3_HEAD" "docker ps --format '{{.Names}}' | grep -q '^dsv41-nfs$'" 2>/dev/null; then
     note_fail "nfs" "dsv41-nfs is NOT running on $GLM53_TP3_HEAD — the workers' NFS volumes would hard-hang instead of failing fast"
     NEXT_CMD="ssh $GLM53_TP3_HEAD 'docker start dsv41-nfs'   # then re-run: spark-lane up $lane"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
-  ok "dsv41-nfs up"
+  # NFS_SERVER must be the head's FABRIC address (10.73.0.3). dsv41-nfs exports
+  # /var/tmp/models only to 10.73.0.0/24; a Tailscale IP here makes every worker
+  # mount fail with "cannot mount ... from <ts-ip> over NFS". Check both files.
+  for cfgf in "$GLM53_TP3_KIT/.env" "$GLM53_TP3_KIT/scripts/local.sh"; do
+    if sshx "$GLM53_TP3_HEAD" "grep -E '^NFS_SERVER=' $cfgf 2>/dev/null | grep -qvE '10\.73\.0\.'"; then
+      note_fail "nfs" "$cfgf sets NFS_SERVER to a NON-fabric address — workers' NFS mounts will fail (dsv41-nfs only exports 10.73.0.0/24). Must be 10.73.0.3 (spark3 head)."
+      NEXT_CMD="ssh $GLM53_TP3_HEAD 'grep -n NFS_SERVER $GLM53_TP3_KIT/.env $GLM53_TP3_KIT/scripts/local.sh; # set both to 10.73.0.3, then re-run'"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+      return 1
+    fi
+    if ! sshx "$GLM53_TP3_HEAD" "grep -qE '^NFS_SERVER=10\.73\.0\.' $cfgf 2>/dev/null"; then
+      note_fail "nfs" "$cfgf has no NFS_SERVER pointing at a fabric address (10.73.0.x). dsv41-nfs exports only to 10.73.0.0/24."
+      NEXT_CMD="ssh $GLM53_TP3_HEAD 'grep -n NFS_SERVER $GLM53_TP3_KIT/.env $GLM53_TP3_KIT/scripts/local.sh'"
+      result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+      return 1
+    fi
+  done
+  ok "dsv41-nfs up + kit NFS_SERVER on fabric"
 
   step "already up?" "is $GLM53_ENDPOINT already serving completions?"
   if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)" == "200" ]]; then
