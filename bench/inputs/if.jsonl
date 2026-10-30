@@ -1,0 +1,20 @@
+{"id": "if-01", "prompt": "List exactly three colours, one per line, each line starting with '- ' and nothing else.", "check": {"kind": "lines", "prefix": "- ", "n": 3}}
+{"id": "if-02", "prompt": "Reply with the single word: pinecone", "check": {"kind": "exact_ci", "value": "pinecone"}}
+{"id": "if-03", "prompt": "Write one sentence of at most 12 words about a kettle.", "check": {"kind": "max_words", "n": 12}}
+{"id": "if-04", "prompt": "Output a JSON object with exactly the keys a and b, a is the string \"x\", b is the number 2. No other text.", "check": {"kind": "json_keys", "keys": ["a", "b"]}}
+{"id": "if-05", "prompt": "Answer with a number only: how many sides does a hexagon have?", "check": {"kind": "int_only", "value": 6}}
+{"id": "if-06", "prompt": "Write a haiku about rain. Exactly three lines, no title.", "check": {"kind": "lines", "n": 3}}
+{"id": "if-07", "prompt": "Explain gravity in exactly two sentences.", "check": {"kind": "sentences", "n": 2}}
+{"id": "if-08", "prompt": "Do not use the letter 'e' anywhere in your reply. Describe a boat.", "check": {"kind": "absent_char", "char": "e", "min_words": 5}}
+{"id": "if-09", "prompt": "Convert 'the quick brown fox' to uppercase and reply with only that.", "check": {"kind": "exact", "value": "THE QUICK BROWN FOX"}}
+{"id": "if-10", "prompt": "Give three bullet points about tea, each starting with '* ', then a final line 'END'.", "check": {"kind": "lines_prefix_end", "prefix": "* ", "n": 3, "end": "END"}}
+{"id": "if-11", "prompt": "Reply with the numbers 1 to 5 separated by commas, no spaces.", "check": {"kind": "exact", "value": "1,2,3,4,5"}}
+{"id": "if-12", "prompt": "Answer yes or no only: is 91 prime?", "check": {"kind": "one_of", "values": ["no"], "prefix_ok": ["no"]}}
+{"id": "if-13", "prompt": "Name two planets, comma separated, lowercase, nothing else.", "check": {"kind": "comma_n", "n": 2, "lower": true}}
+{"id": "if-14", "prompt": "Write the word 'echo' exactly four times separated by single spaces.", "check": {"kind": "exact_ci", "value": "echo echo echo echo"}}
+{"id": "if-15", "prompt": "Summarise the water cycle in at most 25 words.", "check": {"kind": "max_words", "n": 25}}
+{"id": "if-16", "prompt": "Reply with a markdown table with exactly 2 columns and a header row plus one data row.", "check": {"kind": "lines_matching", "pattern": "^\\|.*\\|.*\\|$", "n": 2}}
+{"id": "if-17", "prompt": "Output only the CSV header: name,age,city", "check": {"kind": "exact", "value": "name,age,city"}}
+{"id": "if-18", "prompt": "Write a sentence that contains the word 'cobalt' and does not contain the word 'blue'.", "check": {"kind": "substring", "must": ["cobalt"], "must_not": ["blue"]}}
+{"id": "if-19", "prompt": "Reply with exactly five words, all lowercase, about snow.", "check": {"kind": "words_n_lower", "n": 5}}
+{"id": "if-20", "prompt": "Start your reply with 'A:' and then state the capital of Peru. Nothing else.", "check": {"kind": "startswith", "prefix": "A:", "contains": "lima"}}

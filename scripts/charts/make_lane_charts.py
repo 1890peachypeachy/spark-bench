@@ -97,20 +97,24 @@ def two_panel(t):
 
 def tensorfold(t, theme):
     fig, a, b = two_panel(t)
-    frame(fig, t, "DeepSeek V4.1 Flash · TensorFold · 4× Spark",
-          "Uncensored 2.9-bit EXL3 · 420K context · images · G19 engine live since 2026-10-07")
+    fig.subplots_adjust(left=0.185)
+    frame(fig, t, "DeepSeek V4.1 Flash · TensorFold (Zig engine) · 4× Spark",
+          "Uncensored 2.9-bit EXL3 · Zig TP=4 + pipelined prefill on RoCE · live since 2026-10-11")
     axclean(a, t, "Writing speed  (tok/s, higher is better)")
-    hbars(a, t, ["Prose", "Code", "4 users"],
-          [("TensorFold", [66.5, 104.1, 122.2], "new", None),
-           ("SGLang TP4/EP2", [37.8, 57.4, 75.7], "old", None)], xmax=145)
-    axclean(b, t, "Cold 160k-token prompt  (s, lower is better)")
-    hbars(b, t, ["2026-10-04", "10-05 pipelined", "10-07 G19 (live)", "SGLang"],
-          [("", [98.6, 39.1, 35.9, 50.1], "new", ["97–100 s", "39 s", "36 s", "48–52 s"])], xmax=125)
-    for i in (0, 1, 3):
+    hbars(a, t, ["Code, one stream", "Code, 4 streams total", "Prose, one stream", "Prose, 4 streams total"],
+          [("Zig + pipeline", [129.1, 218.3, 66.2, 138.2], "new", ["129", "218", "66", "138"]),
+           ("Python engine", [113.0, 204.9, 65.2, 128.2], "old", ["113", "205", "65", "128"])], xmax=265)
+    axclean(b, t, "Cold 154K-token prompt  (s, lower is better)")
+    hbars(b, t, ["Zig, pipeline off", "Zig + pipeline", "Python engine"],
+          [("", [60.5, 30.0, 35.4], "new", ["60.5 s", "30.0 s", "35.4 s"])], xmax=78)
+    for i in (0, 2):
         b.patches[i].set_color(t["old"]); b.texts[i].set_color(t["ink2"]); b.texts[i].set_fontweight("normal")
-    legend(fig, t, [("TensorFold (ours, 4 Sparks)", "new"), ("SGLang TP4/EP2 · earlier build", "old")])
-    fig.text(0.97, 0.075, "decode: geometric mean over 1k–160k prompts", fontsize=10.5,
-             color=t["muted"], ha="right", va="center")
+    legend(fig, t, [("TensorFold Zig + pipeline (live since 2026-10-11)", "new"),
+                    ("TensorFold Python (previous build)", "old")], y=0.135)
+    fig.text(0.035, 0.075, "pipeline on vs off: one window, same image — prompt reading +102 % at 131K · the prompt is 154,196 tokens",
+             fontsize=10.5, color=t["muted"], va="center")
+    fig.text(0.035, 0.03, "short cells: 384-token greedy replies, cold against cold · 1 rep each (Zig 2026-10-11, Python 2026-10-10)",
+             fontsize=10.5, color=t["muted"], va="center")
     save(fig, "dsv41-tensorfold", theme)
 
 

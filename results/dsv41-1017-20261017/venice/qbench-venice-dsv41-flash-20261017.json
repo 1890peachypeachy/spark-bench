@@ -1,0 +1,2312 @@
+{
+ "bench": "qbench",
+ "version": 1,
+ "tag": "venice-dsv41-flash-fullprec-20261017",
+ "base_url": "https://api.venice.ai/api/v1",
+ "model": "deepseek-v4-1-flash",
+ "thinking": false,
+ "venice": true,
+ "started": "2026-10-17T09:09:01-0700",
+ "areas": {
+  "mmlu": {
+   "n": 200,
+   "correct": 180,
+   "accuracy": 0.9,
+   "items": [
+    {
+     "subject": "abstract_algebra",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "anatomy",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "astronomy",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "business_ethics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "clinical_knowledge",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "college_biology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_chemistry",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_computer_science",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_mathematics",
+     "ok": false,
+     "got": 1,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_medicine",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_physics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "computer_security",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "conceptual_physics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "econometrics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "electrical_engineering",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "elementary_mathematics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "formal_logic",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "global_facts",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_biology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_chemistry",
+     "ok": false,
+     "got": 1,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_computer_science",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_european_history",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_geography",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_government_and_politics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_macroeconomics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "high_school_mathematics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_microeconomics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_physics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_psychology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_statistics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_us_history",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_world_history",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "human_aging",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "human_sexuality",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "international_law",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "jurisprudence",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "logical_fallacies",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "machine_learning",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "management",
+     "ok": false,
+     "got": 0,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "marketing",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "medical_genetics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "miscellaneous",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "moral_disputes",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "moral_scenarios",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "nutrition",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "philosophy",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "prehistory",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "professional_accounting",
+     "ok": false,
+     "got": 1,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "professional_law",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "professional_medicine",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "professional_psychology",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "public_relations",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "security_studies",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "sociology",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "us_foreign_policy",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "virology",
+     "ok": false,
+     "got": 1,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "world_religions",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "abstract_algebra",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "anatomy",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "astronomy",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "business_ethics",
+     "ok": false,
+     "got": 0,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "clinical_knowledge",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_biology",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_chemistry",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_computer_science",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_mathematics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_medicine",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_physics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "computer_security",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "conceptual_physics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "econometrics",
+     "ok": false,
+     "got": 1,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "electrical_engineering",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "elementary_mathematics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "formal_logic",
+     "ok": false,
+     "got": 1,
+     "answer": 0,
+     "finish": "length",
+     "reply": "Let's go ste"
+    },
+    {
+     "subject": "global_facts",
+     "ok": false,
+     "got": 1,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_biology",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_chemistry",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_computer_science",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_european_history",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_geography",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_government_and_politics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_macroeconomics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "high_school_mathematics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "high_school_microeconomics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_physics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_psychology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_statistics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_us_history",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "high_school_world_history",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "human_aging",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "human_sexuality",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "international_law",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "jurisprudence",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "logical_fallacies",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "machine_learning",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "management",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "marketing",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "medical_genetics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "miscellaneous",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "moral_disputes",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "moral_scenarios",
+     "ok": false,
+     "got": 1,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "nutrition",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "philosophy",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "prehistory",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "professional_accounting",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "professional_law",
+     "ok": false,
+     "got": 0,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "professional_medicine",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "professional_psychology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "public_relations",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "security_studies",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "sociology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "us_foreign_policy",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "virology",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "world_religions",
+     "ok": false,
+     "got": 0,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "abstract_algebra",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "anatomy",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "astronomy",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "business_ethics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "clinical_knowledge",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_biology",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "college_chemistry",
+     "ok": false,
+     "got": 2,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "college_computer_science",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_mathematics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_medicine",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "college_physics",
+     "ok": false,
+     "got": 1,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "computer_security",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "conceptual_physics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "econometrics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "electrical_engineering",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "elementary_mathematics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "formal_logic",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "global_facts",
+     "ok": false,
+     "got": 3,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_biology",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_chemistry",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_computer_science",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "high_school_european_history",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_geography",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_government_and_politics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "high_school_macroeconomics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_mathematics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_microeconomics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_physics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_psychology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_statistics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_us_history",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_world_history",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "human_aging",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "human_sexuality",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "international_law",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "jurisprudence",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "logical_fallacies",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "machine_learning",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "management",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "marketing",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "medical_genetics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "miscellaneous",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "moral_disputes",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "moral_scenarios",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "nutrition",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "philosophy",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "prehistory",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "professional_accounting",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "professional_law",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "professional_medicine",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "professional_psychology",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "public_relations",
+     "ok": false,
+     "got": 2,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "security_studies",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "sociology",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "us_foreign_policy",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "virology",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "world_religions",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "abstract_algebra",
+     "ok": false,
+     "got": 2,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "anatomy",
+     "ok": false,
+     "got": 3,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "astronomy",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "business_ethics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "clinical_knowledge",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_biology",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "college_chemistry",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "college_computer_science",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "college_mathematics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_medicine",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "college_physics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "computer_security",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "conceptual_physics",
+     "ok": true,
+     "got": 0,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "A"
+    },
+    {
+     "subject": "econometrics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "electrical_engineering",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "elementary_mathematics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "formal_logic",
+     "ok": false,
+     "got": 1,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "global_facts",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_biology",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_chemistry",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_computer_science",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_european_history",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_geography",
+     "ok": false,
+     "got": 1,
+     "answer": 0,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_government_and_politics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_macroeconomics",
+     "ok": true,
+     "got": 2,
+     "answer": 2,
+     "finish": "stop",
+     "reply": "C"
+    },
+    {
+     "subject": "high_school_mathematics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_microeconomics",
+     "ok": true,
+     "got": 1,
+     "answer": 1,
+     "finish": "stop",
+     "reply": "B"
+    },
+    {
+     "subject": "high_school_physics",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    },
+    {
+     "subject": "high_school_psychology",
+     "ok": true,
+     "got": 3,
+     "answer": 3,
+     "finish": "stop",
+     "reply": "D"
+    }
+   ],
+   "error": null,
+   "seconds": 31.8
+  },
+  "math": {
+   "n": 30,
+   "correct": 30,
+   "accuracy": 1.0,
+   "items": [
+    {
+     "id": "gsm8k-test-0",
+     "ok": true,
+     "got": "18",
+     "want": "18",
+     "finish": "stop",
+     "reasoning_tokens": 94
+    },
+    {
+     "id": "gsm8k-test-1",
+     "ok": true,
+     "got": "3",
+     "want": "3",
+     "finish": "stop",
+     "reasoning_tokens": 40
+    },
+    {
+     "id": "gsm8k-test-2",
+     "ok": true,
+     "got": "70000",
+     "want": "70000",
+     "finish": "stop",
+     "reasoning_tokens": 194
+    },
+    {
+     "id": "gsm8k-test-3",
+     "ok": true,
+     "got": "540",
+     "want": "540",
+     "finish": "stop",
+     "reasoning_tokens": 47
+    },
+    {
+     "id": "gsm8k-test-4",
+     "ok": true,
+     "got": "20",
+     "want": "20",
+     "finish": "stop",
+     "reasoning_tokens": 111
+    },
+    {
+     "id": "gsm8k-test-5",
+     "ok": true,
+     "got": "64",
+     "want": "64",
+     "finish": "stop",
+     "reasoning_tokens": 109
+    },
+    {
+     "id": "gsm8k-test-6",
+     "ok": true,
+     "got": "260",
+     "want": "260",
+     "finish": "stop",
+     "reasoning_tokens": 120
+    },
+    {
+     "id": "gsm8k-test-7",
+     "ok": true,
+     "got": "160",
+     "want": "160",
+     "finish": "stop",
+     "reasoning_tokens": 245
+    },
+    {
+     "id": "gsm8k-test-8",
+     "ok": true,
+     "got": "45",
+     "want": "45",
+     "finish": "stop",
+     "reasoning_tokens": 245
+    },
+    {
+     "id": "gsm8k-test-9",
+     "ok": true,
+     "got": "460",
+     "want": "460",
+     "finish": "stop",
+     "reasoning_tokens": 85
+    },
+    {
+     "id": "gsm8k-test-10",
+     "ok": true,
+     "got": "366",
+     "want": "366",
+     "finish": "stop",
+     "reasoning_tokens": 90
+    },
+    {
+     "id": "gsm8k-test-11",
+     "ok": true,
+     "got": "694",
+     "want": "694",
+     "finish": "stop",
+     "reasoning_tokens": 81
+    },
+    {
+     "id": "gsm8k-test-12",
+     "ok": true,
+     "got": "13",
+     "want": "13",
+     "finish": "stop",
+     "reasoning_tokens": 242
+    },
+    {
+     "id": "gsm8k-test-13",
+     "ok": true,
+     "got": "18",
+     "want": "18",
+     "finish": "stop",
+     "reasoning_tokens": 326
+    },
+    {
+     "id": "gsm8k-test-14",
+     "ok": true,
+     "got": "60",
+     "want": "60",
+     "finish": "stop",
+     "reasoning_tokens": 81
+    },
+    {
+     "id": "gsm8k-test-15",
+     "ok": true,
+     "got": "125",
+     "want": "125",
+     "finish": "stop",
+     "reasoning_tokens": 105
+    },
+    {
+     "id": "gsm8k-test-16",
+     "ok": true,
+     "got": "230",
+     "want": "230",
+     "finish": "stop",
+     "reasoning_tokens": 55
+    },
+    {
+     "id": "gsm8k-test-17",
+     "ok": true,
+     "got": "57500",
+     "want": "57500",
+     "finish": "stop",
+     "reasoning_tokens": 82
+    },
+    {
+     "id": "gsm8k-test-18",
+     "ok": true,
+     "got": "7",
+     "want": "7",
+     "finish": "stop",
+     "reasoning_tokens": 71
+    },
+    {
+     "id": "gsm8k-test-19",
+     "ok": true,
+     "got": "6",
+     "want": "6",
+     "finish": "stop",
+     "reasoning_tokens": 208
+    },
+    {
+     "id": "gsm8k-test-20",
+     "ok": true,
+     "got": "15",
+     "want": "15",
+     "finish": "stop",
+     "reasoning_tokens": 340
+    },
+    {
+     "id": "gsm8k-test-21",
+     "ok": true,
+     "got": "14",
+     "want": "14",
+     "finish": "stop",
+     "reasoning_tokens": 66
+    },
+    {
+     "id": "gsm8k-test-22",
+     "ok": true,
+     "got": "7",
+     "want": "7",
+     "finish": "stop",
+     "reasoning_tokens": 79
+    },
+    {
+     "id": "gsm8k-test-23",
+     "ok": true,
+     "got": "8",
+     "want": "8",
+     "finish": "stop",
+     "reasoning_tokens": 53
+    },
+    {
+     "id": "gsm8k-test-24",
+     "ok": true,
+     "got": "26",
+     "want": "26",
+     "finish": "stop",
+     "reasoning_tokens": 88
+    },
+    {
+     "id": "gsm8k-test-25",
+     "ok": true,
+     "got": "2",
+     "want": "2",
+     "finish": "stop",
+     "reasoning_tokens": 136
+    },
+    {
+     "id": "gsm8k-test-26",
+     "ok": true,
+     "got": "243",
+     "want": "243",
+     "finish": "stop",
+     "reasoning_tokens": 87
+    },
+    {
+     "id": "gsm8k-test-27",
+     "ok": true,
+     "got": "16",
+     "want": "16",
+     "finish": "stop",
+     "reasoning_tokens": 76
+    },
+    {
+     "id": "gsm8k-test-28",
+     "ok": true,
+     "got": "25",
+     "want": "25",
+     "finish": "stop",
+     "reasoning_tokens": 64
+    },
+    {
+     "id": "gsm8k-test-29",
+     "ok": true,
+     "got": "104",
+     "want": "104",
+     "finish": "stop",
+     "reasoning_tokens": 85
+    }
+   ],
+   "error": null,
+   "seconds": 907.8
+  },
+  "coding": {
+   "n": 5,
+   "correct": 4,
+   "accuracy": 0.8,
+   "items": [
+    {
+     "id": "code-01",
+     "ok": true,
+     "detail": "",
+     "finish": "stop",
+     "code_lines": 20
+    },
+    {
+     "id": "code-02",
+     "ok": false,
+     "detail": "FAILED (failures=1)",
+     "finish": "stop",
+     "code_lines": 16
+    },
+    {
+     "id": "code-03",
+     "ok": true,
+     "detail": "",
+     "finish": "stop",
+     "code_lines": 28
+    },
+    {
+     "id": "code-04",
+     "ok": true,
+     "detail": "",
+     "finish": "stop",
+     "code_lines": 22
+    },
+    {
+     "id": "code-05",
+     "ok": true,
+     "detail": "",
+     "finish": "stop",
+     "code_lines": 27
+    }
+   ],
+   "error": null,
+   "seconds": 8.5
+  },
+  "if": {
+   "n": 20,
+   "correct": 19,
+   "accuracy": 0.95,
+   "items": [
+    {
+     "id": "if-01",
+     "kind": "lines",
+     "ok": true,
+     "finish": "stop",
+     "reply": "- Red\n- Green\n- Blue"
+    },
+    {
+     "id": "if-02",
+     "kind": "exact_ci",
+     "ok": true,
+     "finish": "stop",
+     "reply": "pinecone"
+    },
+    {
+     "id": "if-03",
+     "kind": "max_words",
+     "ok": true,
+     "finish": "stop",
+     "reply": "The old kettle whistled softly on the stove."
+    },
+    {
+     "id": "if-04",
+     "kind": "json_keys",
+     "ok": true,
+     "finish": "stop",
+     "reply": "{\"a\":\"x\",\"b\":2}"
+    },
+    {
+     "id": "if-05",
+     "kind": "int_only",
+     "ok": true,
+     "finish": "stop",
+     "reply": "6"
+    },
+    {
+     "id": "if-06",
+     "kind": "lines",
+     "ok": true,
+     "finish": "stop",
+     "reply": "Silver drops descend\nTapping on the windowpane\nThe world smells new now"
+    },
+    {
+     "id": "if-07",
+     "kind": "sentences",
+     "ok": true,
+     "finish": "stop",
+     "reply": "Gravity is the fundamental force by which all objects with mass or energy attract one another, with its strength proport"
+    },
+    {
+     "id": "if-08",
+     "kind": "absent_char",
+     "ok": true,
+     "finish": "stop",
+     "reply": "A long hull floats on a vast liquid. It cuts through salt spray, a wood or glass form. A sail, a motor, or oars push it "
+    },
+    {
+     "id": "if-09",
+     "kind": "exact",
+     "ok": true,
+     "finish": "stop",
+     "reply": "THE QUICK BROWN FOX"
+    },
+    {
+     "id": "if-10",
+     "kind": "lines_prefix_end",
+     "ok": true,
+     "finish": "stop",
+     "reply": "* Tea is one of the most widely consumed beverages in the world, second only to water.\n* It is made by steeping the cure"
+    },
+    {
+     "id": "if-11",
+     "kind": "exact",
+     "ok": true,
+     "finish": "stop",
+     "reply": "1,2,3,4,5"
+    },
+    {
+     "id": "if-12",
+     "kind": "one_of",
+     "ok": true,
+     "finish": "stop",
+     "reply": "No"
+    },
+    {
+     "id": "if-13",
+     "kind": "comma_n",
+     "ok": true,
+     "finish": "stop",
+     "reply": "venus, mars"
+    },
+    {
+     "id": "if-14",
+     "kind": "exact_ci",
+     "ok": true,
+     "finish": "stop",
+     "reply": "echo echo echo echo"
+    },
+    {
+     "id": "if-15",
+     "kind": "max_words",
+     "ok": true,
+     "finish": "stop",
+     "reply": "Water evaporates, condenses into clouds, falls as precipitation, and flows back to oceans and rivers, repeating continuo"
+    },
+    {
+     "id": "if-16",
+     "kind": "lines_matching",
+     "ok": true,
+     "finish": "stop",
+     "reply": "| Column 1 | Column 2 |\n| -------- | -------- |\n| Value 1  | Value 2  |"
+    },
+    {
+     "id": "if-17",
+     "kind": "exact",
+     "ok": true,
+     "finish": "stop",
+     "reply": "name,age,city"
+    },
+    {
+     "id": "if-18",
+     "kind": "substring",
+     "ok": true,
+     "finish": "stop",
+     "reply": "The chemist placed a lump of cobalt into the solution, watching it dissolve slowly."
+    },
+    {
+     "id": "if-19",
+     "kind": "words_n_lower",
+     "ok": false,
+     "finish": "stop",
+     "reply": "soft white flakes falling"
+    },
+    {
+     "id": "if-20",
+     "kind": "startswith",
+     "ok": true,
+     "finish": "stop",
+     "reply": "A: Lima"
+    }
+   ],
+   "error": null,
+   "seconds": 14.3
+  },
+  "json": {
+   "n": 6,
+   "correct": 6,
+   "accuracy": 1.0,
+   "items": [
+    {
+     "name": "person",
+     "ok": true,
+     "errors": [],
+     "finish": "stop",
+     "markup_leak": false,
+     "content": "{\n  \"name\": \"Alice Johnson\",\n  \"age\": 30,\n  \"active\": true\n}"
+    },
+    {
+     "name": "order",
+     "ok": true,
+     "errors": [],
+     "finish": "stop",
+     "markup_leak": false,
+     "content": "{\n  \"id\": \"ORD-1001\",\n  \"items\": [\n    {\n      \"sku\": \"SKU-001\",\n      \"qty\": 2\n    },\n    {\n      \"sku\": \"SKU-002\",\n      \"qty\": 1\n    }\n  ],\n  \"total\": 59.99\n"
+    },
+    {
+     "name": "status",
+     "ok": true,
+     "errors": [],
+     "finish": "stop",
+     "markup_leak": false,
+     "content": "{\n  \"state\": \"ok\",\n  \"code\": 0\n}"
+    },
+    {
+     "name": "city",
+     "ok": true,
+     "errors": [],
+     "finish": "stop",
+     "markup_leak": false,
+     "content": "{\n  \"name\": \"Kyoto\",\n  \"population\": 1464890,\n  \"tags\": [\"historic\", \"cultural\", \"temples\", \"japan\"],\n  \"coords\": {\n    \"lat\": 35.0116,\n    \"lon\": 135.7681\n  }\n"
+    },
+    {
+     "name": "flags",
+     "ok": true,
+     "errors": [],
+     "finish": "stop",
+     "markup_leak": false,
+     "content": "{\n  }"
+    },
+    {
+     "name": "list",
+     "ok": true,
+     "errors": [],
+     "finish": "stop",
+     "markup_leak": false,
+     "content": "[\n  \"red\",\n  \"green\",\n  \"blue\"\n]"
+    }
+   ],
+   "error": null,
+   "seconds": 1.8
+  },
+  "tools": {
+   "n": 10,
+   "correct": 10,
+   "accuracy": 1.0,
+   "single": {
+    "n": 8,
+    "correct": 8,
+    "items": [
+     {
+      "id": "tool-01",
+      "ok": true,
+      "why": "",
+      "name": "get_weather",
+      "calls": 1,
+      "markup_leak": false,
+      "finish": "tool_calls"
+     },
+     {
+      "id": "tool-02",
+      "ok": true,
+      "why": "",
+      "name": "create_task",
+      "calls": 1,
+      "markup_leak": false,
+      "finish": "tool_calls"
+     },
+     {
+      "id": "tool-03",
+      "ok": true,
+      "why": "",
+      "name": "run_sql",
+      "calls": 1,
+      "markup_leak": false,
+      "finish": "tool_calls"
+     },
+     {
+      "id": "tool-04",
+      "ok": true,
+      "why": "",
+      "name": "convert_currency",
+      "calls": 1,
+      "markup_leak": false,
+      "finish": "tool_calls"
+     },
+     {
+      "id": "tool-05",
+      "ok": true,
+      "why": "expected no tool call",
+      "name": null,
+      "calls": 0,
+      "markup_leak": false,
+      "finish": "stop"
+     },
+     {
+      "id": "tool-06",
+      "ok": true,
+      "why": "",
+      "name": "create_task",
+      "calls": 1,
+      "markup_leak": false,
+      "finish": "tool_calls"
+     },
+     {
+      "id": "tool-07",
+      "ok": true,
+      "why": "expected no tool call",
+      "name": null,
+      "calls": 0,
+      "markup_leak": false,
+      "finish": "stop"
+     },
+     {
+      "id": "tool-08",
+      "ok": true,
+      "why": "",
+      "name": "get_weather",
+      "calls": 1,
+      "markup_leak": false,
+      "finish": "tool_calls"
+     }
+    ]
+   },
+   "chains": {
+    "n": 2,
+    "correct": 2,
+    "items": [
+     {
+      "id": "chain-01",
+      "ok": true,
+      "why": "",
+      "calls": [
+       {
+        "name": "get_weather",
+        "args": {
+         "city": "Sapporo",
+         "units": "c"
+        }
+       },
+       {
+        "name": "create_task",
+        "args": {
+         "title": "sleet watch",
+         "priority": 4
+        }
+       }
+      ]
+     },
+     {
+      "id": "chain-02",
+      "ok": true,
+      "why": "",
+      "calls": [
+       {
+        "name": "run_sql",
+        "args": {
+         "query": "SELECT id, created_at FROM messages ORDER BY created_at DESC LIMIT 5",
+         "limit": 5
+        }
+       },
+       {
+        "name": "convert_currency",
+        "args": {
+         "amount": 500,
+         "from": "EUR",
+         "to": "JPY"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "error": null,
+   "seconds": 4.0
+  },
+  "longctx": {
+   "n": 3,
+   "correct": 3,
+   "accuracy": 1.0,
+   "items": [
+    {
+     "size_target": 32768,
+     "size_actual": 0,
+     "depth": 0.3333333333333333,
+     "ok": true,
+     "reply": "698772",
+     "finish": "stop",
+     "prompt_tokens": 26728,
+     "ttft_s": null
+    },
+    {
+     "size_target": 131072,
+     "size_actual": 0,
+     "depth": 0.3333333333333333,
+     "ok": true,
+     "reply": "364956",
+     "finish": "stop",
+     "prompt_tokens": 106783,
+     "ttft_s": null
+    },
+    {
+     "size_target": 299000,
+     "size_actual": 0,
+     "depth": 0.3333333333333333,
+     "ok": true,
+     "reply": "968519",
+     "finish": "stop",
+     "prompt_tokens": 243536,
+     "ttft_s": null
+    }
+   ],
+   "error": null,
+   "seconds": 14.1
+  },
+  "summary": {
+   "facts_total": 20,
+   "facts_kept": 20,
+   "facts_kept_rate": 1.0,
+   "missing": [],
+   "stale_returned": [],
+   "stale_rate": 0.0,
+   "extra_fact_kept": true,
+   "invented_numbers": [],
+   "invented_rate": 0.0,
+   "transcript_tokens": 7439,
+   "finish": "stop",
+   "summary_words": 178,
+   "error": null,
+   "seconds": 4.8
+  }
+ },
+ "finished": "2026-10-17T09:25:28-0700",
+ "requests": 277,
+ "transport_errors": 1
+}

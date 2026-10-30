@@ -1,0 +1,3865 @@
+{
+ "bench": "qbench-harness",
+ "row": "C",
+ "harness": "dsh",
+ "harness_version": {
+  "name": "DeepSeek harness (dsh)",
+  "tag": "dsh-v0.2.1-rc.2",
+  "commit": "687f282e8625c6b8d11ff58211a90524be2e4317",
+  "sdk": "0.2.1rc2 0.2.1rc2",
+  "profile": "sdk-minimal"
+ },
+ "model": "DeepSeek-V4.1-Flash-1017-TF",
+ "thinking": false,
+ "timeout_s": 600.0,
+ "workers": 4,
+ "mmlu_subset": "mmlu200.jsonl items 0,4,...,196 (every 4th, 50 items)",
+ "instruction": "\n\n---\nDo not answer in chat. Write exactly what your reply would have been, and nothing else, to the file `{file}` in the current working directory, then stop.",
+ "venice_dry_run": false,
+ "started": "2026-10-17T10:40:15-0700",
+ "tasks": [
+  {
+   "area": "coding",
+   "id": "code-01",
+   "file": "solution.py",
+   "timed_out": false,
+   "wall_s": 9.36,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "def roman_to_int(s: str) -> int:\n    values = {\n        'I': 1,\n        'V': 5,\n        'X': 10,\n        'L': 50,\n        'C': 100,\n        'D': 500,\n        'M': 1000,\n    }\n    total = 0\n    prev = 0\n    for ch in reversed(s):\n        curr = values[ch]\n        if curr < prev:\n            total -= ",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "coding",
+   "id": "code-02",
+   "file": "solution.py",
+   "timed_out": false,
+   "wall_s": 8.72,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "def flatten(x):\n    \"\"\"Flatten an arbitrarily nested list of ints into a flat list of ints.\n\n    Non-list scalars pass through unchanged.\n    \"\"\"\n    result = []\n    if isinstance(x, list):\n        for item in x:\n            result.extend(flatten(item))\n    else:\n        result.append(x)\n    return ",
+   "ok": false,
+   "detail": "FAILED (failures=1)"
+  },
+  {
+   "area": "coding",
+   "id": "code-03",
+   "file": "solution.py",
+   "timed_out": false,
+   "wall_s": 10.42,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "def merge_intervals(intervals):\n    \"\"\"Merge overlapping or touching closed intervals.\n\n    Args:\n        intervals: A list of (start, end) tuples representing closed intervals.\n\n    Returns:\n        A sorted list of merged (start, end) tuples.\n    \"\"\"\n    if not intervals:\n        return []\n\n    in",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "coding",
+   "id": "code-04",
+   "file": "solution.py",
+   "timed_out": false,
+   "wall_s": 9.68,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "def parse_kv(text):\n    \"\"\"Parse lines of the form ``key=value`` into a dict.\n\n    Whitespace around keys and values is stripped, blank lines and lines\n    starting with ``#`` are ignored, and the last value wins for a repeated key.\n    \"\"\"\n    result = {}\n    for line in text.splitlines():\n        ",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "coding",
+   "id": "code-05",
+   "file": "solution.py",
+   "timed_out": false,
+   "wall_s": 6.72,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "def top_k(items, k):\n    \"\"\"Return the k highest integers from items, in descending order.\"\"\"\n    if k <= 0:\n        return []\n    return sorted(items, reverse=True)[:k]\n",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-0",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.04,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Janet's ducks lay 16 eggs per day. She eats 3 and uses 4 for muffins, so she has 16 - 3 - 4 = 9 eggs left to sell. At $2 per egg, she makes 9 \u00d7 $2 = $18 per day at the farmers' market.\n\nANSWER: 18\n",
+   "ok": true,
+   "detail": "got 18 want 18"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-1",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.44,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A robe takes 2 bolts of blue fiber and half that much white fiber, so it takes 2 + 1 = 3 bolts in total.\nANSWER: 3\n",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-2",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.7,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Josh bought the house for $80,000 and spent $50,000 on repairs, so his total cost is $130,000. The repairs increased the house's value by 150%, meaning the value increased by 1.5 \u00d7 $80,000 = $120,000. So the house is now worth $80,000 + $120,000 = $200,000. His profit is $200,000 \u2212 $130,000 = $70,00",
+   "ok": true,
+   "detail": "got 70000 want 70000"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-3",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 8.47,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "James runs 3 sprints per session, 3 times a week, so he runs 3 \u00d7 3 = 9 sprints per week. At 60 meters per sprint, that is 9 \u00d7 60 = 540 meters per week.\n\nANSWER: 540\n",
+   "ok": true,
+   "detail": "got 540 want 540"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-4",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.73,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Each of the 20 chickens needs 3 cups per day, for a total of 20 \u00d7 3 = 60 cups.\nShe has already given 15 + 25 = 40 cups.\nSo the final meal must provide 60 \u2212 40 = 20 cups.\nANSWER: 20\n",
+   "ok": true,
+   "detail": "got 20 want 20"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-5",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 9.69,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "One glass costs $5, and every second glass costs 60% of the price, which is $3.\n\nSo the glasses come in pairs: each pair costs $5 + $3 = $8.\n\n16 glasses make 8 pairs, so Kylar pays 8 \u00d7 $8 = $64.\n\nANSWER: 64\n",
+   "ok": true,
+   "detail": "got 64 want 64"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-6",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.05,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Seattle has 20 sheep. Charleston has 4 \u00d7 20 = 80 sheep. Toulouse has 2 \u00d7 80 = 160 sheep. Together they have 20 + 80 + 160 = 260 sheep.\nANSWER: 260\n",
+   "ok": true,
+   "detail": "got 260 want 260"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-7",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 8.45,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Carla downloads at 2 GB/minute, so the full 200 GB file takes:\n\n200 \u00f7 2 = 100 minutes\n\nShe gets 40% of the way through before the restart, which takes:\n\n0.40 \u00d7 100 = 40 minutes\n\nThen Windows restarts and takes 20 minutes. After the restart, she must download the entire file from the beginning, takin",
+   "ok": true,
+   "detail": "got 160 want 160"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-8",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 9.17,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "John drives 3 hours at 60 mph, so he travels 3 \u00d7 60 = 180 miles from home.\n\nOn the return trip, he first spends 2 hours at standstill, traveling 0 miles.\n\nThen he drives for half an hour (0.5 hours) at 30 mph, covering 0.5 \u00d7 30 = 15 miles back toward home.\n\nThe remaining time is 4 \u2212 2 \u2212 0.5 = 1.5 ho",
+   "ok": true,
+   "detail": "got 45 want 45"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-9",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.23,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Eliza earns her regular rate for the first 40 hours: 40 \u00d7 $10 = $400.\n\nHer overtime rate is 1.2 \u00d7 $10 = $12 per hour. She worked 5 overtime hours, so overtime pay is 5 \u00d7 $12 = $60.\n\nTotal earnings: $400 + $60 = $460.\n\nANSWER: 460\n",
+   "ok": true,
+   "detail": "got 460 want 460"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-10",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.27,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "First month: 60 downloads.\nSecond month: 60 \u00d7 3 = 180 downloads.\nThird month: 180 reduced by 30%, so 180 \u00d7 0.70 = 126 downloads.\nTotal: 60 + 180 + 126 = 366 downloads.\n\nANSWER: 366\n",
+   "ok": true,
+   "detail": "got 366 want 366"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-11",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.59,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "3 dozen donuts cost 3 \u00d7 $68 = $204.\n2 dozen mini cupcakes cost 2 \u00d7 $80 = $160.\n6 dozen mini cheesecakes cost 6 \u00d7 $55 = $330.\nTotal cost = $204 + $160 + $330 = $694.\nANSWER: 694\n",
+   "ok": true,
+   "detail": "got 694 want 694"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-12",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 8.62,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Each year, Carlos earns 7 \u00d7 $1.50 = $10.50 from the lemons, but spends $3 on water and feed, for a net gain of $10.50 \u2212 $3 = $7.50 per year.\n\nThe tree costs $90 to plant. To start earning money means his cumulative net gain must exceed $90.\n\nAfter n years, his cumulative net gain is 7.5n. We need 7.",
+   "ok": true,
+   "detail": "got 13 want 13"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-13",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.81,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Let x be the number she started with.\n\nAt the green house she sold x/3, leaving 2x/3.\nAt the red house she sold 2 more, leaving 2x/3 - 2.\nAt the orange house she sold half of what was left, so half remained:\n(2x/3 - 2)/2 = 5.\n\nSo 2x/3 - 2 = 10, giving 2x/3 = 12, and x = 18.\n\nANSWER: 18\n",
+   "ok": true,
+   "detail": "got 18 want 18"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-14",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.33,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "20% enrolled in contemporary dance, so 80% remain.\n\n25% of the remaining 80% enrolled in jazz dance:\n0.25 \u00d7 80% = 20% enrolled in jazz.\n\nThe rest enrolled in hip-hop:\n100% \u2212 20% \u2212 20% = 60%.\n\nANSWER: 60\n",
+   "ok": true,
+   "detail": "got 60 want 60"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-15",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.44,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "The jewelry profit would be 2.5% of ,000 = 25. The electronic gadgets profit would be 1.2% of ,000 = 6. To maximize profit, the merchant should choose the jewelry, yielding a profit of 25.\n\nANSWER: 125",
+   "ok": true,
+   "detail": "got 125 want 125"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-16",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.69,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Each train travels 80 miles west and 150 miles north, so the total distance covered by each train is 80 + 150 = 230 miles.\n\nANSWER: 230",
+   "ok": true,
+   "detail": "got 230 want 230"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-17",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.37,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Jill earns $20 per hour as a teacher and $30 per hour as a coach. Each week she earns:\n\n20 \u00d7 35 = $700 teaching\n30 \u00d7 15 = $450 coaching\n\nWeekly total: 700 + 450 = $1,150\n\nFor 50 weeks: 1,150 \u00d7 50 = $57,500\n\nANSWER: 57500\n",
+   "ok": true,
+   "detail": "got 57500 want 57500"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-18",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.49,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Claire eats 3 eggs each morning. In 4 weeks, there are 4 \u00d7 7 = 28 days, so she eats 3 \u00d7 28 = 84 eggs. Since a dozen is 12 eggs, she eats 84 \u00f7 12 = 7 dozens of eggs.\n\nANSWER: 7\n",
+   "ok": true,
+   "detail": "got 7 want 7"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-19",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 8.63,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Marissa has walked 4 + 2 = 6 miles in 1 + 1 = 2 hours. To average 4 miles per hour over the 12-mile trail, she needs a total time of 12 / 4 = 3 hours. She has already used 2 hours, so she has 1 hour left to walk the remaining 12 - 6 = 6 miles. Her speed must be 6 / 1 = 6 miles per hour.\n\nANSWER: 6\n",
+   "ok": true,
+   "detail": "got 6 want 6"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-20",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.8,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Orange drink: 10 L, but 1 L spills, leaving 9 L. Water in orange = (2/3) * 9 = 6 L.\n\nPineapple drink: 15 L, water = (3/5) * 15 = 9 L.\n\nTotal water = 6 + 9 = 15 L.\n\nANSWER: 15\n",
+   "ok": true,
+   "detail": "got 15 want 15"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-21",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 10.08,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Raymond was born 6 years before Samantha, so Raymond is 6 years older than Samantha.\n\nSamantha is now 31, so Raymond is 31 + 6 = 37 years old.\n\nRaymond had a son at age 23, so his son is 37 - 23 = 14 years old.\n\nTherefore, Raymond's son was born 14 years ago.\n\nANSWER: 14\n",
+   "ok": true,
+   "detail": "got 14 want 14"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-22",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 8.92,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Billy's first 3 customers each buy 1 DVD, so that's 3 DVDs. His next 2 customers each buy 2 DVDs, so that's 4 more DVDs. His last 3 customers buy none. In total, Billy sells 3 + 4 = 7 DVDs.\n\nANSWER: 7\n",
+   "ok": true,
+   "detail": "got 7 want 7"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-23",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 8.59,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "The candle burns for 4 hours (from 1:00 PM to 5:00 PM). At 2 centimeters per hour, it will be 4 \u00d7 2 = 8 centimeters shorter.\n\nANSWER: 8",
+   "ok": true,
+   "detail": "got 8 want 8"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-24",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.54,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Let the original price be x. A 25% discount means Kyle paid 75% of the original price:\n\n0.75x = 19.50\n\nx = 19.50 / 0.75 = 26\n\nThe original price of the book was $26.\n\nANSWER: 26\n",
+   "ok": true,
+   "detail": "got 26 want 26"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-25",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.95,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Let the number of pizza boxes be x.\n\nChicken: $12\nMilk: 5 \u00d7 $3 = $15\nApples: 4 \u00d7 $1.50 = $6\nPizza: 8.50x\n\nTotal equation: 12 + 15 + 6 + 8.50x = 50\n33 + 8.50x = 50\n8.50x = 17\nx = 2\n\nANSWER: 2\n",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-26",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 9.75,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Mishka bought 3 pairs of shorts at $16.50 each, 3 pairs of pants at $22.50 each, and 3 pairs of shoes at $42 each.\n\nCost of shorts: 3 \u00d7 $16.50 = $49.50\nCost of pants: 3 \u00d7 $22.50 = $67.50\nCost of shoes: 3 \u00d7 $42 = $126\n\nTotal: $49.50 + $67.50 + $126 = $243\n\nANSWER: 243\n",
+   "ok": true,
+   "detail": "got 243 want 243"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-27",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.0,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "She eats 1 serving per night, so in 60 days she eats 60 servings. Each carton has 15 servings, so she needs 60/15 = 4 cartons. At $4.00 per carton, she spends 4 \u00d7 $4.00 = $16.00.\n\nANSWER: 16\n",
+   "ok": true,
+   "detail": "got 16 want 16"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-28",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.5,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Henry's trip is 60 miles total. His first stop is after 20 miles. His second stop is 15 miles before the end, which is 60 - 15 = 45 miles into the trip. The distance between the first and second stops is 45 - 20 = 25 miles.\n\nANSWER: 25\n",
+   "ok": true,
+   "detail": "got 25 want 25"
+  },
+  {
+   "area": "math",
+   "id": "gsm8k-test-29",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.11,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "One pair of heels costs $33, and the other costs twice as much, so it costs 2 \u00d7 $33 = $66.\n\nTogether, the two pairs of heels cost $33 + $66 = $99.\n\nThe heels cost five dollars less than the boots, so the boots cost $99 + $5 = $104.\n\nANSWER: 104\n",
+   "ok": true,
+   "detail": "got 104 want 104"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-000",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.34,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-004",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.59,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C\n",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-008",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.54,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": false,
+   "detail": "got 1 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-012",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 3.89,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-016",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.02,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B\n",
+   "ok": false,
+   "detail": "got 1 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-020",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.91,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C\n",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-024",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.62,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-028",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.63,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D\n",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-032",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.38,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B\n",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-036",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.77,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-040",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.77,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-044",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.67,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B\n",
+   "ok": false,
+   "detail": "got 1 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-048",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.12,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B\n",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-052",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.88,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-056",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.88,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-060",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.81,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-064",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.45,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-068",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.44,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-072",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.8,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-076",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.29,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-080",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.64,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C\n",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-084",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.79,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B\n",
+   "ok": false,
+   "detail": "got 1 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-088",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.84,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-092",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.81,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-096",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.54,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-100",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.13,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C",
+   "ok": false,
+   "detail": "got 2 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-104",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.43,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-108",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.21,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-112",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.65,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-116",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.63,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D\n",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-120",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.29,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C\n",
+   "ok": false,
+   "detail": "got 2 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-124",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.72,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 3,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 2,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A\n",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-128",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.14,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D\n",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-132",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.11,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-136",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.79,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-140",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.71,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-144",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.54,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C\n",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-148",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.28,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": false,
+   "detail": "got 3 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-152",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.06,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "C",
+   "ok": true,
+   "detail": "got 2 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-156",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.02,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-160",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.07,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-164",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.12,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A\n",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-168",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.45,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A\n",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-172",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.2,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D\n",
+   "ok": false,
+   "detail": "got 3 want 2"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-176",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.4,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A",
+   "ok": true,
+   "detail": "got 0 want 0"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-180",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.74,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-184",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.0,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D\n",
+   "ok": true,
+   "detail": "got 3 want 3"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-188",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.17,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-192",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.5,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "B\n",
+   "ok": true,
+   "detail": "got 1 want 1"
+  },
+  {
+   "area": "mmlu",
+   "id": "mmlu-196",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.54,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "D",
+   "ok": false,
+   "detail": "got 3 want 1"
+  },
+  {
+   "area": "if",
+   "id": "if-01",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.26,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "- red\n- blue\n- green\n",
+   "ok": true,
+   "detail": "lines"
+  },
+  {
+   "area": "if",
+   "id": "if-02",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.89,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "pinecone",
+   "ok": true,
+   "detail": "exact_ci"
+  },
+  {
+   "area": "if",
+   "id": "if-03",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.33,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "The kettle whistles softly as the water boils.",
+   "ok": true,
+   "detail": "max_words"
+  },
+  {
+   "area": "if",
+   "id": "if-04",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.59,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "{\"a\":\"x\",\"b\":2}",
+   "ok": true,
+   "detail": "json_keys"
+  },
+  {
+   "area": "if",
+   "id": "if-05",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.55,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "6",
+   "ok": true,
+   "detail": "int_only"
+  },
+  {
+   "area": "if",
+   "id": "if-06",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 23.59,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 7,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "error",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Soft rain taps the leaves\nSilver threads from cloudy skies\nEarth drinks quietly\n",
+   "ok": true,
+   "detail": "lines"
+  },
+  {
+   "area": "if",
+   "id": "if-07",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.78,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Gravity is the attractive force by which objects with mass or energy draw one another together, with its strength increasing with mass and decreasing with distance. In Einstein's general relativity, it arises from the curvature of spacetime, which objects follow as they move along the straightest po",
+   "ok": true,
+   "detail": "sentences"
+  },
+  {
+   "area": "if",
+   "id": "if-08",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 34.2,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 15,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 14,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A boat is a small craft for gliding on a body of H2O. It has a hull, a bow, and a flat back. Oars or wind can push it. A good boat is snug and dry.\n",
+   "ok": true,
+   "detail": "absent_char"
+  },
+  {
+   "area": "if",
+   "id": "if-09",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.44,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "THE QUICK BROWN FOX",
+   "ok": true,
+   "detail": "exact"
+  },
+  {
+   "area": "if",
+   "id": "if-10",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 10.51,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 4,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 3,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "* Tea is made by steeping the leaves of the Camellia sinensis plant in hot water.\n* Green, black, and oolong teas differ mainly in how the leaves are processed after picking.\n* Drinking tea has been a daily ritual across cultures for thousands of years.\nEND\n",
+   "ok": true,
+   "detail": "lines_prefix_end"
+  },
+  {
+   "area": "if",
+   "id": "if-11",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.79,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "1,2,3,4,5",
+   "ok": true,
+   "detail": "exact"
+  },
+  {
+   "area": "if",
+   "id": "if-12",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.86,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "No",
+   "ok": true,
+   "detail": "one_of"
+  },
+  {
+   "area": "if",
+   "id": "if-13",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.17,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "earth, mars",
+   "ok": true,
+   "detail": "comma_n"
+  },
+  {
+   "area": "if",
+   "id": "if-14",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.9,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "echo echo echo echo",
+   "ok": true,
+   "detail": "exact_ci"
+  },
+  {
+   "area": "if",
+   "id": "if-15",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 7.9,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "Water evaporates, condenses into clouds, falls as precipitation, then collects in oceans, lakes, and soil before evaporating again.",
+   "ok": true,
+   "detail": "max_words"
+  },
+  {
+   "area": "if",
+   "id": "if-16",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.6,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "| Column 1 | Column 2 |\n| --- | --- |\n| Value 1 | Value 2 |\n",
+   "ok": true,
+   "detail": "lines_matching"
+  },
+  {
+   "area": "if",
+   "id": "if-17",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 4.37,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "name,age,city",
+   "ok": true,
+   "detail": "exact"
+  },
+  {
+   "area": "if",
+   "id": "if-18",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 6.89,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "The cobalt ore was extracted from the mine and shipped overseas.\n",
+   "ok": true,
+   "detail": "substring"
+  },
+  {
+   "area": "if",
+   "id": "if-19",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.73,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "soft cold white snow falls",
+   "ok": true,
+   "detail": "words_n_lower"
+  },
+  {
+   "area": "if",
+   "id": "if-20",
+   "file": "answer.txt",
+   "timed_out": false,
+   "wall_s": 5.52,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "A: Lima",
+   "ok": true,
+   "detail": "startswith"
+  },
+  {
+   "area": "json",
+   "id": "person",
+   "file": "answer.json",
+   "timed_out": false,
+   "wall_s": 23.33,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 7,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "error",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "{\"name\": \"Jane Doe\", \"age\": 30, \"active\": true}\n",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "json",
+   "id": "order",
+   "file": "answer.json",
+   "timed_out": false,
+   "wall_s": 5.72,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "{\"id\":\"order-001\",\"items\":[{\"sku\":\"SKU-1001\",\"qty\":2},{\"sku\":\"SKU-2002\",\"qty\":1}],\"total\":49.98}\n",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "json",
+   "id": "status",
+   "file": "answer.json",
+   "timed_out": false,
+   "wall_s": 6.06,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "{\"state\":\"ok\",\"code\":0}",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "json",
+   "id": "city",
+   "file": "answer.json",
+   "timed_out": false,
+   "wall_s": 24.01,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 7,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "error",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "{\"name\":\"Tokyo\",\"population\":13960000,\"tags\":[\"capital\",\"metropolis\",\"coastal\"],\"coords\":{\"lat\":35.6762,\"lon\":139.6503}}\n",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "json",
+   "id": "flags",
+   "file": "answer.json",
+   "timed_out": false,
+   "wall_s": 5.63,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "{\n  \"featureFlagOne\": true,\n  \"featureFlagTwo\": false,\n  \"featureFlagThree\": true\n}\n",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "area": "json",
+   "id": "list",
+   "file": "answer.json",
+   "timed_out": false,
+   "wall_s": 5.09,
+   "exit": 0,
+   "tap": {
+    "llm_requests": 2,
+    "other_requests": 0,
+    "errors": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "tool_calls": 1,
+    "reasoning_chars": 0,
+    "thinking_asked": [
+     "False"
+    ]
+   },
+   "harness_reported": {
+    "tool_calls": 0,
+    "turns": 0,
+    "result": {
+     "subtype": "completed",
+     "usage": {
+      "thinking_tokens": null
+     },
+     "models": []
+    }
+   },
+   "answer": "[\"red\", \"green\", \"blue\"]\n",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "wall_s": 214.5,
+ "finished": "2026-10-17T10:43:50-0700",
+ "engine_metrics_delta": {
+  "tensorfold_requests_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 261.0,
+  "tensorfold_prompt_tokens_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 231650.0,
+  "tensorfold_cached_tokens_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 130688.0,
+  "tensorfold_completion_tokens_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 12293.0,
+  "tensorfold_decode_rounds_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 2803.0,
+  "tensorfold_decode_seconds_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 250.69,
+  "tensorfold_prefill_seconds_total{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 172.624,
+  "tensorfold_uptime_seconds{model=\"DeepSeek-V4.1-Flash-1017-TF\"}": 214.52,
+  "vllm:prompt_tokens_total{model_name=\"DeepSeek-V4.1-Flash-1017-TF\"}": 231650.0,
+  "vllm:generation_tokens_total{model_name=\"DeepSeek-V4.1-Flash-1017-TF\"}": 12293.0,
+  "vllm:prompt_tokens_cached_total{model_name=\"DeepSeek-V4.1-Flash-1017-TF\"}": 130688.0,
+  "vllm:request_success_total{model_name=\"DeepSeek-V4.1-Flash-1017-TF\",finished_reason=\"stop\"}": 261.0
+ },
+ "summary": {
+  "areas": {
+   "coding": {
+    "n": 5,
+    "correct": 4,
+    "accuracy": 0.8,
+    "no_answer_file": 0,
+    "timeouts": 0
+   },
+   "math": {
+    "n": 30,
+    "correct": 30,
+    "accuracy": 1.0,
+    "no_answer_file": 0,
+    "timeouts": 0
+   },
+   "mmlu": {
+    "n": 50,
+    "correct": 41,
+    "accuracy": 0.82,
+    "no_answer_file": 0,
+    "timeouts": 0
+   },
+   "if": {
+    "n": 20,
+    "correct": 20,
+    "accuracy": 1.0,
+    "no_answer_file": 0,
+    "timeouts": 0
+   },
+   "json": {
+    "n": 6,
+    "correct": 6,
+    "accuracy": 1.0,
+    "no_answer_file": 0,
+    "timeouts": 0
+   }
+  },
+  "totals": {
+   "tasks": 111,
+   "wall_s_sum": 786.4,
+   "harness_tool_calls": 0,
+   "tap_llm_requests": 261,
+   "tap_errors": 0,
+   "tap_prompt_tokens": 0,
+   "tap_completion_tokens": 0,
+   "tap_tool_calls": 135,
+   "tap_reasoning_chars": 0,
+   "tap_thinking_asked": [
+    "False"
+   ]
+  }
+ }
+}

@@ -1,0 +1,169 @@
+{
+ "tasks": [
+  {
+   "name": "person",
+   "prompt": "Give one person as JSON: name (string), age (integer), active (boolean).",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "age": {
+      "type": "integer"
+     },
+     "active": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name",
+     "age",
+     "active"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "name": "order",
+   "prompt": "Give an order as JSON: id (string), items (array of objects with sku string and qty integer), total (number). Two items.",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "sku": {
+         "type": "string"
+        },
+        "qty": {
+         "type": "integer"
+        }
+       },
+       "required": [
+        "sku",
+        "qty"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "total": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "items",
+     "total"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "name": "status",
+   "prompt": "Give a status object as JSON: state one of \"ok\", \"degraded\", \"down\"; code integer 0-99.",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "state": {
+      "type": "string",
+      "enum": [
+       "ok",
+       "degraded",
+       "down"
+      ]
+     },
+     "code": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 99
+     }
+    },
+    "required": [
+     "state",
+     "code"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "name": "city",
+   "prompt": "Give a city as JSON: name (string), population (integer > 0), tags (array of strings), coords with lat and lon numbers.",
+   "schema": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "population": {
+      "type": "integer"
+     },
+     "tags": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "coords": {
+      "type": "object",
+      "properties": {
+       "lat": {
+        "type": "number"
+       },
+       "lon": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "lat",
+       "lon"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "name",
+     "population",
+     "tags",
+     "coords"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "name": "flags",
+   "prompt": "Give three feature flags as JSON: object whose values are booleans.",
+   "schema": {
+    "type": "object",
+    "additionalProperties": {
+     "type": "boolean"
+    }
+   }
+  },
+  {
+   "name": "list",
+   "prompt": "Give a JSON array of exactly three strings, each a colour name.",
+   "schema": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    },
+    "minItems": 3,
+    "maxItems": 3
+   }
+  }
+ ],
+ "func_names": {
+  "person": "make_person",
+  "order": "make_order",
+  "status": "make_status",
+  "city": "make_city",
+  "flags": "make_flags",
+  "list": "make_colours"
+ }
+}

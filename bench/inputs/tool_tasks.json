@@ -1,0 +1,268 @@
+{
+ "tools": [
+  {
+   "type": "function",
+   "function": {
+    "name": "get_weather",
+    "description": "Get current weather for a city",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "city": {
+       "type": "string"
+      },
+      "units": {
+       "type": "string",
+       "enum": [
+        "c",
+        "f"
+       ]
+      }
+     },
+     "required": [
+      "city"
+     ]
+    }
+   }
+  },
+  {
+   "type": "function",
+   "function": {
+    "name": "create_task",
+    "description": "Create a task in the tracker",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "title": {
+       "type": "string"
+      },
+      "priority": {
+       "type": "integer",
+       "minimum": 1,
+       "maximum": 5
+      },
+      "tags": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "due": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "title",
+      "priority"
+     ]
+    }
+   }
+  },
+  {
+   "type": "function",
+   "function": {
+    "name": "run_sql",
+    "description": "Run a read-only SQL query",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "query": {
+       "type": "string"
+      },
+      "limit": {
+       "type": "integer"
+      }
+     },
+     "required": [
+      "query"
+     ]
+    }
+   }
+  },
+  {
+   "type": "function",
+   "function": {
+    "name": "convert_currency",
+    "description": "Convert an amount between currencies",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "amount": {
+       "type": "number"
+      },
+      "from": {
+       "type": "string"
+      },
+      "to": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "amount",
+      "from",
+      "to"
+     ]
+    }
+   }
+  }
+ ],
+ "cases": [
+  {
+   "id": "tool-01",
+   "prompt": "What's the weather in Sapporo right now? Use celsius.",
+   "expect": {
+    "tool": "get_weather",
+    "required": [
+     "city"
+    ],
+    "const": {
+     "units": "c"
+    }
+   }
+  },
+  {
+   "id": "tool-02",
+   "prompt": "Create a task titled 'pin blender mcp source' with priority 2, tags ops and security, due 2026-09-25.",
+   "expect": {
+    "tool": "create_task",
+    "required": [
+     "title",
+     "priority"
+    ]
+   }
+  },
+  {
+   "id": "tool-03",
+   "prompt": "Query the messages table for the 5 most recent rows (id, created_at), newest first.",
+   "expect": {
+    "tool": "run_sql",
+    "required": [
+     "query"
+    ]
+   }
+  },
+  {
+   "id": "tool-04",
+   "prompt": "Convert 250 EUR to JPY.",
+   "expect": {
+    "tool": "convert_currency",
+    "required": [
+     "amount",
+     "from",
+     "to"
+    ]
+   }
+  },
+  {
+   "id": "tool-05",
+   "prompt": "Explain in about 80 words why speculative decoding helps single-stream latency. Do not call any tool.",
+   "expect": {
+    "no_tool": true
+   }
+  },
+  {
+   "id": "tool-06",
+   "prompt": "Create a task titled exactly: He said \"don't\" then left, priority 5, tags [\"a\\\"b\", \"日本語\"].",
+   "expect": {
+    "tool": "create_task",
+    "required": [
+     "title",
+     "priority"
+    ],
+    "const": {
+     "priority": 5
+    }
+   }
+  },
+  {
+   "id": "tool-07",
+   "prompt": "Write a short paragraph (about 60 words) about a stone room under a koi pond. No tools.",
+   "expect": {
+    "no_tool": true
+   }
+  },
+  {
+   "id": "tool-08",
+   "prompt": "What's the weather in Reykjavik in fahrenheit?",
+   "expect": {
+    "tool": "get_weather",
+    "required": [
+     "city"
+    ],
+    "const": {
+     "units": "f"
+    }
+   }
+  }
+ ],
+ "chains": [
+  {
+   "id": "chain-01",
+   "turns": [
+    {
+     "prompt": "What's the weather in Sapporo right now? Use celsius.",
+     "expect": {
+      "tool": "get_weather",
+      "required": [
+       "city"
+      ],
+      "const": {
+       "units": "c"
+      }
+     }
+    },
+    {
+     "prompt": "Add a task titled 'sleet watch' with priority equal to the temperature you just read (rounded up to an integer, minimum 1).",
+     "expect": {
+      "tool": "create_task",
+      "required": [
+       "title",
+       "priority"
+      ],
+      "const": {
+       "priority": 4
+      }
+     }
+    }
+   ],
+   "final_check": {
+    "arg": "title",
+    "value": "sleet watch"
+   }
+  },
+  {
+   "id": "chain-02",
+   "turns": [
+    {
+     "prompt": "Query the messages table for the 5 most recent rows (id, created_at), newest first.",
+     "expect": {
+      "tool": "run_sql",
+      "required": [
+       "query"
+      ]
+     }
+    },
+    {
+     "prompt": "Convert the number of rows you just got, times 100, from EUR to JPY.",
+     "expect": {
+      "tool": "convert_currency",
+      "required": [
+       "amount",
+       "from",
+       "to"
+      ],
+      "const": {
+       "amount": 500,
+       "from": "EUR",
+       "to": "JPY"
+      }
+     }
+    }
+   ],
+   "final_check": {
+    "arg": "amount",
+    "value": 500
+   }
+  }
+ ]
+}

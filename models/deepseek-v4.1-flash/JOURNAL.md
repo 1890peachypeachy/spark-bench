@@ -4,6 +4,21 @@ Every dated entry for this model, newest first: what we changed, what it measure
 
 ---
 
+**2026-10-11 — the Zig engine is live.** The window-8 build below (CUDA Zig, TP=4 over RoCE, pipelined prompt reading) now serves the lane; the Python G19 build's run (2026-10-07 → 2026-10-11) is history. The serving numbers are the window-8 ones below: prompt reading 4,851 / 5,148 tok/s at 32K / 131K, cold first token 30.0 s on the 154K-token prompt, short decode 129 / 218 (code) and 66 / 138 (prose) tok/s, cold against cold ahead of the previous engine by +14 % / +7 % / +2 % / +8 %. The warm short cells, the mix cells, the 1k–160k depth sweep and the `m2bench` steady runs were never measured for Zig — those rows end with the Python engine.
+
+**2026-10-11 — the lane's engine becomes Zig: benched on four Sparks over RoCE, prompt reading +102 %.** The CUDA Zig port of TensorFold (in [the fork](https://github.com/neko-legends/deepseek-v41-tensorfold-spark), `zig-tp4` merged to `master`) ran its window 8 on RoCE — the transport the live engine uses — with pipelined prompt reading on:
+
+- **Controlled (one window, two boots, only the pipeline switch differs):** prompt reading **+74.6 % at 32K** (2,779 → 4,852 prompt tok/s) and **+102.0 % at 131K** (2,549 → 5,148); the cold 154K-token prompt's first token **60.5 → 30.0 s**. Short decode unchanged (±1 %); decode after the 131K prompt 90.7 → 99.6 tok/s.
+- **Headline (RoCE, cold single reps, 384-token greedy replies):** code **129.1** tok/s one stream, **218.3** for four; prose **66.2 / 138.2**. Cross-session against the Python engine benched the day before on RoCE, cold against cold (113.0 / 204.9, 65.2 / 128.2): code ×1 +14 %, code ×4 +7 %, prose ×1 +2 %, prose ×4 +8 %, first token −15 %.
+- **Not measured on RoCE in window 8:** the warm short cells and the mix cells — those cells stay empty (the NCCL window-7 numbers are in the fork's `docs/ZIG-RESULTS.md`). No 1k–160k depth sweep or `m2bench` steady run exists for Zig, so the lane's older geometric-mean and steady rows have no Zig successor.
+- **Went live the same day** (see the entry above): this bench is the basis for the migration.
+
+[Report](../../artifacts/tensorfold-v41-zig-20261011/REPORT.md) · the fork's `docs/ZIG-RESULTS.md` and `docs/ZIG-PREFILL-PIPE.md` · charts:
+
+![TP=4: Python vs Zig vs Zig + pipelined prefill](../../docs/images/prefill-pipe-comparison-20261011.png)
+
+![Every engine on four Sparks, 2026-10-11](../../docs/images/engines-dsv41-comparison-20261011.png)
+
 **2026-10-07 (19:00) — expert split rotated (live, +1-1.5% at four users); a drafter retrain that did not pay.**
 
 - **Rotation (`TF_DSV41_EXPERT_ROTATE=1`, fork `patches/0004`).** Each expert's wide 128-column slices now rotate round the four Sparks by expert id, instead of always landing on Sparks 1 and 2. The x3ld kernel reads an expert's own width; nothing else changes and it stays exact.

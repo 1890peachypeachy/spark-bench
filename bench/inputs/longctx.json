@@ -1,0 +1,23 @@
+{
+ "items": [
+  {
+   "size": 32768,
+   "depth": 0.3333333333333333,
+   "passkey": "698772",
+   "seed": 55570
+  },
+  {
+   "size": 131072,
+   "depth": 0.3333333333333333,
+   "passkey": "364956",
+   "seed": 338094
+  },
+  {
+   "size": 299000,
+   "depth": 0.3333333333333333,
+   "passkey": "968519",
+   "seed": 271029
+  }
+ ],
+ "question": "What is the passkey? Reply with the passkey only."
+}
