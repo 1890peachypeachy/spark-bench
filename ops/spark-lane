@@ -235,7 +235,7 @@ docker_names() { sshx "$1" "docker ps --format '{{.Names}}|{{.Image}}' 2>/dev/nu
 # never touch a live process either way.
 lane_container_names() {
   case "$1" in
-    dsv41-tp3|dsv41-tp4) echo "dsv41-head dsv41-worker" ;;
+    dsv41-tp3|dsv41-tp4|dsv41-tf3) echo "dsv41-head dsv41-worker" ;;
     dsv41-native) echo "dsv41-1017-tf" ;;
     dsv41-tf4|dsv41-tf4-ablit) echo "tp4-lane" ;;
     dsv41-tf2)            echo "dsv41-tf2-lane" ;;
@@ -515,6 +515,7 @@ lane_nodes() {
     dsv41-tf4)       echo "spark1 spark2 spark3 spark4" ;;
     dsv41-tf4-ablit) echo "spark1 spark2 spark3 spark4" ;;
     dsv41-tf2)       echo "spark3 spark4" ;;
+    dsv41-tf3)       echo "spark1 spark3 spark4" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
     glm53-tp4|glm53-tp4-ablit) echo "spark1 spark2 spark3 spark4" ;;
     glm53-gr8)       echo "spark1 spark2 spark3 spark4" ;;
@@ -524,19 +525,26 @@ lane_nodes() {
   esac
 }
 
-lane_endpoint() { case "$1" in comfy-studio-4x) echo "spark1 100.106.81.35:8188 | spark2 100.71.248.116:8188 | spark3 100.99.120.29:8188 | spark4 100.91.114.22:8188" ;; comfy-engine) echo "$COMFY_URL" ;; dsv41-tf2) echo "$TF2_ENDPOINT" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-image-2.1+minimax-h3)" ;; comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; dsv41-tf2) echo "$TF2_MODEL" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in comfy-studio-4x) echo "spark1 100.106.81.35:8188 | spark2 100.71.248.116:8188 | spark3 100.99.120.29:8188 | spark4 100.91.114.22:8188" ;; comfy-engine) echo "$COMFY_URL" ;; dsv41-tf2) echo "$TF2_ENDPOINT" ;; dsv41-tf3) echo "$TF3_ENDPOINT" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-image-2.1+minimax-h3)" ;; comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; dsv41-tf2|dsv41-tf3) echo "$TF2_MODEL" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
 # 2026-10-25 (Victor): dsv41-tf4-ablit (EXL3 + Keys) is the DEFAULT lane and co-tenants with comfy-studio-4x.
 # dsv41-native (Mia, original FP8/MXFP4 weights) is kept but is EXCLUSIVE: it will not start while comfy-studio runs.
 # RETIRED: dsv41-tp3, dsv41-tp4 (SGLang).
 # Their up/down functions below are kept as dead code for archaeology; they are no longer reachable.
-# RETIRED 2026-10-25 (Victor): glm53-tp4, glm53-tp4-ablit, glm53-hy, glm53-vllm4, glm53-tf2 (code kept, unreachable).
+# RETIRED 2026-10-25 (Victor): glm53-tp4, glm53-tp4-ablit, glm53-hy, glm53-vllm4 (code kept, unreachable).
+# glm53-tf2 REINSTATED 2026-10-31 (Victor) as the TP2 GLM option (kit /home/spark3/GLM53-TF, staged).
 # glm53-tp3 REINSTATED 2026-10-30 (Victor) as the main GLM lane after a successful
 # fabric-NFS TP3 flip. The kit's NFS_SERVER must point at the HEAD's FABRIC address
 # (10.73.0.3), NOT its Tailscale IP — dsv41-nfs only exports to 10.73.0.0/24.
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf2 dsv41-native glm53-tp3"
+# 2026-10-31 (Victor) — the four standing configurations the registry must offer:
+#   1. TP4 GLM-5.3-Flash OR DeepSeek TP4 full (exclusive):        glm53-tp4 / dsv41-tf4
+#   2. TP4 DeepSeek + ComfyUI TP4:                                dsv41-tf4-ablit + comfy-studio-4x (co-tenant)
+#   3. TP3 DeepSeek OR GLM + Imagination Studio on spark2:        dsv41-tf3 / glm53-tp3 (spark1/3/4; spark2 free)
+#   4. TP2 DeepSeek OR GLM + Imagination Studio TP2:              dsv41-tf2 / glm53-tf2 (spark3+4; spark2 + spark1 for Studio)
+# dsv41-tf3 = Mia TP3 SGLang recipe (fleet port, /var/tmp/dsv41-tf3 on spark3).
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf3 dsv41-tf2 dsv41-native glm53-tp3 glm53-tf2"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -549,6 +557,7 @@ lane_label() {
     dsv41-native)    echo "DeepSeek V4.1-Flash-1017 · TensorFold native TP4 · original FP8/MXFP4 + Keys ABLIT (Mia recipe) · NO COMFY, exclusive";;
     dsv41-tf4)       echo "DeepSeek V4.1-Flash · TensorFold TP4 · EXL3 3.5bpw (LibertAI)";;
     dsv41-tf2)       echo "DeepSeek V4.1-Flash-1017 · TensorFold TP2 · EXL3 2.9bpw (LibertAI) · 2 nodes (spark3 rank0 + spark4)";;
+    dsv41-tf3)       echo "DeepSeek V4.1-Flash-1017 · SGLang TP3 (Mia recipe, MXFP4+FP8, NVMe Engram) · spark3 head + spark1/spark4";;
     dsv41-tf4-ablit) echo "DeepSeek V4.1-Flash · TensorFold TP4 · EXL3 3.5bpw ABLITERATED (Keys-1017 wo_b) · default, Comfy co-tenant";;
     glm53-tp3)       echo "GLM-5.3-Flash · TensorFold TP3 · EXL3 (kit GLM53-TF3)";;
     glm53-tp4)       echo "GLM-5.3-Flash · TensorFold TP4 · EXL3 4bpw (kit glm53-tf4-trial, ABLIT=0)";;
@@ -1114,6 +1123,12 @@ TF2_LAUNCH="${TF2_LAUNCH:-$TF2_ROOT/launch}"
 TF2_CONFIG="${TF2_CONFIG:-$TF2_LAUNCH/config.spark-fleet-tp2.env}"
 TF2_ENDPOINT="${TF2_ENDPOINT:-http://100.99.120.29:8000/v1}"
 TF2_MODEL="deepseek-v4.1-flash"
+# ── dsv41-tf3: Mia TP3 SGLang recipe, fleet port. Head spark3 (NFS pool), workers spark1+spark4. ──
+TF3_ROOT="${TF3_ROOT:-/var/tmp/dsv41-tf3}"
+TF3_RECIPE="${TF3_RECIPE:-$TF3_ROOT/recipe}"
+TF3_ENV="${TF3_ENV:-$TF3_ROOT/.env.spark-fleet}"
+TF3_ENDPOINT="${TF3_ENDPOINT:-http://100.99.120.29:8000/v1}"
+TF3_MODEL="deepseek-v4.1-flash"
 # The abliterated variant is the same lane on patched rank-cache copies (Keys 1017 overlay on layers.10-35.attn.wo_b).
 # Nothing else changes: same model, same endpoint, same served name, same context. The stock caches stay intact,
 # so switching lanes is a restart (~2 min), not a re-patch.
@@ -1416,6 +1431,83 @@ dsv41_tf2_down() {
   ok "all required nodes released"
   result "$lane" "down" "-" "-"
   NEXT_CMD="nothing — nodes released. Weights, rank caches and images were NOT deleted."
+  return 0
+}
+
+dsv41_tf3_up() {
+  # Mia TP3 SGLang recipe, fleet port. start.sh runs on the head (spark3) and drives
+  # workers spark1/spark4 over ssh (per-node users via spark1-fleet/spark4-fleet aliases).
+  local lane="dsv41-tf3"
+  STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "occupancy" "$(lane_nodes "$lane")"
+  local conflict; conflict="$(occupancy_conflict "$lane")"
+  if [[ -n "$conflict" ]]; then
+    note_fail "occupancy" "nodes already taken:$conflict"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
+    result "$lane" "up" "$TF3_ENDPOINT" "$TF3_MODEL"; return 1
+  fi
+  ok "all required nodes free"
+
+  step "cleanup" "removing any dead dsv41-head/dsv41-worker containers"
+  cleanup_dead_containers "$lane"
+  ok "dead containers cleared (if any)"
+
+  step "preflight" "recipe + fleet env + checkpoint present on spark3"
+  if ! sshx spark3 "test -f $TF3_RECIPE/start.sh && test -f $TF3_ENV && test -f /var/tmp/models/DeepSeek-V4.1-Flash-1017/config.json"; then
+    note_fail "preflight" "missing recipe/env/checkpoint on spark3 — nothing was started"
+    NEXT_CMD="ssh spark3 'ls $TF3_RECIPE $TF3_ENV /var/tmp/models/DeepSeek-V4.1-Flash-1017/'"
+    result "$lane" "up" "$TF3_ENDPOINT" "$TF3_MODEL"; return 1
+  fi
+  ok "preflight clean"
+
+  step "start" "start.sh serve on spark3 (drives spark1+spark4 over ssh; waits for the API)"
+  if ! timeout_run 1800 ssh $SSH_OPTS spark3 "cd $TF3_RECIPE && ENV_FILE=$TF3_ENV bash start.sh serve" >/dev/null 2>&1; then
+    note_fail "start" "start.sh serve failed or timed out (1800s)"
+    NEXT_CMD="ssh spark3 'cd $TF3_RECIPE && ENV_FILE=$TF3_ENV bash start.sh status'   # then: spark-lane down $lane"
+    result "$lane" "up" "$TF3_ENDPOINT" "$TF3_MODEL"; return 1
+  fi
+  ok "ranks up, endpoint answering"
+
+  step "identity" "served model name must be $TF3_MODEL"
+  if ! curl -s -m 10 "$TF3_ENDPOINT/models" | grep -q "$TF3_MODEL"; then
+    note_fail "identity" "endpoint does not list $TF3_MODEL"
+    NEXT_CMD="curl -s $TF3_ENDPOINT/models"
+    result "$lane" "up" "$TF3_ENDPOINT" "$TF3_MODEL"; return 1
+  fi
+  ok "serving $TF3_MODEL"
+
+  canary_tf2 "$TF3_ENDPOINT" "$TF3_MODEL" || { result "$lane" "up" "$TF3_ENDPOINT" "$TF3_MODEL"; return 1; }
+  result "$lane" "up" "$TF3_ENDPOINT" "$TF3_MODEL"
+  return $FAILED
+}
+
+dsv41_tf3_down() {
+  local lane="dsv41-tf3"
+  STEPS=2; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "stop" "stop.sh on spark3 (removes dsv41-head/dsv41-worker on all three nodes, bounded ${DSV41_STOP_TIMEOUT:-180}s)"
+  if ! timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS spark3 "cd $TF3_RECIPE && ENV_FILE=$TF3_ENV bash stop.sh" >/dev/null 2>&1; then
+    note_fail "stop" "stop.sh failed or timed out"
+    NEXT_CMD="ssh spark1 'docker rm -f dsv41-worker'; ssh spark4 'docker rm -f dsv41-worker'; ssh spark3 'docker rm -f dsv41-head dsv41-worker'"
+    result "$lane" "down" "-" "-"; return 1
+  fi
+  ok "stop issued"
+
+  step "verify torn down" "no dsv41-head/dsv41-worker containers left on $(lane_nodes "$lane")"
+  local n left="" c
+  for n in $(lane_nodes "$lane"); do
+    c="$(docker_names "$n" | grep -E '^dsv41-(head|worker)[|]' || true)"
+    [[ -n "$c" ]] && left="$left $n:$c"
+  done
+  if [[ -n "$left" ]]; then
+    note_fail "torn-down" "containers still present:$left"
+    NEXT_CMD="spark-lane status   # inspect, then re-run down"
+    result "$lane" "down" "-" "-"; return 1
+  fi
+  ok "all required nodes released"
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — nodes released. Weights, Engram packs and images were NOT deleted."
   return 0
 }
 
@@ -2821,11 +2913,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_up ;; comfy-studio-4x) comfy_studio_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-native) dsv41_native_up ;; dsv41-tf4) dsv41_tf4_up ;; dsv41-tf4-ablit) dsv41_tf4_ablit_up ;; dsv41-tf2) dsv41_tf2_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; comfy-studio-4x) comfy_studio_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-native) dsv41_native_up ;; dsv41-tf4) dsv41_tf4_up ;; dsv41-tf4-ablit) dsv41_tf4_ablit_up ;; dsv41-tf2) dsv41_tf2_up ;; dsv41-tf3) dsv41_tf3_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_down ;; comfy-studio-4x) comfy_studio_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-native) dsv41_native_down ;; dsv41-tf4) dsv41_tf4_down ;; dsv41-tf4-ablit) dsv41_tf4_ablit_down ;; dsv41-tf2) dsv41_tf2_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; comfy-studio-4x) comfy_studio_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-native) dsv41_native_down ;; dsv41-tf4) dsv41_tf4_down ;; dsv41-tf4-ablit) dsv41_tf4_ablit_down ;; dsv41-tf2) dsv41_tf2_down ;; dsv41-tf3) dsv41_tf3_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
