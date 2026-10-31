@@ -347,12 +347,14 @@ census_reset() { [[ -n "$CENSUS_DIR" ]] && rm -rf "$CENSUS_DIR" 2>/dev/null; CEN
 node_occupants() {
   local node="$1" out lanes=""
   if [[ $CENSUS_ON -eq 1 ]]; then
-    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]' || true)"
+    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]' || true)"
   else
-    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]' || true)"
+    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]' || true)"
   fi
   [[ -z "$out" ]] && { echo ""; return; }
-  echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tp3"
+  echo "$out" | grep -qE '^dsv41-tf2-lane[|]'    && lanes="$lanes dsv41-tf2"
+  # Mia SGLang TP3 (dsv41-head/-worker on the dsv41-3x-spark image) is the dsv41-tf3 lane; dsv41-tp3 stays retired.
+  echo "$out" | grep -qiE 'dsv41-3x|sglang.*3' && lanes="$lanes dsv41-tf3"
   echo "$out" | grep -qiE 'dsv41-4x'           && lanes="$lanes dsv41-tp4"
   echo "$out" | grep -qE 'dsv41-1017-tf'         && lanes="$lanes dsv41-native"
   echo "$out" | grep -qE '^tp4-lane[|]'         && { if [[ "$(tf4_lane_variant "$node")" == ablit ]]; then lanes="$lanes dsv41-tf4-ablit"; else lanes="$lanes dsv41-tf4"; fi; }
@@ -363,7 +365,7 @@ node_occupants() {
     lanes="$lanes glm53-vllm4"
   elif echo "$out" | grep -qiE 'glm53-tf4' || echo "$out" | grep -qE '^glm53[|]'; then
     if [[ "$(tf4_variant "$node")" == ablit ]]; then lanes="$lanes glm53-tp4-ablit"; else lanes="$lanes glm53-tp4"; fi
-  elif echo "$out" | grep -qiE 'glm53-tf3'; then
+  elif echo "$out" | grep -qiE 'glm53-tf3|^glm53-tp3[|]'; then
     lanes="$lanes glm53-tp3"
   elif echo "$out" | grep -qiE 'glm53-flash-tf'; then
     lanes="$lanes glm53-tf2"
@@ -516,6 +518,7 @@ lane_nodes() {
     dsv41-tf4-ablit) echo "spark1 spark2 spark3 spark4" ;;
     dsv41-tf2)       echo "spark3 spark4" ;;
     dsv41-tf3)       echo "spark1 spark3 spark4" ;;
+    studio-12)       echo "spark1 spark2" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
     glm53-tp4|glm53-tp4-ablit) echo "spark1 spark2 spark3 spark4" ;;
     glm53-gr8)       echo "spark1 spark2 spark3 spark4" ;;
@@ -525,8 +528,8 @@ lane_nodes() {
   esac
 }
 
-lane_endpoint() { case "$1" in comfy-studio-4x) echo "spark1 100.106.81.35:8188 | spark2 100.71.248.116:8188 | spark3 100.99.120.29:8188 | spark4 100.91.114.22:8188" ;; comfy-engine) echo "$COMFY_URL" ;; dsv41-tf2) echo "$TF2_ENDPOINT" ;; dsv41-tf3) echo "$TF3_ENDPOINT" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-image-2.1+minimax-h3)" ;; comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; dsv41-tf2|dsv41-tf3) echo "$TF2_MODEL" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in comfy-studio-4x) echo "spark1 100.106.81.35:8188 | spark2 100.71.248.116:8188 | spark3 100.99.120.29:8188 | spark4 100.91.114.22:8188" ;; comfy-engine) echo "$COMFY_URL" ;; dsv41-tf2) echo "$TF2_ENDPOINT" ;; dsv41-tf3) echo "$TF3_ENDPOINT" ;; studio-12) echo "$STUDIO_URL" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-image-2.1+minimax-h3)" ;; comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; dsv41-tf2|dsv41-tf3) echo "$TF2_MODEL" ;; studio-12) echo "imagination-studio" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
 # 2026-10-25 (Victor): dsv41-tf4-ablit (EXL3 + Keys) is the DEFAULT lane and co-tenants with comfy-studio-4x.
@@ -544,7 +547,7 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 #   3. TP3 DeepSeek OR GLM + Imagination Studio on spark2:        dsv41-tf3 / glm53-tp3 (spark1/3/4; spark2 free)
 #   4. TP2 DeepSeek OR GLM + Imagination Studio TP2:              dsv41-tf2 / glm53-tf2 (spark3+4; spark2 + spark1 for Studio)
 # dsv41-tf3 = Mia TP3 SGLang recipe (fleet port, /var/tmp/dsv41-tf3 on spark3).
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf3 dsv41-tf2 dsv41-native glm53-tp3 glm53-tf2"
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf3 dsv41-tf2 dsv41-native glm53-tp3 glm53-tf2 studio-12"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -557,6 +560,7 @@ lane_label() {
     dsv41-native)    echo "DeepSeek V4.1-Flash-1017 · TensorFold native TP4 · original FP8/MXFP4 + Keys ABLIT (Mia recipe) · NO COMFY, exclusive";;
     dsv41-tf4)       echo "DeepSeek V4.1-Flash · TensorFold TP4 · EXL3 3.5bpw (LibertAI)";;
     dsv41-tf2)       echo "DeepSeek V4.1-Flash-1017 · TensorFold TP2 · EXL3 2.9bpw (LibertAI) · 2 nodes (spark3 rank0 + spark4)";;
+    studio-12)       echo "Imagination Studio · spark2 leader (app :7870, Agent room :8443) + spark1 worker (parallel clips)";;
     dsv41-tf3)       echo "DeepSeek V4.1-Flash-1017 · SGLang TP3 (Mia recipe, MXFP4+FP8, NVMe Engram) · spark3 head + spark1/spark4";;
     dsv41-tf4-ablit) echo "DeepSeek V4.1-Flash · TensorFold TP4 · EXL3 3.5bpw ABLITERATED (Keys-1017 wo_b) · default, Comfy co-tenant";;
     glm53-tp3)       echo "GLM-5.3-Flash · TensorFold TP3 · EXL3 (kit GLM53-TF3)";;
@@ -581,6 +585,11 @@ json_str() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\
 #   partial = the lane holds some but not all of its nodes (a broken half-up)
 lane_up_state() {
   local lane="$1" n occ total=0 mine=0
+  if [[ "$lane" == "studio-12" ]]; then   # app + API, not containers
+    local _c _s; _c="$(studio_leader_http)"; _s="$(studio_worker_state)"
+    case "${_s%%|*}" in ready|busy) [[ "$_c" == "200" ]] && echo up || echo partial ;; *) [[ "$_c" == "200" ]] && echo partial || echo down ;; esac
+    return
+  fi
   for n in $(lane_nodes "$lane"); do
     total=$((total + 1))
     occ="$(node_occupants "$n")"
@@ -610,6 +619,7 @@ lane_json_obj() {
   local other cot="{" cf=1 mine
   for n in $(lane_nodes "$l"); do
     occ="$(node_occupants "$n")"
+    [[ "$l" == "studio-12" ]] && occ="${occ//comfy-studio-4x/studio-12}"
     mine=0
     case " $occ " in *" $l "*) mine=1 ;; esac
     if [[ $mine -eq 1 ]]; then
@@ -1432,6 +1442,169 @@ dsv41_tf2_down() {
   result "$lane" "down" "-" "-"
   NEXT_CMD="nothing — nodes released. Weights, rank caches and images were NOT deleted."
   return 0
+}
+
+# ── studio-12: Imagination Studio on spark2 (leader) + spark1 (worker) ──────────────────────────
+# The Studio is a Python app, not a container. spark2 runs it (tailnet-only :7870, Agent room proxy :8443).
+# spark1 is registered as a Studio WORKER (the Studio's own Sparks feature): the leader opens an ssh tunnel to
+# the worker's 127.0.0.1:7870 and hands it single video clips. Everything else (long video, pictures, edits,
+# voice, songs) stays on spark2. Control goes through the Studio's own /api/sparks routes — no docker.
+# up   = leader answering -> spark1 free of LLM lanes -> spark1 has a Studio install -> register + "update and start" -> ready
+# down = stop the spark1 worker (leader stays up: spark2 keeps rendering alone)
+STUDIO_LEADER="${STUDIO_LEADER:-spark2}"
+STUDIO_URL="${STUDIO_URL:-http://spark2.tail57389c.ts.net:8443}"
+STUDIO_API="${STUDIO_API:-http://100.71.248.116:7870}"
+STUDIO_WORKER_NODE="${STUDIO_WORKER_NODE:-spark1}"
+STUDIO_WORKER_ADDR="${STUDIO_WORKER_ADDR:-spark@10.73.0.1}"      # as spark2 ssh's it: fabric IP + spark1's user
+STUDIO_WORKER_NAME="${STUDIO_WORKER_NAME:-spark1}"
+
+# One Studio API call, made ON the leader (the key never leaves it). usage: studio_api METHOD PATH [json-body]
+studio_api() {
+  local m="$1" path="$2" body="${3:-}"
+  sshx "$STUDIO_LEADER" "K=\$(cat ~/ImaginationStudio/access-key) && curl -s -m 40 -X $m -H \"X-Studio-Key: \$K\" -H 'Content-Type: application/json' ${body:+-d '$body'} '$STUDIO_API$path'" 2>/dev/null
+}
+studio_leader_http() { sshx "$STUDIO_LEADER" "K=\$(cat ~/ImaginationStudio/access-key) && curl -s -o /dev/null -w '%{http_code}' -m 15 -H \"X-Studio-Key: \$K\" '$STUDIO_API/api/projects'" 2>/dev/null; }
+# prints "state|why" of the spark1 worker row ("absent|" when not registered)
+studio_worker_state() {
+  studio_api GET /api/sparks | python3 -c '
+import json,sys
+a=sys.argv[1]
+try: d=json.load(sys.stdin)
+except Exception: print("api-error|"); raise SystemExit
+w=next((x for x in d.get("workers",[]) if x.get("address")==a),None)
+print(("%s|%s" % (w.get("state"), (w.get("why") or "").replace("\n"," ")[:140])) if w else "absent|")' "$STUDIO_WORKER_ADDR" 2>/dev/null
+}
+studio_worker_encoded() { printf '%s' "$STUDIO_WORKER_ADDR" | sed 's/@/%40/'; }
+# does spark1 have the Studio environment (what "Update and start" cannot create)?
+studio_worker_installed() {
+  sshx "$STUDIO_WORKER_NODE" "test -x \$HOME/.local/opt/tensorfold-studio/venv/bin/python && test -d \$HOME/spark-studio-models" 2>/dev/null
+}
+
+studio_12_up() {
+  local lane="studio-12"
+  STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "leader" "Studio app on $STUDIO_LEADER answers $STUDIO_API"
+  local code; code="$(studio_leader_http)"
+  if [[ "$code" != "200" ]]; then
+    info "leader answered '${code:-nothing}' — starting it (~/bin/start-studio.sh, detached)"
+    launch_detached "$STUDIO_LEADER" "nohup setsid bash \$HOME/bin/start-studio.sh >> \$HOME/logs/studio-app.log 2>&1 < /dev/null &"
+    local i; for i in $(seq 1 24); do sleep 5; code="$(studio_leader_http)"; [[ "$code" == "200" ]] && break; done
+  fi
+  if [[ "$code" != "200" ]]; then
+    note_fail "leader" "Studio on $STUDIO_LEADER did not answer 200 (got '${code:-none}')"
+    NEXT_CMD="ssh $STUDIO_LEADER 'tail -40 ~/logs/studio-app.log'"
+    result "$lane" "up" "$STUDIO_URL" "imagination-studio"; return 1
+  fi
+  ok "leader up (HTTP 200)"
+
+  step "worker free" "$STUDIO_WORKER_NODE must not be held by an LLM lane (Studio + a model share its GPU)"
+  local occ o blockers=""
+  occ="$(node_occupants "$STUDIO_WORKER_NODE")"
+  for o in $occ; do
+    case "$o" in comfy-studio-4x|llm-lane-unknown) ;; *) blockers="${blockers:+$blockers }$o" ;; esac
+  done
+  if [[ -n "$blockers" ]]; then
+    note_fail "worker free" "$STUDIO_WORKER_NODE is held by: $blockers"
+    NEXT_CMD="spark-lane down ${blockers%% *}   # then: spark-lane up $lane   (or: spark-lane rotate $lane)"
+    result "$lane" "up" "$STUDIO_URL" "imagination-studio"; return 1
+  fi
+  ok "$STUDIO_WORKER_NODE free"
+
+  step "worker install" "$STUDIO_WORKER_NODE has the Studio environment + models"
+  if ! studio_worker_installed; then
+    note_fail "worker install" "no Studio environment on $STUDIO_WORKER_NODE (needs a one-time stage, ~390 GB)"
+    NEXT_CMD="one-time stage: rsync ~/spark-studio-models and ~/studio-src from spark2 to spark@10.73.0.1, then on spark1 run: bash ~/studio-src/Imagination-Studio/oneshot-setup-spark.sh --no-render --yue2 --flux3 --sound"
+    result "$lane" "up" "$STUDIO_URL" "imagination-studio"; return 1
+  fi
+  ok "environment present"
+
+  step "register" "$STUDIO_WORKER_ADDR in the Studio's Sparks list, then update + start"
+  local st; st="$(studio_worker_state)"
+  if [[ "${st%%|*}" == "absent" ]]; then
+    studio_api POST /api/sparks/workers "{\"address\":\"$STUDIO_WORKER_ADDR\",\"name\":\"$STUDIO_WORKER_NAME\"}" >/dev/null
+    info "registered as $STUDIO_WORKER_NAME"
+  fi
+  # a previously disabled/stopped row: make sure it is enabled, then ask for "update and start"
+  studio_api POST "/api/sparks/workers/$(studio_worker_encoded)" '{"enabled":true}' >/dev/null
+  st="$(studio_worker_state)"
+  if [[ "${st%%|*}" != "ready" && "${st%%|*}" != "busy" ]]; then
+    studio_api POST "/api/sparks/workers/$(studio_worker_encoded)/update" >/dev/null
+  fi
+  ok "start requested"
+
+  step "ready" "worker state ready (ceiling 900s; code sync + app start + tunnel)"
+  local t=0
+  while [[ $t -lt 900 ]]; do
+    st="$(studio_worker_state)"
+    case "${st%%|*}" in ready|busy) break ;; esac
+    sleep 10; t=$((t + 10))
+    [[ $((t % 60)) -eq 0 ]] && info "+${t}s ${st}"
+  done
+  case "${st%%|*}" in
+    ready|busy) ok "worker ${st%%|*} — $STUDIO_WORKER_NAME renders clips in parallel with $STUDIO_LEADER" ;;
+    *) note_fail "ready" "worker state '${st%%|*}': ${st#*|}"
+       NEXT_CMD="curl -s -H 'X-Studio-Key: …' $STUDIO_API/api/sparks   # or the Studio's Sparks page"
+       result "$lane" "up" "$STUDIO_URL" "imagination-studio"; return 1 ;;
+  esac
+  result "$lane" "up" "$STUDIO_URL" "imagination-studio"
+  return $FAILED
+}
+
+# Stops ONLY the spark1 worker. The leader keeps rendering on spark2 alone. Never aborts a running clip:
+# a clip on the worker is requeued by the Studio itself (it marks a stopped worker down and moves the clip).
+studio_12_down() {
+  local lane="studio-12"
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "leader" "Studio on $STUDIO_LEADER (left running)"
+  local code; code="$(studio_leader_http)"
+  if [[ "$code" != "200" ]]; then
+    warn "leader answered '${code:-none}' — cannot ask it to stop the worker; falling back to stopping spark1's app directly"
+  else ok "leader up"; fi
+
+  step "stop worker" "$STUDIO_WORKER_NODE Studio app"
+  local st; st="$(studio_worker_state)"
+  if [[ "$code" == "200" && "${st%%|*}" != "absent" ]]; then
+    studio_api POST "/api/sparks/workers/$(studio_worker_encoded)/stop" >/dev/null
+    local t=0; while [[ $t -lt 120 ]]; do
+      st="$(studio_worker_state)"; case "${st%%|*}" in stopped|unreachable|bare) break ;; esac; sleep 5; t=$((t + 5))
+    done
+    # disable the row so the leader does not hand it clips or restart it
+    studio_api POST "/api/sparks/workers/$(studio_worker_encoded)" '{"enabled":false}' >/dev/null
+  fi
+  ok "stop requested (state: ${st%%|*})"
+
+  step "verify" "no Studio app and no comfy-studio container left on $STUDIO_WORKER_NODE"
+  local left
+  left="$(sshx "$STUDIO_WORKER_NODE" "pgrep -af '[I]magination-Studio/app/launcher.py' | head -2; docker ps --format '{{.Names}}' | grep -E '^comfy-studio\$' || true" 2>/dev/null)"
+  if [[ -n "$left" ]]; then
+    note_fail "verify" "still running on $STUDIO_WORKER_NODE: $(echo "$left" | tr '\n' ' ' | cut -c1-160)"
+    NEXT_CMD="ssh $STUDIO_WORKER_NODE 'pgrep -af launcher.py; docker ps'   # stop it by hand, then re-run down"
+    result "$lane" "down" "-" "-"; return 1
+  fi
+  ok "$STUDIO_WORKER_NODE released"
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — spark1 free for a TP lane. Leader on spark2 untouched. Models and install were NOT deleted."
+  return 0
+}
+
+studio_12_verify() {
+  local lane="studio-12"
+  STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+  step "leader" "app + Agent room URL"
+  local code; code="$(studio_leader_http)"
+  [[ "$code" == "200" ]] && ok "leader HTTP 200" || { note_fail "leader" "HTTP '${code:-none}'"; NEXT_CMD="spark-lane up $lane"; }
+  step "agent room" "$STUDIO_URL/api/brains answers with the key"
+  local b; b="$(sshx "$STUDIO_LEADER" "K=\$(cat ~/ImaginationStudio/access-key); curl -s -m 15 -H \"X-Studio-Key: \$K\" -H 'Host: spark2.tail57389c.ts.net:8443' http://100.71.248.116:8443/api/brains" 2>/dev/null | python3 -c 'import json,sys
+try: d=json.load(sys.stdin); h=next(x for x in d["backends"] if x["id"]=="hermes"); print("found" if h.get("found") else "missing")
+except Exception: print("error")' 2>/dev/null)"
+  [[ "$b" == found ]] && ok "Agent room: hermes brain found" || warn "Agent room hermes brain: ${b:-error} (proxy :8443 or ssh to the mini may be down)"
+  step "worker" "$STUDIO_WORKER_NAME state"
+  local st; st="$(studio_worker_state)"
+  case "${st%%|*}" in ready|busy) ok "worker ${st%%|*}" ;; absent) info "worker not registered (spark2 renders alone)" ;; *) warn "worker ${st%%|*}: ${st#*|}" ;; esac
+  result "$lane" "verify" "$STUDIO_URL" "imagination-studio"
+  return $FAILED
 }
 
 dsv41_tf3_up() {
@@ -2756,6 +2929,7 @@ stage_dsv41() {
 # ── verify ───────────────────────────────────────────────────────────────────
 verify_lane() {
   local lane="$1"
+  [[ "$lane" == "studio-12" ]] && { studio_12_verify; return; }
   STEPS=3; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
   # ComfyUI is NOT an OpenAI endpoint: no /v1/models, no chat completions. The standard
   # path below would fail forever against it, so comfy-engine gets its own checks.
@@ -2885,6 +3059,10 @@ lanes:
   glm53-gr8         spark1-4      GLM-5.3 full TP4        -> $GLM53_ENDPOINT  (gr8 engine, ctx 310k, thinking always on)
   glm53-vllm4       spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (vLLM knapcio align-fix NVFP4, ctx 262k; staged 2026-10-13)
   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
+  dsv41-tf2         spark3,4      DeepSeek V4.1-Flash TensorFold TP2 -> $DSV41_ENDPOINT
+  dsv41-tf3         spark1,3,4    DeepSeek V4.1-Flash SGLang TP3 (Mia) -> $DSV41_ENDPOINT
+  studio-12         spark1,2      Imagination Studio: spark2 leader + spark1 worker -> $STUDIO_URL
+                                  down = stop the spark1 worker only (spark2 keeps running)
 
 The DeepSeek endpoint and model name are stable across TP3/TP4: $DSV41_ENDPOINT / $DSV41_MODEL
 The GLM lane serves a distinct identity: $GLM53_ENDPOINT / $GLM53_MODEL
@@ -2913,11 +3091,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_up ;; comfy-studio-4x) comfy_studio_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-native) dsv41_native_up ;; dsv41-tf4) dsv41_tf4_up ;; dsv41-tf4-ablit) dsv41_tf4_ablit_up ;; dsv41-tf2) dsv41_tf2_up ;; dsv41-tf3) dsv41_tf3_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; comfy-studio-4x) comfy_studio_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-native) dsv41_native_up ;; dsv41-tf4) dsv41_tf4_up ;; dsv41-tf4-ablit) dsv41_tf4_ablit_up ;; dsv41-tf2) dsv41_tf2_up ;; dsv41-tf3) dsv41_tf3_up ;; studio-12) studio_12_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_down ;; comfy-studio-4x) comfy_studio_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-native) dsv41_native_down ;; dsv41-tf4) dsv41_tf4_down ;; dsv41-tf4-ablit) dsv41_tf4_ablit_down ;; dsv41-tf2) dsv41_tf2_down ;; dsv41-tf3) dsv41_tf3_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; comfy-studio-4x) comfy_studio_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-native) dsv41_native_down ;; dsv41-tf4) dsv41_tf4_down ;; dsv41-tf4-ablit) dsv41_tf4_ablit_down ;; dsv41-tf2) dsv41_tf2_down ;; dsv41-tf3) dsv41_tf3_down ;; studio-12) studio_12_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -2926,6 +3104,12 @@ case "$ACT" in
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
     echo "${B}── rotate: park everything that $LANE needs, then bring it up ──${N}"
+    # A Studio worker on spark1 (studio-12) is not a model lane: stop just the worker, never the leader on spark2.
+    case " $(lane_nodes "$LANE") " in *" $STUDIO_WORKER_NODE "*)
+      if [[ "$LANE" != "studio-12" ]]; then
+        case "$(studio_worker_state)" in ready*|busy*|starting*|update*) echo "${Y}parks studio-12 worker${N}"; "${0:-$HERE/spark-lane}" down studio-12 || true ;; esac
+      fi ;;
+    esac
     occ_list=""
     for n in $(lane_nodes "$LANE"); do
       o="$(node_occupants "$n")"
@@ -2933,6 +3117,7 @@ case "$ACT" in
     done
     for other in comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native; do
       [[ "$other" == "$LANE" ]] && continue
+      [[ "$LANE" == "studio-12" ]] && continue   # studio-12 parks nothing but LLM lanes on spark1 (see occupancy)
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
     done
     exec "${0:-$HERE/spark-lane}" up "$LANE" ;;
