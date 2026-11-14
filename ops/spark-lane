@@ -202,6 +202,10 @@ result() { # lane action endpoint model extra
 }
 
 sshx() { ssh $SSH_OPTS "$@"; }
+# NFS weight export on a lane head. Source of truth since 2026-11-08 is the HOST kernel nfs-server (systemd),
+# exporting /var/tmp/models to the fabric subnet only. The old dsv41-nfs container dies on start (host owns :2049),
+# so a container check proves nothing. Require: service active AND the export visible to the fabric.
+nfs_export_ok() { sshx "$1" "systemctl is-active --quiet nfs-server && showmount -e localhost 2>/dev/null | grep -qE '^/var/tmp/models[[:space:]].*10\\.73\\.0\\.0/24'" 2>/dev/null; }
 
 # Detach a remote long-running job AND return immediately. sshx/$SSH_OPTS already
 # has -n (stdin), but that is NOT enough for a backgrounded job: the remote
@@ -1964,9 +1968,9 @@ glm53_tf2_up() {
   ok "kit present"
 
   step "nfs" "dsv41-nfs export alive on $GLM53_TF2_HEAD (worker reads weights through it)"
-  if ! sshx "$GLM53_TF2_HEAD" "docker ps --format '{{.Names}}' | grep -q '^dsv41-nfs$'" 2>/dev/null; then
-    note_fail "nfs" "dsv41-nfs is NOT running on $GLM53_TF2_HEAD — the worker's NFS volume would hard-hang instead of failing fast"
-    NEXT_CMD="ssh $GLM53_TF2_HEAD 'docker start dsv41-nfs'   # then re-run: spark-lane up $lane"
+  if ! nfs_export_ok "$GLM53_TF2_HEAD"; then
+    note_fail "nfs" "host nfs-server is not exporting /var/tmp/models to 10.73.0.0/24 on $GLM53_TF2_HEAD — the worker's NFS volume would hard-hang instead of failing fast"
+    NEXT_CMD=\"ssh $GLM53_TF2_HEAD 'sudo systemctl start nfs-server; sudo exportfs -ra'   # (needs sudo) then re-run: spark-lane up \$lane\"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
@@ -2117,9 +2121,9 @@ glm53_tf3_up() {
   ok "rank 2 configured"
 
   step "nfs" "dsv41-nfs running + kit NFS_SERVER is a FABRIC addr (10.73.0.0/24) that dsv41-nfs actually exports"
-  if ! sshx "$GLM53_TP3_HEAD" "docker ps --format '{{.Names}}' | grep -q '^dsv41-nfs$'" 2>/dev/null; then
-    note_fail "nfs" "dsv41-nfs is NOT running on $GLM53_TP3_HEAD — the workers' NFS volumes would hard-hang instead of failing fast"
-    NEXT_CMD="ssh $GLM53_TP3_HEAD 'docker start dsv41-nfs'   # then re-run: spark-lane up $lane"
+  if ! nfs_export_ok "$GLM53_TP3_HEAD"; then
+    note_fail "nfs" "host nfs-server is not exporting /var/tmp/models to 10.73.0.0/24 on $GLM53_TP3_HEAD — the workers' NFS volumes would hard-hang instead of failing fast"
+    NEXT_CMD=\"ssh $GLM53_TP3_HEAD 'sudo systemctl start nfs-server; sudo exportfs -ra'   # (needs sudo) then re-run: spark-lane up \$lane\"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
@@ -2320,9 +2324,9 @@ glm53_tp4_core_up() {
   ok "rank 3 configured"
 
   step "nfs" "dsv41-nfs export alive on $GLM53_TP4_TF_HEAD (all workers read weights through it)"
-  if ! sshx "$GLM53_TP4_TF_HEAD" "docker ps --format '{{.Names}}' | grep -q '^dsv41-nfs$'" 2>/dev/null; then
-    note_fail "nfs" "dsv41-nfs is NOT running on $GLM53_TP4_TF_HEAD — the workers' NFS volumes would hard-hang instead of failing fast"
-    NEXT_CMD="ssh $GLM53_TP4_TF_HEAD 'docker start dsv41-nfs'   # then re-run: spark-lane up $lane"
+  if ! nfs_export_ok "$GLM53_TP4_TF_HEAD"; then
+    note_fail "nfs" "host nfs-server is not exporting /var/tmp/models to 10.73.0.0/24 on $GLM53_TP4_TF_HEAD — the workers' NFS volumes would hard-hang instead of failing fast"
+    NEXT_CMD=\"ssh $GLM53_TP4_TF_HEAD 'sudo systemctl start nfs-server; sudo exportfs -ra'   # (needs sudo) then re-run: spark-lane up \$lane\"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
     return 1
   fi
