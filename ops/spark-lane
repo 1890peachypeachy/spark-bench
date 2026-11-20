@@ -520,8 +520,6 @@ lane_nodes() {
     dsv41-native)    echo "spark1 spark2 spark3 spark4" ;;
     dsv41-tf4)       echo "spark1 spark2 spark3 spark4" ;;
     dsv41-tf4-ablit) echo "spark1 spark2 spark3 spark4" ;;
-    dsv41-tf2)       echo "spark3 spark4" ;;
-    dsv41-tf3)       echo "spark1 spark3 spark4" ;;
     studio-12)       echo "spark1 spark2" ;;
     studio-2)        echo "spark2" ;;
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
@@ -542,6 +540,9 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 # RETIRED: dsv41-tp3, dsv41-tp4 (SGLang).
 # Their up/down functions below are kept as dead code for archaeology; they are no longer reachable.
 # RETIRED 2026-10-25 (Victor): glm53-tp4, glm53-tp4-ablit, glm53-hy, glm53-vllm4 (code kept, unreachable).
+# RETIRED 2026-11-20 (Victor): dsv41-tf2 and dsv41-tf3 (DeepSeek TP2 / TP3). DeepSeek is TP4 only now (dsv41-tf4-ablit, dsv41-tf4,
+# dsv41-native); GLM-5.3-Flash covers TP2 (glm53-tf2), TP3 (glm53-tp3) and TP4 (glm53-tp4, glm53-gr8). Code kept unreachable;
+# kits archived on the NAS under spark-models/<node>/retired-20261120-dsv41-tf2-tf3; caches/engram/images deleted to free disk.
 # glm53-gr8 REINSTATED 2026-11-20 (Victor) as a TP4 GLM-5.3 option: gr8 v3 bit280 (KindlingAI, recipe
 # bertholomus/glm-5.3-exlr8-4x-spark @ af95a2e), EXCLUSIVE (all four nodes, nothing co-tenants), :8888, name
 # GLM-5.3-Flash-EXL3. Paths /var/tmp/gr8/recipe, container glm53-4x-spark. See CUTOVER-2026-11-20.md.
@@ -555,7 +556,7 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 #   3. TP3 DeepSeek OR GLM + Imagination Studio on spark2:        dsv41-tf3 / glm53-tp3 (spark1/3/4; spark2 free)
 #   4. TP2 DeepSeek OR GLM + Imagination Studio TP2:              dsv41-tf2 / glm53-tf2 (spark3+4; spark2 + spark1 for Studio)
 # dsv41-tf3 = Mia TP3 SGLang recipe (fleet port, /var/tmp/dsv41-tf3 on spark3).
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf3 dsv41-tf2 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 glm53-gr8 studio-12 studio-2"
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 glm53-gr8 studio-12 studio-2"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -3134,15 +3135,13 @@ lanes:
   dsv41-tf4-ablit  spark1-4      DeepSeek V4.1-Flash TensorFold TP4, EXL3 3.5bpw + Keys ablit -> $DSV41_ENDPOINT (default; Comfy co-tenant)
   dsv41-tf4        spark1-4      same, stock EXL3 caches
   dsv41-native     spark1-4      Mia recipe, original FP8/MXFP4 + Keys ablit (EXCLUSIVE: needs Comfy down)
-  (retired: dsv41-tp3, dsv41-tp4)
+  (retired: dsv41-tp3, dsv41-tp4, dsv41-tf2, dsv41-tf3)
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
   glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, standard weights, thinking max)
   glm53-tp4-ablit   spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, Ablit weights, thinking max)
   glm53-gr8         spark1-4      GLM-5.3 full TP4        -> $GLM53_ENDPOINT  (gr8 v3 bit280, ctx 776k, thinking always on, EXCLUSIVE)
   glm53-vllm4       spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (vLLM knapcio align-fix NVFP4, ctx 262k; staged 2026-10-13)
   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
-  dsv41-tf2         spark3,4      DeepSeek V4.1-Flash TensorFold TP2 -> $DSV41_ENDPOINT
-  dsv41-tf3         spark1,3,4    DeepSeek V4.1-Flash SGLang TP3 (Mia) -> $DSV41_ENDPOINT
   studio-12         spark1,2      Imagination Studio: spark2 leader + spark1 worker -> $STUDIO_URL
                                   down = stop the spark1 worker only (spark2 keeps running)
   studio-2          spark2        Imagination Studio alone on spark2 -> $STUDIO_URL
