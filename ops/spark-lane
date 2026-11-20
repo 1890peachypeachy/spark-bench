@@ -127,13 +127,13 @@ GLM53_TP4_ENV=".env"
 # glm53-gr8 added 2026-10-13 (Victor): kindlingai/gr8 f4d1d4e, full GLM-5.3 exlr8 3.25bpw, TP=4, docker compose per
 # node at $GLM53_GR8_DIR (docker/.env + docker/compose.override.yaml: PORT=8888, PEERS spark3-first, front-wrap.sh
 # so the front end ALSO answers to GLM-5.3-Flash-EXL3). Weights are LOCAL per node (no NFS):
-# /var/tmp/gr8/cache (~86G/node). Context 310,514 tokens; thinking cannot be disabled (use reasoning_effort).
+# /var/tmp/gr8/cache (~79G/node). v3 bit280 (2.80bpw). Context 776,690 tokens; thinking cannot be disabled (use reasoning_effort).
 # Ranks come up workers-first, head (spark3) last; `gr8 glm53 down` on the head stops every box.
 GLM53_GR8_HEAD="spark3"
 GLM53_GR8_WORKERS="spark1 spark2 spark4"
-GLM53_GR8_DIR="/var/tmp/gr8/repo"
+GLM53_GR8_DIR="/var/tmp/gr8/recipe"
 GLM53_GR8_CACHE="/var/tmp/gr8/cache"
-GLM53_GR8_COMPOSE="docker compose -f docker/compose.yaml -f docker/compose.override.yaml"
+GLM53_GR8_COMPOSE="docker compose -f compose.yaml -f compose.override.yaml"
 #
 # NAME WARNING (restored 2026-09-29 — it applies to this recipe too): the served name
 # says EXL3 and the weights are NOT EXL3. Verified on spark3's own config.json:
@@ -363,7 +363,7 @@ node_occupants() {
   echo "$out" | grep -qE 'dsv41-1017-tf'         && lanes="$lanes dsv41-native"
   echo "$out" | grep -qE '^tp4-lane[|]'         && { if [[ "$(tf4_lane_variant "$node")" == ablit ]]; then lanes="$lanes dsv41-tf4-ablit"; else lanes="$lanes dsv41-tf4"; fi; }
   # glm family stays mutually exclusive (an image string can match both arms).
-  if   echo "$out" | grep -qE '^gr8[|]'; then
+  if   echo "$out" | grep -qE '^(gr8|glm53-4x-spark)[|]'; then
     lanes="$lanes glm53-gr8"
   elif echo "$out" | grep -qiE 'glm53-alignfix|glm53-lvkp|glm53-roce'; then
     lanes="$lanes glm53-vllm4"
@@ -492,7 +492,7 @@ census() {
   echo "  per-node containers (authoritative for occupancy):"
   local n o
   for n in spark1 spark2 spark3 spark4; do
-    o="$(docker_names "$n" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|^tp4-lane[|]|dsv41-1017-tf|sglang|glm53|^gr8[|]' || true)"
+    o="$(docker_names "$n" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|^tp4-lane[|]|dsv41-1017-tf|sglang|glm53|^gr8[|]|^glm53-4x-spark[|]' || true)"
     if [[ -z "$o" ]]; then printf '    %-8s %s(free)%s\n' "$n" "$D" "$N"
     else printf '    %-8s %s\n' "$n" "$(echo "$o" | paste -sd' ' -)"; fi
   done
@@ -2839,11 +2839,11 @@ glm53_gr8_up() {
   step "preflight" "compose files + LOCAL weight cache on every node (gr8 has no NFS)"
   local miss=""
   for n in $(lane_nodes "$lane"); do
-    sshx "$n" "test -f $GLM53_GR8_DIR/docker/.env && test -f $GLM53_GR8_DIR/docker/compose.override.yaml && test -x /var/tmp/gr8/front-wrap.sh && test -d $GLM53_GR8_CACHE/hf" >/dev/null 2>&1 || miss="$miss $n"
+    sshx "$n" "test -f $GLM53_GR8_DIR/.env && test -f $GLM53_GR8_DIR/compose.override.yaml && test -x /var/tmp/gr8/front-wrap.sh && test -d $GLM53_GR8_CACHE/hf" >/dev/null 2>&1 || miss="$miss $n"
   done
   if [[ -n "$miss" ]]; then
-    note_fail "preflight" "gr8 not staged on:$miss (need $GLM53_GR8_DIR/docker/{.env,compose.override.yaml}, /var/tmp/gr8/front-wrap.sh, $GLM53_GR8_CACHE/hf)"
-    NEXT_CMD="ssh $GLM53_GR8_HEAD 'cat $GLM53_GR8_DIR/docker/.env'   # restage per CUTOVER notes: prepare, then up"
+    note_fail "preflight" "gr8 not staged on:$miss (need $GLM53_GR8_DIR/{.env,compose.override.yaml}, /var/tmp/gr8/front-wrap.sh, $GLM53_GR8_CACHE/hf)"
+    NEXT_CMD="ssh $GLM53_GR8_HEAD 'cat $GLM53_GR8_DIR/.env'   # restage per CUTOVER notes: prepare, then up"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
   fi
   ok "staged on all 4 nodes"
@@ -2878,7 +2878,7 @@ glm53_gr8_up() {
   done
   if [[ $ok_wait -eq 0 ]]; then
     note_fail "wait-healthy" "no 200 from $GLM53_ENDPOINT/models within ${GR8_MAX_WAIT:-1800}s (last: $code)"
-    NEXT_CMD="ssh $GLM53_GR8_HEAD 'docker logs --tail 60 gr8'"
+    NEXT_CMD="ssh $GLM53_GR8_HEAD 'docker logs --tail 60 glm53-4x-spark'"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
   fi
 
@@ -2889,11 +2889,11 @@ try: print(" ".join(m.get("id","") for m in json.load(sys.stdin).get("data",[]))
 except Exception: print("")' 2>/dev/null)"
   if [[ "$ids" != *"$GLM53_MODEL"* ]]; then
     note_fail "identity" "endpoint serves [$ids], expected $GLM53_MODEL"
-    NEXT_CMD="ssh $GLM53_GR8_HEAD 'cat /var/tmp/gr8/front-wrap.sh; grep FRONT_BIN $GLM53_GR8_DIR/docker/compose.override.yaml'"
+    NEXT_CMD="ssh $GLM53_GR8_HEAD 'cat /var/tmp/gr8/front-wrap.sh; grep FRONT_BIN $GLM53_GR8_DIR/compose.override.yaml'"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
   fi
   for n in $(lane_nodes "$lane"); do
-    [[ "$(sshx "$n" "docker ps --filter name=^/gr8\$ -q | wc -l" 2>/dev/null || echo 0)" != "0" ]] && up_ranks=$((up_ranks + 1))
+    [[ "$(sshx "$n" "docker ps --filter name=^/glm53-4x-spark\$ -q | wc -l" 2>/dev/null || echo 0)" != "0" ]] && up_ranks=$((up_ranks + 1))
   done
   if [[ $up_ranks -ne 4 ]]; then
     note_fail "identity" "serving $ids but only $up_ranks/4 ranks are up — NOT a healthy TP4"
@@ -2904,7 +2904,7 @@ except Exception: print("")' 2>/dev/null)"
   step "canary" "real chat completion (reasoning_effort low; enable_thinking:false is refused by gr8)"
   canary_gr8 "$GLM53_ENDPOINT" "$GLM53_MODEL" || { result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1; }
 
-  result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified, gr8 TP4 4/4, ctx 310514)"
+  result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(chat verified, gr8 v3 bit280 TP4 4/4, ctx 776690)"
   NEXT_CMD="nothing — lane is serving."
   return 0
 }
@@ -2915,7 +2915,7 @@ glm53_gr8_down() {
 
   step "stop" "gr8 glm53 down on head $GLM53_GR8_HEAD (stops every box), bounded ${DSV41_STOP_TIMEOUT:-180}s"
   # `compose down` on ONE box restarts the others (on-failure); the launcher's own `down` stops the cluster cleanly.
-  timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_GR8_HEAD" "docker exec gr8 /opt/gr8/gr8 glm53 down" >/dev/null 2>&1 || warn "gr8 down returned non-zero — falling back to per-node compose down"
+  timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh $SSH_OPTS "$GLM53_GR8_HEAD" "docker exec glm53-4x-spark /opt/gr8/gr8 glm53 down" >/dev/null 2>&1 || warn "gr8 down returned non-zero — falling back to per-node compose down"
   ok "stop issued"
 
   step "remove containers" "compose down on every node (weights cache is kept)"
@@ -2927,7 +2927,7 @@ glm53_gr8_down() {
   step "verify torn down" "no gr8 containers left on $(lane_nodes "$lane")"
   local left="" c
   for n in $(lane_nodes "$lane"); do
-    c="$(docker_names "$n" | grep -E '^gr8[|]' || true)"
+    c="$(docker_names "$n" | grep -E '^(gr8|glm53-4x-spark)[|]' || true)"
     [[ -n "$c" ]] && left="$left $n:$c"
   done
   if [[ -n "$left" ]]; then
@@ -3215,7 +3215,7 @@ case "$ACT" in
     case "${LANE:-}" in
       glm53-tp3) kit="$GLM53_TP3_KIT"; host="$GLM53_TP3_HEAD" ;;
       glm53-tp4|glm53-tp4-ablit) kit="$GLM53_TP4_TF_KIT"; host="$GLM53_TP4_TF_HEAD" ;;
-      glm53-gr8) echo "${B}gr8 head log on $GLM53_GR8_HEAD${N} (tail ${TAIL:-40})"; sshx "$GLM53_GR8_HEAD" "docker logs --tail ${TAIL:-40} gr8 2>&1"; exit 0 ;;
+      glm53-gr8) echo "${B}gr8 head log on $GLM53_GR8_HEAD${N} (tail ${TAIL:-40})"; sshx "$GLM53_GR8_HEAD" "docker logs --tail ${TAIL:-40} glm53-4x-spark 2>&1"; exit 0 ;;
       glm53-vllm4) kit="$GLM53_TP4_KIT"; host="$GLM53_HEAD_HOST" ;;
       glm53-tf2) kit="$GLM53_TF2_KIT"; host="$GLM53_TF2_HEAD" ;;
       dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
