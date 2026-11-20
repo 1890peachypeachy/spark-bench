@@ -33,7 +33,7 @@
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tp3) — MAIN GLM LANE (reinstated 2026-10-30)
 #   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tf4)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
-#   glm53-gr8         spark1-4      GLM-5.3 full (gr8 engine, kindlingai/gr8 f4d1d4e, CONTAINER gr8) -> :8888/v1
+#   glm53-gr8         spark1-4      GLM-5.3 full (gr8 v3 bit280, kindlingai/gr8 ca7e874, CONTAINER glm53-4x-spark) -> :8888/v1
 #
 # POLICY (do not change these constants casually)
 #   * The OpenAI endpoint + served model name stay IDENTICAL across TP3/TP4 swaps:
@@ -542,6 +542,9 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 # RETIRED: dsv41-tp3, dsv41-tp4 (SGLang).
 # Their up/down functions below are kept as dead code for archaeology; they are no longer reachable.
 # RETIRED 2026-10-25 (Victor): glm53-tp4, glm53-tp4-ablit, glm53-hy, glm53-vllm4 (code kept, unreachable).
+# glm53-gr8 REINSTATED 2026-11-20 (Victor) as a TP4 GLM-5.3 option: gr8 v3 bit280 (KindlingAI, recipe
+# bertholomus/glm-5.3-exlr8-4x-spark @ af95a2e), EXCLUSIVE (all four nodes, nothing co-tenants), :8888, name
+# GLM-5.3-Flash-EXL3. Paths /var/tmp/gr8/recipe, container glm53-4x-spark. See CUTOVER-2026-11-20.md.
 # glm53-tf2 REINSTATED 2026-10-31 (Victor) as the TP2 GLM option (kit /home/spark3/GLM53-TF, staged).
 # glm53-tp3 REINSTATED 2026-10-30 (Victor) as the main GLM lane after a successful
 # fabric-NFS TP3 flip. The kit's NFS_SERVER must point at the HEAD's FABRIC address
@@ -552,7 +555,7 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 #   3. TP3 DeepSeek OR GLM + Imagination Studio on spark2:        dsv41-tf3 / glm53-tp3 (spark1/3/4; spark2 free)
 #   4. TP2 DeepSeek OR GLM + Imagination Studio TP2:              dsv41-tf2 / glm53-tf2 (spark3+4; spark2 + spark1 for Studio)
 # dsv41-tf3 = Mia TP3 SGLang recipe (fleet port, /var/tmp/dsv41-tf3 on spark3).
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf3 dsv41-tf2 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 studio-12 studio-2"
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-tf3 dsv41-tf2 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 glm53-gr8 studio-12 studio-2"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -573,7 +576,7 @@ lane_label() {
     glm53-tp4)       echo "GLM-5.3-Flash · TensorFold TP4 · EXL3 4bpw (kit glm53-tf4-trial, ABLIT=0)";;
     glm53-tp4-ablit) echo "GLM-5.3-Flash · TensorFold TP4 · EXL3 4bpw ABLITERATED (ABLIT=1)";;
     glm53-tf2)       echo "GLM-5.3-Flash · TensorFold TP2 · EXL3 (2 nodes)";;
-    glm53-gr8)       echo "GLM-5.3-Flash · gr8 engine · exlr8 3.25bpw (kindlingai f4d1d4e)";;
+    glm53-gr8)       echo "GLM-5.3 · gr8 v3 engine · exlr8 bit280 2.80bpw · TP4 · ctx 776k (EXCLUSIVE, kindlingai ca7e874)";;
     glm53-vllm4)     echo "GLM-5.3-Flash · vLLM TP4 · knapcio/Mia recipe (kit glm53-recipe-tp4)";;
     comfy-engine)    echo "ComfyUI · music/image/design/video · spark2 alone";;
     comfy-studio-4x) echo "ComfyUI 0.38.1 · H3+Qwen-Image-2.1+YuE2+Ming · 4 nodes, co-tenant";;
@@ -3135,7 +3138,7 @@ lanes:
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
   glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, standard weights, thinking max)
   glm53-tp4-ablit   spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, Ablit weights, thinking max)
-  glm53-gr8         spark1-4      GLM-5.3 full TP4        -> $GLM53_ENDPOINT  (gr8 engine, ctx 310k, thinking always on)
+  glm53-gr8         spark1-4      GLM-5.3 full TP4        -> $GLM53_ENDPOINT  (gr8 v3 bit280, ctx 776k, thinking always on, EXCLUSIVE)
   glm53-vllm4       spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (vLLM knapcio align-fix NVFP4, ctx 262k; staged 2026-10-13)
   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
   dsv41-tf2         spark3,4      DeepSeek V4.1-Flash TensorFold TP2 -> $DSV41_ENDPOINT
@@ -3196,7 +3199,7 @@ case "$ACT" in
       o="$(node_occupants "$n")"
       [[ -n "$o" ]] && occ_list="$occ_list $o"
     done
-    for other in comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2; do
+    for other in comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 glm53-gr8; do
       [[ "$other" == "$LANE" ]] && continue
       [[ "$LANE" == "studio-12" || "$LANE" == "studio-2" ]] && continue   # studio-12 parks nothing but LLM lanes on spark1 (see occupancy)
       case " $occ_list " in *" $other "*) echo "${Y}parks $other${N}"; "${0:-$HERE/spark-lane}" down "$other" || true ;; esac
