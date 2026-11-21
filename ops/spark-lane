@@ -133,7 +133,8 @@ GLM53_GR8_HEAD="spark3"
 GLM53_GR8_WORKERS="spark1 spark2 spark4"
 GLM53_GR8_DIR="/var/tmp/gr8/recipe"
 GLM53_GR8_CACHE="/var/tmp/gr8/cache"
-GLM53_GR8_COMPOSE="docker compose -f compose.yaml -f compose.override.yaml"
+# 2026-11-20: ATTIC=1 lane (spark-attic lends the display carveout): the recipe overlay compose.attic.yaml mounts atticd's socket + key.
+GLM53_GR8_COMPOSE="docker compose -f compose.yaml -f compose.attic.yaml -f compose.override.yaml"
 #
 # NAME WARNING (restored 2026-09-29 — it applies to this recipe too): the served name
 # says EXL3 and the weights are NOT EXL3. Verified on spark3's own config.json:
@@ -2843,7 +2844,7 @@ glm53_gr8_up() {
   step "preflight" "compose files + LOCAL weight cache on every node (gr8 has no NFS)"
   local miss=""
   for n in $(lane_nodes "$lane"); do
-    sshx "$n" "test -f $GLM53_GR8_DIR/.env && test -f $GLM53_GR8_DIR/compose.override.yaml && test -x /var/tmp/gr8/front-wrap.sh && test -d $GLM53_GR8_CACHE/hf" >/dev/null 2>&1 || miss="$miss $n"
+    sshx "$n" "test -f $GLM53_GR8_DIR/.env && test -f $GLM53_GR8_DIR/compose.override.yaml && test -f $GLM53_GR8_DIR/compose.attic.yaml && test -S /run/spark-attic/attic.sock && test -x /var/tmp/gr8/front-wrap.sh && test -d $GLM53_GR8_CACHE/hf" >/dev/null 2>&1 || miss="$miss $n"
   done
   if [[ -n "$miss" ]]; then
     note_fail "preflight" "gr8 not staged on:$miss (need $GLM53_GR8_DIR/{.env,compose.override.yaml}, /var/tmp/gr8/front-wrap.sh, $GLM53_GR8_CACHE/hf)"
