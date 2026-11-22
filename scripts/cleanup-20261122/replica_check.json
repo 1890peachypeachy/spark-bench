@@ -1,0 +1,62 @@
+{
+ "/var/tmp/comfy/h3": {
+  "spark4": "ca21ed58aa517f52 files/bytes=8 70164374879",
+  "identical_on": [
+   "spark1",
+   "spark3"
+  ]
+ },
+ "/var/tmp/comfy/models": {
+  "spark4": "4d29dff757420d94 files/bytes=8 72604984811",
+  "identical_on": [
+   "spark1",
+   "spark3"
+  ]
+ },
+ "/var/tmp/comfy/yue2": {
+  "spark4": "d83acec190734dd0 files/bytes=2 5347806922",
+  "identical_on": [
+   "spark1",
+   "spark3"
+  ]
+ },
+ "/var/tmp/comfy/data": {
+  "spark4": "81eafca268a4b51b files/bytes=28 48556514",
+  "identical_on": []
+ },
+ "/var/tmp/tf1017/engram": {
+  "spark4": "4e41304834d5573d files/bytes=3 203080547870",
+  "identical_on": [
+   "spark2",
+   "spark1",
+   "spark3"
+  ]
+ },
+ "/var/tmp/tf1017/cache": {
+  "spark4": "d0570f3c7a288c88 files/bytes=2 68885754299",
+  "identical_on": []
+ },
+ "/var/tmp/tf1017/model": {
+  "spark4": "dcfe67309a521d9a files/bytes=8 8185409312",
+  "identical_on": [
+   "spark2",
+   "spark3"
+  ]
+ },
+ "/var/tmp/tf1017/kit": {
+  "spark4": "c119d45651f45161 files/bytes=377 711612454",
+  "identical_on": [
+   "spark2",
+   "spark1",
+   "spark3"
+  ]
+ },
+ "/var/tmp/tf1017/engine-bin-v035": {
+  "spark4": "4238cf2d48eeda56 files/bytes=6 64799581",
+  "identical_on": [
+   "spark2",
+   "spark1",
+   "spark3"
+  ]
+ }
+}

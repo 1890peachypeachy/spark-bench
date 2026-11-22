@@ -1,0 +1,71 @@
+[
+ {
+  "spark": "spark1",
+  "path": "/home/spark/.vscode-server/cli/servers/Stable-df53daabb18cd157bdb08c7f01c34df936cf12f4",
+  "bytes_listed": 687689728,
+  "rule": "editor-server",
+  "result": "DELETED 677294309",
+  "ts": "2026-11-22 10:55:58"
+ },
+ {
+  "spark": "spark1",
+  "path": "/home/spark/.vscode-server/cli/servers/Stable-8b640eef5a6c6089c029249d48efa5c99adf7d51",
+  "bytes_listed": 381743104,
+  "rule": "editor-server",
+  "result": "DELETED 371572939",
+  "ts": "2026-11-22 10:55:59"
+ },
+ {
+  "spark": "spark1",
+  "path": "/home/spark/.cache/pip",
+  "bytes_listed": 5883953152,
+  "rule": "package-cache",
+  "result": "DELETED 5865231466",
+  "ts": "2026-11-22 10:56:00"
+ },
+ {
+  "spark": "spark1",
+  "path": "/home/spark/.cache/ms-playwright",
+  "bytes_listed": 293330944,
+  "rule": "browser-cache",
+  "result": "DELETED 292359502",
+  "ts": "2026-11-22 10:56:00"
+ },
+ {
+  "spark": "spark2",
+  "path": "/home/spark2/.cache/ms-playwright",
+  "bytes_listed": 293326848,
+  "rule": "browser-cache",
+  "result": "DELETED 292359503",
+  "ts": "2026-11-22 10:56:01"
+ },
+ {
+  "spark": "spark3",
+  "path": "/home/spark3/.cache/pip",
+  "bytes_listed": 279179264,
+  "rule": "package-cache",
+  "result": "DELETED 276405538",
+  "ts": "2026-11-22 10:56:02"
+ },
+ {
+  "spark": "spark1",
+  "path": "/home/spark/.cache/uv",
+  "rule": "package-cache",
+  "result": "DELETED 10429737943",
+  "ts": "2026-11-22 10:56:24"
+ },
+ {
+  "spark": "spark2",
+  "path": "/home/spark2/.cache/uv",
+  "rule": "package-cache",
+  "result": "DELETED 414126487",
+  "ts": "2026-11-22 10:56:25"
+ },
+ {
+  "spark": "spark3",
+  "path": "/home/spark3/.cache/uv",
+  "rule": "package-cache",
+  "result": "DELETED 7897140318",
+  "ts": "2026-11-22 10:56:26"
+ }
+]
