@@ -352,9 +352,9 @@ census_reset() { [[ -n "$CENSUS_DIR" ]] && rm -rf "$CENSUS_DIR" 2>/dev/null; CEN
 node_occupants() {
   local node="$1" out lanes=""
   if [[ $CENSUS_ON -eq 1 ]]; then
-    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]' || true)"
+    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]|^glm53-4x-spark[|]' || true)"
   else
-    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]' || true)"
+    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]|^glm53-4x-spark[|]' || true)"
   fi
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qE '^dsv41-tf2-lane[|]'    && lanes="$lanes dsv41-tf2"
