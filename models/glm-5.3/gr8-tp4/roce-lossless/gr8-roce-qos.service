@@ -1,0 +1,13 @@
+[Unit]
+Description=Lossless RoCE on the Spark fabric ports: trust DSCP, PFC on priority 3 (pairs with GR8_FABRIC_TC=106 in the gr8 lane)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'for i in enp1s0f1np1 enP2p1s0f1np1; do n=0; while ! ip link show $$i >/dev/null 2>&1 && [ $$n -lt 60 ]; do sleep 1; n=$$((n+1)); done; /usr/bin/mlnx_qos -i $$i --trust dscp && /usr/bin/mlnx_qos -i $$i --pfc 0,0,0,1,0,0,0,0; done'
+ExecStop=/bin/sh -c 'for i in enp1s0f1np1 enP2p1s0f1np1; do /usr/bin/mlnx_qos -i $$i --pfc 0,0,0,0,0,0,0,0; /usr/bin/mlnx_qos -i $$i --trust pcp; done'
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,72 @@
+{
+ "label": "baseline_tc0",
+ "tclass": 0,
+ "seconds": 12,
+ "client_Gbps_avg": [
+  43.55,
+  43.57
+ ],
+ "client_total_Gbps": 87.1,
+ "switch_delta": {
+  "spark4": {
+   "tx-packet": 232016,
+   "tx-drop-packet": 0,
+   "tx-queue1-byte": 13332191,
+   "tx-queue3-byte": 0,
+   "tx-queue6-byte": 2362698,
+   "tx-pause": 0,
+   "rx-pause": 0
+  },
+  "spark2": {
+   "tx-packet": 35740842,
+   "tx-drop-packet": 482548,
+   "tx-queue1-byte": 148615749737,
+   "tx-queue3-byte": 0,
+   "tx-queue6-byte": 0,
+   "tx-pause": 0,
+   "rx-pause": 0
+  },
+  "spark1": {
+   "tx-packet": 229892,
+   "tx-drop-packet": 0,
+   "tx-queue1-byte": 13214843,
+   "tx-queue3-byte": 0,
+   "tx-queue6-byte": 2335710,
+   "tx-pause": 0,
+   "rx-pause": 0
+  },
+  "spark3": {
+   "tx-packet": 184,
+   "tx-drop-packet": 0,
+   "tx-queue1-byte": 29173,
+   "tx-queue3-byte": 0,
+   "tx-queue6-byte": 0,
+   "tx-pause": 0,
+   "rx-pause": 0
+  }
+ },
+ "nic_delta": {
+  "spark1": {
+   "packet_seq_err": 32010,
+   "local_ack_timeout_err": 0,
+   "np_cnp_sent": 0,
+   "rp_cnp_handled": 30355
+  },
+  "spark2": {
+   "packet_seq_err": 0,
+   "local_ack_timeout_err": 0,
+   "np_cnp_sent": 60968,
+   "rp_cnp_handled": 0
+  },
+  "spark4": {
+   "packet_seq_err": 32271,
+   "local_ack_timeout_err": 0,
+   "np_cnp_sent": 0,
+   "rp_cnp_handled": 30613
+  }
+ },
+ "client_tail": [
+  "---------------------------------------------------------------------------------------",
+  "---------------------------------------------------------------------------------------"
+ ]
+}
