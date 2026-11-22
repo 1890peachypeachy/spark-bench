@@ -33,7 +33,7 @@
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tp3) — MAIN GLM LANE (reinstated 2026-10-30)
 #   glm53-tp4         spark1-4      GLM-5.3-Flash TP4        -> :8888/v1 (TensorFold engine, v0.6.0, CONTAINER glm53-tf4)
 #   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2   -> :8888/v1 (TensorFold engine)
-#   glm53-gr8         spark1-4      GLM-5.3 full (gr8 v3 bit280, kindlingai/gr8 ca7e874, CONTAINER glm53-4x-spark) -> :8888/v1
+#   glm53-gr8         spark1-4      GLM-5.3 full (gr8 v3.2.1 bit280, kindlingai/gr8 v1.1.1 a3f44a0 + attic, CONTAINER glm53-4x-spark) -> :8888/v1
 #
 # POLICY (do not change these constants casually)
 #   * The OpenAI endpoint + served model name stay IDENTICAL across TP3/TP4 swaps:
@@ -578,7 +578,7 @@ lane_label() {
     glm53-tp4)       echo "GLM-5.3-Flash · TensorFold TP4 · EXL3 4bpw (kit glm53-tf4-trial, ABLIT=0)";;
     glm53-tp4-ablit) echo "GLM-5.3-Flash · TensorFold TP4 · EXL3 4bpw ABLITERATED (ABLIT=1)";;
     glm53-tf2)       echo "GLM-5.3-Flash · TensorFold TP2 · EXL3 (2 nodes)";;
-    glm53-gr8)       echo "GLM-5.3 · gr8 v3 engine · exlr8 bit280 2.80bpw · TP4 · ctx 776k (EXCLUSIVE, kindlingai ca7e874)";;
+    glm53-gr8)       echo "GLM-5.3 · gr8 v3.2.1 engine · exlr8 bit280 2.80bpw · TP4 · ctx 1M, 8 chats (EXCLUSIVE, kindlingai v1.1.1 a3f44a0)";;
     glm53-vllm4)     echo "GLM-5.3-Flash · vLLM TP4 · knapcio/Mia recipe (kit glm53-recipe-tp4)";;
     comfy-engine)    echo "ComfyUI · music/image/design/video · spark2 alone";;
     comfy-studio-4x) echo "ComfyUI 0.38.1 · H3+Qwen-Image-2.1+YuE2+Ming · 4 nodes, co-tenant";;
@@ -3140,7 +3140,7 @@ lanes:
   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3  -> $GLM53_ENDPOINT
   glm53-tp4         spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, standard weights, thinking max)
   glm53-tp4-ablit   spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (TensorFold, Ablit weights, thinking max)
-  glm53-gr8         spark1-4      GLM-5.3 full TP4        -> $GLM53_ENDPOINT  (gr8 v3 bit280, ctx 776k, thinking always on, EXCLUSIVE)
+  glm53-gr8         spark1-4      GLM-5.3 full TP4        -> $GLM53_ENDPOINT  (gr8 v3.2.1 bit280, ctx 1M, 8 chats, thinking always on, EXCLUSIVE)
   glm53-vllm4       spark1-4      GLM-5.3-Flash TP4       -> $GLM53_ENDPOINT  (vLLM knapcio align-fix NVFP4, ctx 262k; staged 2026-10-13)
   glm53-tf2         spark3,4      GLM-5.3-Flash EXL3 TP2  -> $GLM53_ENDPOINT  (TensorFold engine)
   studio-12         spark1,2      Imagination Studio: spark2 leader + spark1 worker -> $STUDIO_URL
