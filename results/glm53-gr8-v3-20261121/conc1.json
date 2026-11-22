@@ -1,0 +1,1 @@
+{"streams": 1, "ok": 1, "total_tokens": 526, "aggregate_tok_s_overlap": 39.8, "per_stream_tok_s": [39.8], "mean_per_stream": 39.8, "ttft_s": [0.34]}

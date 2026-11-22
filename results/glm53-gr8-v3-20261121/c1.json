@@ -1,0 +1,108 @@
+{
+  "summary": {
+    "prose": 40.7,
+    "code": 48.6,
+    "structured": 74.2
+  },
+  "records": [
+    {
+      "kind": "prose",
+      "decode_tok_s": 41.4,
+      "completion_tokens": 400,
+      "stream_chunks": 178,
+      "ttft_s": 0.11,
+      "decode_s": 9.63,
+      "text": "# How Solid-State Drives Wear Out Over Time\n\nSolid-state drives (SSDs) store data in NAND flash memory cells, and unlike hard drives with spinning platters, they have no moving parts to fail mechanically. Instead, SSDs degrade through a fundamentally different mechanism: the gradual breakdown of the insulating material inside each memory cell. Understanding this process requires knowing a bit about how flash memory works, because the wear mechanism is baked into the physics of writing data.\n\n## How Flash Cells Store Data\n\nEach NAND flash cell is a transistor with a \"floating gate\" \u2014 a conductive region electrically isolated by a thin layer of oxide. To store data, the drive injects electrons through this oxide layer onto the floating gate using a process called Fowler-Nordheim tunneling, which requires applying relatively high voltages. The presence or absence of charge on the gate changes the cell's threshold voltage, which the controller reads as a 1 or 0 (or, in modern multi-level cells, one of several voltage levels). The critical point is that every write operation forces electrons through that oxide barrier, and each crossing does microscopic damage to it.\n\n## Why Writes Cause Wear\n\nThe oxide layer is only a few nanometers thick, and each write/erase cycle slightly degrades its insulating properties. Electrons can become trapped in the oxide, and the layer can develop small defects that allow charge to leak. As the oxide degrades, the cell's voltage levels become less distinct \u2014 the difference between a \"1\" and a \"0\" shrinks until the controller can no longer read the cell reliably. Once a cell's charge retention becomes unreliable, it must be retired. This is why SSD endurance is measured in program/erase (P/E) cycles: each cell can only tolerate a finite number of writes before it fails. The limit varies by cell type: SLC (one bit per cell) tolerates roughly 100,000 cycles, MLC around 10,",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "prose",
+      "decode_tok_s": 38.9,
+      "completion_tokens": 400,
+      "stream_chunks": 176,
+      "ttft_s": 0.11,
+      "decode_s": 10.26,
+      "text": "# How Solid-State Drives Wear Out Over Time\n\nSolid-state drives (SSDs) store data in NAND flash memory cells, and unlike hard drives with spinning platters, they have no moving parts to fail mechanically. Instead, SSDs degrade through a fundamentally different mechanism: the gradual breakdown of the insulating layers inside each memory cell. Understanding this process requires a basic picture of how flash memory works, and once you grasp it, the rest of SSD endurance\u2014write cycles, wear leveling, and eventual failure\u2014follows logically.\n\nThe core issue is that NAND flash stores data as electrical charge trapped in tiny cells called floating-gate transistors. To write or erase a cell, the drive applies a relatively high voltage that forces electrons through an insulating oxide layer (a process called Fowler-Nordheim tunneling). Each time this happens, the insulating layer suffers microscopic damage. Electrons can become trapped in the oxide, and the layer slowly loses its ability to hold charge reliably. After enough write/erase cycles, a cell can no longer maintain the distinct voltage levels that represent its stored bits, and it must be retired from service.\n\nThis is why SSD endurance is measured in program/erase (P/E) cycles rather than raw hours of operation. Reading data causes essentially no wear; only writes and erases do. Different NAND types have different tolerances: older single-level cell (SLC) flash could endure roughly 100,000 cycles per cell, multi-level cell (MLC) around 3,000\u201310,000, and modern triple-level cell (TLC) and quad-level cell (QLC) flash\u2014denser but more fragile\u2014typically handle only a few hundred to a few thousand cycles. Manufacturers compensate for lower per-cell endurance with larger capacities and smarter firmware, so a modern consumer SSD is often more durable in practice than its raw cell ratings suggest.\n\nSSD controllers employ several techniques to stretch this limited lifespan. The most important is wear leveling",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "prose",
+      "decode_tok_s": 40.7,
+      "completion_tokens": 400,
+      "stream_chunks": 179,
+      "ttft_s": 0.11,
+      "decode_s": 9.8,
+      "text": "# How Solid-State Drives Wear Out Over Time\n\nSolid-state drives (SSDs) store data in NAND flash memory cells, and unlike hard drives with spinning platters, they have no moving parts to fail mechanically. Instead, SSDs degrade through a fundamentally different mechanism: the gradual breakdown of the insulating layers inside each memory cell. Understanding this process requires a basic picture of how flash memory works, because the wear mechanism is baked into the physics of writing data.\n\nEach NAND flash cell is a transistor with a \"floating gate\" (or similar charge-trapping structure) that holds electrons to represent data. To write a bit, the drive applies a high voltage that forces electrons through an insulating oxide layer into the floating gate; to erase, it applies a reverse voltage to pull them back out. Each time electrons tunnel through this insulator, they inflict tiny amounts of damage\u2014trapped charges and physical defects accumulate in the oxide. This damage is microscopic and invisible per operation, but it slowly degrades the cell's ability to reliably hold and distinguish charge levels. A cell is rated for a finite number of program/erase (P/E) cycles before it becomes unreliable, typically ranging from roughly 1,000 cycles for cheap triple-level cell (TLC) NAND to 100,000 for older single-level cell (SLC) designs.\n\nThe wear problem is compounded by how flash memory is organized. Cells are grouped into pages (the unit of writing) and blocks (the unit of erasing), and you cannot overwrite a page directly\u2014you must erase the entire containing block first. This means the drive's controller must constantly shuffle data around, erasing and rewriting blocks to make room for new writes, a process called write amplification. If you write 10 GB of data, the flash may physically endure 20\u201340 GB of writes. The drive's firmware mitigates this through wear leveling, which spreads writes evenly across all blocks so no single area dies prematurely, but it",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "code",
+      "decode_tok_s": 47.4,
+      "completion_tokens": 400,
+      "stream_chunks": 154,
+      "ttft_s": 0.28,
+      "decode_s": 8.42,
+      "text": "Write module with OrderedDict, threading.Lock, TTL, tests```python\n\"\"\"\nthreadsafe_lru_cache\n====================\n\nA thread-safe LRU (Least Recently Used) cache with per-entry TTL\n(time-to-live) support.\n\nFeatures:\n    * Fixed maximum capacity with LRU eviction.\n    * Optional TTL per entry (seconds). Entries expire lazily on access\n      and are also purged opportunistically.\n    * Fully thread-safe via a re-entrant lock.\n\nUsage:\n    from threadsafe_lru_cache import LRUCache\n\n    cache = LRUCache(maxsize=100, default_ttl=60)\n    cache.set(\"key\", \"value\", ttl=30)\n    value = cache.get(\"key\")   # returns None if missing or expired\n\"\"\"\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Hashable, Optional\n\n\nclass LRUCache:\n    \"\"\"A thread-safe LRU cache with per-entry TTL.\n\n    Attributes:\n        maxsize: Maximum number of entries the cache may hold.\n        default_ttl: Default time-to-live (in seconds) for entries.\n            If ``None``, entries never expire.\n    \"\"\"\n\n    def __init__(self, maxsize: int = 128, default_ttl: Optional[float] = None) -> None:\n        \"\"\"Initialize the cache.\n\n        Args:\n            maxsize: Maximum number of entries (must be > 0).\n            default_ttl: Default TTL in seconds, or None for no expiry.\n\n        Raises:\n            ValueError: If maxsize is not a positive integer.\n        \"\"\"\n        if not isinstance(maxsize, int) or maxsize <= 0:\n            raise ValueError(\"maxsize must be a positive integer\")\n        self._maxsize = maxsize\n        self._default_ttl = default_ttl\n        self._data: \"OrderedDict[Hashable, tuple[Any, Optional[float]]]\" = OrderedDict()\n        self._lock = threading.R",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "code",
+      "decode_tok_s": 52.7,
+      "completion_tokens": 400,
+      "stream_chunks": 113,
+      "ttft_s": 0.05,
+      "decode_s": 7.57,
+      "text": "Write module with OrderedDict, threading.Lock, TTL, tests```python\n\"\"\"\nthreadsafe_lru_cache\n====================\n\nA thread-safe LRU (Least Recently Used) cache with per-entry TTL\n(time-to-live) support.\n\nFeatures:\n    * Fixed maximum capacity with LRU eviction.\n    * Optional TTL per entry (seconds). Entries expire lazily on access\n      and are also purged opportunistically.\n    * Fully thread-safe via a re-entrant lock.\n\nUsage:\n    from threadsafe_lru_cache import LRUCache\n\n    cache = LRUCache(maxsize=100, default_ttl=60)\n    cache.set(\"key\", \"value\", ttl=30)\n    value = cache.get(\"key\")   # returns None if missing/expired\n\"\"\"\n\nimport threading\nimport time\nfrom collections import OrderedDict\nfrom typing import Any, Callable, Hashable, Optional\n\n\nclass LRUCache:\n    \"\"\"A thread-safe LRU cache with per-entry TTL.\n\n    Attributes:\n        maxsize: Maximum number of live entries.\n        default_ttl: Default time-to-live in seconds for entries.\n            ``None`` means entries never expire.\n    \"\"\"\n\n    def __init__(self, maxsize: int = 128, default_ttl: Optional[float] = None) -> None:\n        \"\"\"Initialize the cache.\n\n        Args:\n            maxsize: Maximum number of entries (must be >= 1).\n            default_ttl: Default TTL in seconds; ``None`` disables expiry.\n\n        Raises:\n            ValueError: If ``maxsize`` is less than 1.\n        \"\"\"\n        if maxsize < 1:\n            raise ValueError(\"maxsize must be >= 1\")\n        self._maxsize = maxsize\n        self._default_ttl = default_ttl\n        self._data: \"OrderedDict[Hashable, tuple[Any, Optional[float]]]\" = OrderedDict()\n        self._lock = threading.RLock()\n\n    # ------------------------------------------------------------------ #\n    # Internal helpers",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "code",
+      "decode_tok_s": 48.6,
+      "completion_tokens": 400,
+      "stream_chunks": 132,
+      "ttft_s": 0.05,
+      "decode_s": 8.21,
+      "text": "Write module with OrderedDict, threading.Lock, TTL, tests```python\n\"\"\"\nthreadsafe_lru_cache\n====================\n\nA thread-safe LRU (Least Recently Used) cache with per-entry TTL\n(time-to-live) support.\n\nFeatures:\n    * Fixed maximum capacity with LRU eviction.\n    * Optional TTL per entry (seconds). Entries expire lazily on access\n      and are also purged opportunistically on writes.\n    * Fully thread-safe: all operations are guarded by a re-entrant lock.\n\nUsage:\n    from threadsafe_lru_cache import LRUCache\n\n    cache = LRUCache(maxsize=100, default_ttl=60)\n    cache.set(\"key\", \"value\", ttl=10)\n    value = cache.get(\"key\")   # returns None if missing or expired\n\"\"\"\n\nimport threading\nimport time\nfrom collections import OrderedDict\n\n\n__all__ = [\"LRUCache\"]\n\n\nclass LRUCache:\n    \"\"\"A thread-safe LRU cache with per-entry TTL.\n\n    Attributes:\n        maxsize (int): Maximum number of live entries.\n        default_ttl (float or None): TTL in seconds applied when `set`\n            is called without an explicit `ttl`. ``None`` means the\n            entry never expires.\n    \"\"\"\n\n    def __init__(self, maxsize=128, default_ttl=None):\n        \"\"\"\n        Args:\n            maxsize (int): Maximum number of entries (must be >= 1).\n            default_ttl (float or None): Default TTL in seconds.\n\n        Raises:\n            ValueError: If ``maxsize`` is not a positive integer.\n        \"\"\"\n        if not isinstance(maxsize, int) or maxsize < 1:\n            raise ValueError(\"maxsize must be a positive integer\")\n        self.maxsize = maxsize\n        self.default_ttl = default_ttl\n        self._lock = threading.RLock()\n        # Maps key -> (value, expires_at). expires_at is None for no expiry.\n",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "structured",
+      "decode_tok_s": 74.2,
+      "completion_tokens": 400,
+      "stream_chunks": 63,
+      "ttft_s": 0.31,
+      "decode_s": 5.38,
+      "text": "Generate 12 objects.```json\n[\n  {\"hostname\": \"atlas-01\", \"rack\": \"R1\", \"cpu_cores\": 32, \"ram_gb\": 128, \"role\": \"database\", \"commissioned\": \"2021-03-14\"},\n  {\"hostname\": \"atlas-02\", \"rack\": \"R1\", \"cpu_cores\": 32, \"ram_gb\": 128, \"role\": \"database\", \"commissioned\": \"2021-03-14\"},\n  {\"hostname\": \"borealis-01\", \"rack\": \"R2\", \"cpu_cores\": 16, \"ram_gb\": 64, \"role\": \"web-frontend\", \"commissioned\": \"2020-08-02\"},\n  {\"hostname\": \"borealis-02\", \"rack\": \"R2\", \"cpu_cores\": 16, \"ram_gb\": 64, \"role\": \"web-frontend\", \"commissioned\": \"2020-08-02\"},\n  {\"hostname\": \"cinder-01\", \"rack\": \"R3\", \"cpu_cores\": 8, \"ram_gb\": 32, \"role\": \"load-balancer\", \"commissioned\": \"2019-11-20\"},\n  {\"hostname\": \"cinder-02\", \"rack\": \"R3\", \"cpu_cores\": 8, \"ram_gb\": 32, \"role\": \"load-balancer\", \"commissioned\": \"2019-11-20\"},\n  {\"hostname\": \"dynamo-01\", \"rack\": \"R4\", \"cpu_cores\": 64, \"ram_gb\": 256, \"role\": \"compute\", \"commissioned\": \"2022-06-30\"},\n  {\"hostname\": \"dynamo-02\", \"rack\": \"R4\", \"cpu_cores\": 64, \"ram_gb\": 256, \"role\": \"compute\",",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "structured",
+      "decode_tok_s": 74.5,
+      "completion_tokens": 400,
+      "stream_chunks": 63,
+      "ttft_s": 0.04,
+      "decode_s": 5.35,
+      "text": "Generate 12 objects.```json\n[\n  {\"hostname\": \"atlas-01\", \"rack\": \"R1\", \"cpu_cores\": 32, \"ram_gb\": 128, \"role\": \"database\", \"commissioned\": \"2021-03-14\"},\n  {\"hostname\": \"atlas-02\", \"rack\": \"R1\", \"cpu_cores\": 32, \"ram_gb\": 128, \"role\": \"database\", \"commissioned\": \"2021-03-14\"},\n  {\"hostname\": \"borealis-01\", \"rack\": \"R2\", \"cpu_cores\": 16, \"ram_gb\": 64, \"role\": \"web-frontend\", \"commissioned\": \"2020-08-02\"},\n  {\"hostname\": \"borealis-02\", \"rack\": \"R2\", \"cpu_cores\": 16, \"ram_gb\": 64, \"role\": \"web-frontend\", \"commissioned\": \"2020-08-02\"},\n  {\"hostname\": \"cinder-01\", \"rack\": \"R3\", \"cpu_cores\": 8, \"ram_gb\": 32, \"role\": \"load-balancer\", \"commissioned\": \"2019-11-20\"},\n  {\"hostname\": \"cinder-02\", \"rack\": \"R3\", \"cpu_cores\": 8, \"ram_gb\": 32, \"role\": \"load-balancer\", \"commissioned\": \"2019-11-20\"},\n  {\"hostname\": \"dynamo-01\", \"rack\": \"R4\", \"cpu_cores\": 64, \"ram_gb\": 256, \"role\": \"compute\", \"commissioned\": \"2022-06-30\"},\n  {\"hostname\": \"dynamo-02\", \"rack\": \"R4\", \"cpu_cores\": 64, \"ram_gb\": 256, \"role\": \"compute\",",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    },
+    {
+      "kind": "structured",
+      "decode_tok_s": 73.1,
+      "completion_tokens": 400,
+      "stream_chunks": 63,
+      "ttft_s": 0.05,
+      "decode_s": 5.46,
+      "text": "Generate```json\n[\n  {\"hostname\": \"atlas-01\", \"rack\": \"R1\", \"cpu_cores\": 32, \"ram_gb\": 128, \"role\": \"database\", \"commissioned\": \"2021-03-15\"},\n  {\"hostname\": \"atlas-02\", \"rack\": \"R1\", \"cpu_cores\": 32, \"ram_gb\": 128, \"role\": \"database\", \"commissioned\": \"2021-03-15\"},\n  {\"hostname\": \"boreas-01\", \"rack\": \"R2\", \"cpu_cores\": 16, \"ram_gb\": 64, \"role\": \"web-frontend\", \"commissioned\": \"2020-07-22\"},\n  {\"hostname\": \"boreas-02\", \"rack\": \"R2\", \"cpu_cores\": 16, \"ram_gb\": 64, \"role\": \"web-frontend\", \"commissioned\": \"2020-07-22\"},\n  {\"hostname\": \"chronos-01\", \"rack\": \"R3\", \"cpu_cores\": 64, \"ram_gb\": 256, \"role\": \"compute\", \"commissioned\": \"2022-01-10\"},\n  {\"hostname\": \"chronos-02\", \"rack\": \"R3\", \"cpu_cores\": 64, \"ram_gb\": 256, \"role\": \"compute\", \"commissioned\": \"2022-01-10\"},\n  {\"hostname\": \"daphne-01\", \"rack\": \"R4\", \"cpu_cores\": 8, \"ram_gb\": 32, \"role\": \"load-balancer\", \"commissioned\": \"2019-11-05\"},\n  {\"hostname\": \"daphne-02\", \"rack\": \"R4\", \"cpu_cores\": 8, \"ram_gb\": 32, \"role\": \"load-bal",
+      "peak_concurrent": 1.0,
+      "concurrent_after": 0.0
+    }
+  ]
+}
