@@ -72,3 +72,35 @@ cleanup never deletes something a lane needs at bring-up. Verified live on spark
    `MissingEngramTable`.
 3. `start.sh` stops any running ranks before relaunching, so a manual `start.sh` while a lane is
    live tears that lane down.
+
+## 2026-11-22: spark4 payload dropped (Victor: "drop comfy and deepseek from spark4")
+
+spark4 has the only small drive (916 GB). Freed **425 GB: 113 GB -> 538 GB free (39% used)**, with the 101 GB gr8 KV store full.
+
+Removed from spark4 only:
+
+| What | Size | Why it was safe |
+|---|---|---|
+| `/var/tmp/comfy/h3`, `models`, `yue2` | 66 + 68 + 5 GB | file-for-file identical (names + sizes) on spark1 and spark3 |
+| `/var/tmp/tf1017/engram` | 190 GB | identical on spark1, spark2, spark3 |
+| `/var/tmp/tf1017/model` | 7.7 GB | identical on spark2, spark3 |
+| `/var/tmp/tf1017/cache` | 65 GB | per-rank compiled cache, differs per node; regenerates on first boot (same class as the 2026-11-20 deletes) |
+| docker image `spark-comfy:m-fd7639f4` + container `comfy-studio` | 27 GB | same image on spark1/spark3; container only held mounts |
+
+Kept on spark4: `/var/tmp/comfy/{data,studio,extra_model_paths.yaml}` (47 MB, differs per node), `/var/tmp/tf1017/{kit,engine-bin-v035,logs}` (742 MB),
+image `tensorfold-dsv41:native-*` (0.77 GB unique, shares layers with the Flash image). File lists: `spark4:/var/tmp/spark4-dropped-manifest-20261122.txt` (copy in `~/.hermes/profiles/spark/backups/cleanup-20261122/`).
+
+**Lanes that cannot start until restored** (they need every node's share): `dsv41-tf4-ablit`, `dsv41-tf4`, `dsv41-native`, `comfy-studio-4x`.
+Unaffected: `glm53-gr8` (live), `comfy-engine` (spark2), `studio-2`/`studio-12` (spark2/spark1), the GLM-5.3-Flash lanes.
+`spark-lane up` does NOT preflight these paths on every node (known gap #2 above): a DeepSeek `up` would fail late with `MissingEngramTable`.
+
+Restore (run on a Spark on the fabric, never over the LAN; the copy is ~270 GB for DeepSeek, ~140 GB + 27 GB image for ComfyUI):
+```
+# DeepSeek: from spark2 (or spark1/spark3)
+ssh spark2 'rsync -a --info=progress2 /var/tmp/tf1017/engram/ spark4@10.73.0.4:/var/tmp/tf1017/engram/ && rsync -a /var/tmp/tf1017/model/ spark4@10.73.0.4:/var/tmp/tf1017/model/'
+#   /var/tmp/tf1017/cache regenerates by itself on the first boot of each rank.
+# ComfyUI: from spark1 (or spark3)
+ssh spark1 'for d in h3 models yue2; do rsync -a /var/tmp/comfy/$d/ spark4@10.73.0.4:/var/tmp/comfy/$d/; done; docker save spark-comfy:m-fd7639f4 | ssh spark4@10.73.0.4 docker load'
+# then re-run the replica check (names + sizes) before bringing a lane up
+```
+Free space needed on spark4 to restore both: ~440 GB, i.e. not while the gr8 lane's 187 GB is also there and anything else fills up.
