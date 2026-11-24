@@ -140,6 +140,13 @@ GLM53_GR8_CACHE="/var/tmp/gr8/cache"
 INKLING2_SETUP="$HOME/recipe-db/inkling2-sparks/recipe/inkling2-tp4/setup.sh"
 INKLING2_CONF="$HOME/recipe-db/spark-bench/models/inkling2-tp4/our-sparks.conf"
 INKLING2_ROOT="/var/tmp/inkling2-tp4"
+# ernie55-tp4 ADDED 2026-11-24 (Victor): ERNIE-5.5-Flash-Preview TP4, vLLM 0.34 + baidu/vLLM-ERNIE, containers `ernie55-tp4` on all four
+# nodes. Recipe: github.com/1890peachypeachy/ERNIE-5.5-Flash-Preview-4x-DGX-Sparks (cloned on the head at ERNIE55_KIT; its host-local
+# scripts/local.sh carries the fleet topology + the fleet identity :8888 / GLM-5.3-Flash-EXL3). EXCLUSIVE (16 GiB KV + ~42 GiB weights per rank).
+ERNIE55_HEAD="${ERNIE55_HEAD:-spark3}"
+ERNIE55_KIT="${ERNIE55_KIT:-/var/tmp/ernie55/recipe}"
+ERNIE55_WEIGHTS="${ERNIE55_WEIGHTS:-/var/tmp/models/ERNIE-5.5-Flash-Preview}"
+ERNIE55_CTN="ernie55-tp4"
 # 2026-11-20: ATTIC=1 lane (spark-attic lends the display carveout): the recipe overlay compose.attic.yaml mounts atticd's socket + key.
 GLM53_GR8_COMPOSE="docker compose -f compose.yaml -f compose.attic.yaml -f compose.override.yaml"
 #
@@ -254,6 +261,7 @@ lane_container_names() {
     glm53-tp3)           echo "glm53-tp3" ;;
     glm53-tp4|glm53-tp4-ablit) echo "glm53-tf4" ;;
     glm53-gr8)           echo "gr8" ;;
+    ernie55-tp4)         echo "ernie55-tp4" ;;
     glm53-vllm4)         echo "${GLM53_TP4_CTN}-r0 ${GLM53_TP4_CTN}-r1 ${GLM53_TP4_CTN}-r2 ${GLM53_TP4_CTN}-r3" ;;
     glm53-tf2)           echo "glm53-flash-tf" ;;
     comfy-engine)        echo "spark-comfy" ;;
@@ -360,9 +368,9 @@ census_reset() { [[ -n "$CENSUS_DIR" ]] && rm -rf "$CENSUS_DIR" 2>/dev/null; CEN
 node_occupants() {
   local node="$1" out lanes=""
   if [[ $CENSUS_ON -eq 1 ]]; then
-    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^inkling2-tp4[|]|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]|^glm53-4x-spark[|]' || true)"
+    out="$(census_section "$node" "" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^inkling2-tp4[|]|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]|^glm53-4x-spark[|]|^ernie55-tp4[|]' || true)"
   else
-    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^inkling2-tp4[|]|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]|^glm53-4x-spark[|]' || true)"
+    out="$(docker_names "$node" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|sglang|glm53-exl3|glm53-alignfix|glm53-lvkp|glm53-roce|glm53-flash-tf|glm53-tf3|glm53-tp3|dsv41-tf2-lane|glm53-tf4|^inkling2-tp4[|]|^tp4-lane[|]|dsv41-1017-tf|^glm53[|]|^gr8[|]|^glm53-4x-spark[|]|^ernie55-tp4[|]' || true)"
   fi
   [[ -z "$out" ]] && { echo ""; return; }
   echo "$out" | grep -qE '^dsv41-tf2-lane[|]'    && lanes="$lanes dsv41-tf2"
@@ -372,6 +380,7 @@ node_occupants() {
   echo "$out" | grep -qE 'dsv41-1017-tf'         && lanes="$lanes dsv41-native"
   echo "$out" | grep -qE '^tp4-lane[|]'         && { if [[ "$(tf4_lane_variant "$node")" == ablit ]]; then lanes="$lanes dsv41-tf4-ablit"; else lanes="$lanes dsv41-tf4"; fi; }
   echo "$out" | grep -qE '^inkling2-tp4[|]'       && lanes="$lanes inkling2-tp4"
+  echo "$out" | grep -qE '^ernie55-tp4[|]'        && lanes="$lanes ernie55-tp4"
   # glm family stays mutually exclusive (an image string can match both arms).
   if   echo "$out" | grep -qE '^(gr8|glm53-4x-spark)[|]'; then
     lanes="$lanes glm53-gr8"
@@ -502,7 +511,7 @@ census() {
   echo "  per-node containers (authoritative for occupancy):"
   local n o
   for n in spark1 spark2 spark3 spark4; do
-    o="$(docker_names "$n" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|^tp4-lane[|]|dsv41-1017-tf|sglang|glm53|^inkling2-tp4[|]|^gr8[|]|^glm53-4x-spark[|]' || true)"
+    o="$(docker_names "$n" | grep -E 'comfy-studio|spark-comfy|ming-layer-web|spark-image-lab|dsv41-[34]x|^dsv41-(head|worker)[|]|^tp4-lane[|]|dsv41-1017-tf|sglang|glm53|^inkling2-tp4[|]|^gr8[|]|^glm53-4x-spark[|]|^ernie55-tp4[|]' || true)"
     if [[ -z "$o" ]]; then printf '    %-8s %s(free)%s\n' "$n" "$D" "$N"
     else printf '    %-8s %s\n' "$n" "$(echo "$o" | paste -sd' ' -)"; fi
   done
@@ -535,15 +544,15 @@ lane_nodes() {
     glm53-tp3)       echo "spark1 spark3 spark4" ;;
     glm53-tp4|glm53-tp4-ablit) echo "spark1 spark2 spark3 spark4" ;;
     glm53-gr8)       echo "spark1 spark2 spark3 spark4" ;;
-    inkling2-tp4)    echo "spark1 spark2 spark3 spark4" ;;
+    inkling2-tp4|ernie55-tp4) echo "spark1 spark2 spark3 spark4" ;;
     glm53-vllm4)     echo "spark1 spark2 spark3 spark4" ;;
     glm53-tf2)       echo "spark3 spark4" ;;
     *) return 1 ;;
   esac
 }
 
-lane_endpoint() { case "$1" in comfy-studio-4x) echo "spark1 100.106.81.35:8188 | spark2 100.71.248.116:8188 | spark3 100.99.120.29:8188 | spark4 100.91.114.22:8188" ;; comfy-engine) echo "$COMFY_URL" ;; dsv41-tf2) echo "$TF2_ENDPOINT" ;; dsv41-tf3) echo "$TF3_ENDPOINT" ;; studio-12|studio-2) echo "$STUDIO_URL" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2|inkling2-tp4) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
-lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-image-2.1+minimax-h3)" ;; comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; dsv41-tf2|dsv41-tf3) echo "$TF2_MODEL" ;; studio-12|studio-2) echo "imagination-studio" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2|inkling2-tp4) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
+lane_endpoint() { case "$1" in comfy-studio-4x) echo "spark1 100.106.81.35:8188 | spark2 100.71.248.116:8188 | spark3 100.99.120.29:8188 | spark4 100.91.114.22:8188" ;; comfy-engine) echo "$COMFY_URL" ;; dsv41-tf2) echo "$TF2_ENDPOINT" ;; dsv41-tf3) echo "$TF3_ENDPOINT" ;; studio-12|studio-2) echo "$STUDIO_URL" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2|inkling2-tp4|ernie55-tp4) echo "$GLM53_ENDPOINT" ;; *) echo "$DSV41_ENDPOINT" ;; esac; }
+lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-image-2.1+minimax-h3)" ;; comfy-engine) echo "comfyui(yue2+qwen-image+ming+h3)" ;; dsv41-tf2|dsv41-tf3) echo "$TF2_MODEL" ;; studio-12|studio-2) echo "imagination-studio" ;; glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2|inkling2-tp4|ernie55-tp4) echo "$GLM53_MODEL" ;; *) echo "$DSV41_MODEL" ;; esac; }
 
 # ── Lane inventory (single source of truth for the sparkDash lane panel) ─────
 # 2026-10-25 (Victor): dsv41-tf4-ablit (EXL3 + Keys) is the DEFAULT lane and co-tenants with comfy-studio-4x.
@@ -567,7 +576,7 @@ lane_model_id() { case "$1" in comfy-studio-4x) echo "comfyui-0.38.1(h3+qwen-ima
 #   3. TP3 DeepSeek OR GLM + Imagination Studio on spark2:        dsv41-tf3 / glm53-tp3 (spark1/3/4; spark2 free)
 #   4. TP2 DeepSeek OR GLM + Imagination Studio TP2:              dsv41-tf2 / glm53-tf2 (spark3+4; spark2 + spark1 for Studio)
 # dsv41-tf3 = Mia TP3 SGLang recipe (fleet port, /var/tmp/dsv41-tf3 on spark3).
-ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 glm53-gr8 inkling2-tp4 studio-12 studio-2"
+ALL_LANE_IDS="comfy-engine comfy-studio-4x dsv41-tf4-ablit dsv41-tf4 dsv41-native glm53-tp3 glm53-tp4 glm53-tf2 glm53-gr8 inkling2-tp4 ernie55-tp4 studio-12 studio-2"
 
 # ── lane labels (display only; NOT identity) ─────────────────────────────────
 # The id stays the stable key every script and caller uses. The label answers the
@@ -589,6 +598,7 @@ lane_label() {
     glm53-tp4-ablit) echo "GLM-5.3-Flash · TensorFold TP4 · EXL3 4bpw ABLITERATED (ABLIT=1)";;
     glm53-tf2)       echo "GLM-5.3-Flash · TensorFold TP2 · EXL3 (2 nodes)";;
     glm53-gr8)       echo "GLM-5.3 · gr8 v3.2.1 engine · exlr8 bit280 2.80bpw · TP4 · ctx 1M, 8 chats (EXCLUSIVE, kindlingai v1.1.1 a3f44a0)";;
+    ernie55-tp4)     echo "ERNIE-5.5-Flash-Preview · vLLM 0.34 + vLLM-ERNIE · TP4, W4A8 experts, DSpark k=3 · ctx 256k, 16 seqs (EXCLUSIVE, recipe 1890peachypeachy/ERNIE-5.5-Flash-Preview-4x-DGX-Sparks)";;
     inkling2-tp4)    echo "Inkling-2-Small · TensorFold-native TP4 · DSpark + vision · ctx 256k, 4 streams (host procs, EXCLUSIVE, swbiggart v0.3)";;
     glm53-vllm4)     echo "GLM-5.3-Flash · vLLM TP4 · knapcio/Mia recipe (kit glm53-recipe-tp4)";;
     comfy-engine)    echo "ComfyUI · music/image/design/video · spark2 alone";;
@@ -3032,6 +3042,88 @@ inkling2_tp4_down() {
   return 0
 }
 
+
+# ── ERNIE-5.5-Flash-Preview TP4 (ernie55-tp4, added 2026-11-24) ──────────────
+# Thin wrapper over the public recipe's own start.sh / stop.sh (cloned on the head). The recipe holds every flag; this only adds the
+# fleet gates: occupancy, staged-kit + weights preflight, already-up short-circuit, and a real chat canary.
+ernie55_tp4_up() {
+  local lane="ernie55-tp4" n miss=""
+  STEPS=5; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "occupancy" "$(lane_nodes "$lane")"
+  local conflict; conflict="$(occupancy_conflict "$lane")"
+  if [[ -n "$conflict" ]]; then
+    note_fail "occupancy" "nodes already taken:$conflict"
+    NEXT_CMD="spark-lane rotate $lane   # parks the conflicting lanes, then brings this one up"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
+  fi
+  ok "all required nodes free"
+
+  step "preflight" "recipe kit on $ERNIE55_HEAD; weights visible on every node"
+  if ! sshx "$ERNIE55_HEAD" "test -x $ERNIE55_KIT/start.sh && test -s $ERNIE55_KIT/scripts/local.sh" >/dev/null 2>&1; then
+    note_fail "preflight" "ERNIE recipe not staged at $ERNIE55_HEAD:$ERNIE55_KIT (needs start.sh and a scripts/local.sh)"
+    NEXT_CMD="ssh $ERNIE55_HEAD 'git clone https://github.com/1890peachypeachy/ERNIE-5.5-Flash-Preview-4x-DGX-Sparks.git $ERNIE55_KIT'   # then create scripts/local.sh from scripts/local.sh.example"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
+  fi
+  for n in $(lane_nodes "$lane"); do
+    sshx "$n" "test -s $ERNIE55_WEIGHTS/model.safetensors.index.json && test -s $ERNIE55_WEIGHTS/config.json" >/dev/null 2>&1 || miss="$miss $n"
+  done
+  if [[ -n "$miss" ]]; then
+    note_fail "preflight" "ERNIE weights not visible at $ERNIE55_WEIGHTS on:$miss (NFS mount from the head, or fetch-weights.sh)"
+    NEXT_CMD="ssh $ERNIE55_HEAD 'cd $ERNIE55_KIT && scripts/fetch-weights.sh --size-only'"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
+  fi
+  ok "kit staged, weights visible on all 4 nodes"
+
+  # Idempotent short-circuit BEFORE anything that could touch a running lane. Nothing above this line mutates the fleet.
+  step "already up?" "is $GLM53_ENDPOINT already serving completions?"
+  if [[ "$(curl -s -o /dev/null -w '%{http_code}' -m 8 "$GLM53_ENDPOINT/models" 2>/dev/null)" == "200" ]] && canary_gr8 "$GLM53_ENDPOINT" "$GLM53_MODEL" >/dev/null 2>&1; then
+    ok "already serving — no change made (and no restart)"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL" "(already up, unchanged)"; NEXT_CMD="nothing"; return 0
+  fi
+  ok "not serving yet"
+
+  step "start" "recipe start.sh on $ERNIE55_HEAD (checks 4 nodes, builds image if absent, starts ranks 3,2,1,0, waits for /health; first boot ~minutes)"
+  if ! timeout_run "${ERNIE55_START_TIMEOUT:-4200}" sshx "$ERNIE55_HEAD" "cd $ERNIE55_KIT && ./start.sh" > /tmp/ernie55-start.$$.log 2>&1; then
+    note_fail "start" "start.sh failed or timed out: $(grep -E '^\[E_|FAIL|error' /tmp/ernie55-start.$$.log | tail -2 | tr '\n' ' ' | cut -c1-220)"
+    NEXT_CMD="spark-lane logs $lane   # the head's container log; ranks may still be alive: check docker ps on all 4 nodes before relaunching"
+    result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
+  fi
+  rm -f /tmp/ernie55-start.$$.log; ok "start.sh returned READY"
+
+  step "canary" "real chat completion on $GLM53_ENDPOINT"
+  if ! canary_gr8 "$GLM53_ENDPOINT" "$GLM53_MODEL"; then
+    note_fail "canary" "chat completion failed"
+    NEXT_CMD="spark-lane logs $lane"
+  fi
+  result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"
+  return $FAILED
+}
+
+ernie55_tp4_down() {
+  local lane="ernie55-tp4" n left=""
+  STEPS=2; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
+
+  step "stop" "recipe stop.sh on $ERNIE55_HEAD (rank 0 first, logs saved), bounded ${DSV41_STOP_TIMEOUT:-180}s"
+  timeout_run "${DSV41_STOP_TIMEOUT:-180}" sshx "$ERNIE55_HEAD" "cd $ERNIE55_KIT && ./stop.sh" >/dev/null 2>&1 || warn "stop.sh returned non-zero — verifying anyway"
+  ok "stop issued"
+
+  step "verify torn down" "no $ERNIE55_CTN container on $(lane_nodes "$lane")"
+  sleep 3
+  for n in $(lane_nodes "$lane"); do
+    [[ -n "$(sshx "$n" "docker ps -aq --filter name=^/$ERNIE55_CTN\$" 2>/dev/null)" ]] && left="$left $n"
+  done
+  if [[ -n "$left" ]]; then
+    note_fail "torn-down" "$ERNIE55_CTN still present on:$left"
+    NEXT_CMD="ssh $ERNIE55_HEAD 'cd $ERNIE55_KIT && ./stop.sh'   # then docker ps -a on each node; do not relaunch until all four are clean"
+    result "$lane" "down" "-" "-"; return 1
+  fi
+  ok "all required nodes released"
+  result "$lane" "down" "-" "-"
+  NEXT_CMD="nothing — nodes released. Weights ($ERNIE55_WEIGHTS) and the built image NOT deleted."
+  return 0
+}
+
 # ── stage (TP4 kit deploy, idempotent) ───────────────────────────────────────
 stage_dsv41() {
   local lane="$1" kit repo branch envf builder
@@ -3193,7 +3285,7 @@ print(" ".join(k if v in files else k.upper()+"-MISSING" for k,v in want.items()
   # glm53-tf2/tf3/tp4: TensorFold is reasoning-first — the generic canary's 8-token
   # budget returns content=None on it. Use the enable_thinking:false variant for real proof.
   case "$lane" in
-    glm53-gr8|glm53-vllm4)         canary_gr8 "$ep" "$model" ;;
+    glm53-gr8|glm53-vllm4|ernie55-tp4) canary_gr8 "$ep" "$model" ;;
     glm53-tf2|glm53-tp3|glm53-tp4|glm53-tp4-ablit|inkling2-tp4|dsv41-native|dsv41-tf4|dsv41-tf4-ablit) canary_tf2 "$ep" "$model" ;;
     *)                             canary "$ep" "$model" ;;
   esac
@@ -3215,6 +3307,7 @@ spark-lane — one-shot lane bring-up / teardown / rotation (DGX Spark fleet)
   spark-lane stage dsv41-tp3|dsv41-tp4   clone + fleet profile + weight check (no serve)
 
 lanes:
+  ernie55-tp4       spark1-4      ERNIE-5.5-Flash-Preview vLLM TP4 (docker, EXCLUSIVE) -> :8888, name GLM-5.3-Flash-EXL3, ctx 256k
   inkling2-tp4      spark1-4      Inkling-2-Small TensorFold TP4 (host procs, EXCLUSIVE) -> :8888, name GLM-5.3-Flash-EXL3, ctx 256k
   comfy-engine      spark2        ComfyUI music/image/design/video -> $COMFY_URL
   comfy-studio-4x   spark1-4      Studios ComfyUI 0.38.1 (H3 video + Qwen-Image-2.1) -> each node :8188
@@ -3262,11 +3355,11 @@ case "$ACT" in
   up)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_up ;; comfy-studio-4x) comfy_studio_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; inkling2-tp4) inkling2_tp4_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-native) dsv41_native_up ;; dsv41-tf4) dsv41_tf4_up ;; dsv41-tf4-ablit) dsv41_tf4_ablit_up ;; dsv41-tf2) dsv41_tf2_up ;; dsv41-tf3) dsv41_tf3_up ;; studio-12) studio_12_up ;; studio-2) studio_2_up ;; *) dsv41_up "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_up ;; comfy-studio-4x) comfy_studio_up ;; glm53-tp3) glm53_tf3_up ;; glm53-tp4) glm53_tp4_up ;; glm53-tp4-ablit) glm53_tp4_ablit_up ;; glm53-gr8) glm53_gr8_up ;; inkling2-tp4) inkling2_tp4_up ;; ernie55-tp4) ernie55_tp4_up ;; glm53-vllm4) glm53_vllm4_up ;; glm53-tf2) glm53_tf2_up ;; dsv41-native) dsv41_native_up ;; dsv41-tf4) dsv41_tf4_up ;; dsv41-tf4-ablit) dsv41_tf4_ablit_up ;; dsv41-tf2) dsv41_tf2_up ;; dsv41-tf3) dsv41_tf3_up ;; studio-12) studio_12_up ;; studio-2) studio_2_up ;; *) dsv41_up "$LANE" ;; esac ;;
   down)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
-    case "$LANE" in comfy-engine) comfy_engine_down ;; comfy-studio-4x) comfy_studio_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; inkling2-tp4) inkling2_tp4_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-native) dsv41_native_down ;; dsv41-tf4) dsv41_tf4_down ;; dsv41-tf4-ablit) dsv41_tf4_ablit_down ;; dsv41-tf2) dsv41_tf2_down ;; dsv41-tf3) dsv41_tf3_down ;; studio-12) studio_12_down ;; studio-2) studio_2_down ;; *) dsv41_down "$LANE" ;; esac ;;
+    case "$LANE" in comfy-engine) comfy_engine_down ;; comfy-studio-4x) comfy_studio_down ;; glm53-tp3) glm53_tf3_down ;; glm53-tp4) glm53_tp4_down ;; glm53-tp4-ablit) glm53_tp4_ablit_down ;; glm53-gr8) glm53_gr8_down ;; inkling2-tp4) inkling2_tp4_down ;; ernie55-tp4) ernie55_tp4_down ;; glm53-vllm4) glm53_vllm4_down ;; glm53-tf2) glm53_tf2_down ;; dsv41-native) dsv41_native_down ;; dsv41-tf4) dsv41_tf4_down ;; dsv41-tf4-ablit) dsv41_tf4_ablit_down ;; dsv41-tf2) dsv41_tf2_down ;; dsv41-tf3) dsv41_tf3_down ;; studio-12) studio_12_down ;; studio-2) studio_2_down ;; *) dsv41_down "$LANE" ;; esac ;;
   verify)
     [[ -z "$LANE" ]] && { usage; exit 2; }
     lane_nodes "$LANE" >/dev/null || { echo "unknown lane: $LANE" >&2; usage; exit 2; }
@@ -3306,13 +3399,14 @@ case "$ACT" in
       glm53-tp3) kit="$GLM53_TP3_KIT"; host="$GLM53_TP3_HEAD" ;;
       glm53-tp4|glm53-tp4-ablit) kit="$GLM53_TP4_TF_KIT"; host="$GLM53_TP4_TF_HEAD" ;;
       glm53-gr8) echo "${B}gr8 head log on $GLM53_GR8_HEAD${N} (tail ${TAIL:-40})"; sshx "$GLM53_GR8_HEAD" "docker logs --tail ${TAIL:-40} glm53-4x-spark 2>&1"; exit 0 ;;
+      ernie55-tp4) echo "${B}ernie55 head log on $ERNIE55_HEAD${N} (tail ${TAIL:-40})"; sshx "$ERNIE55_HEAD" "docker logs --tail ${TAIL:-40} $ERNIE55_CTN 2>&1"; exit 0 ;;
       glm53-vllm4) kit="$GLM53_TP4_KIT"; host="$GLM53_HEAD_HOST" ;;
       glm53-tf2) kit="$GLM53_TF2_KIT"; host="$GLM53_TF2_HEAD" ;;
       dsv41-tp3|dsv41-tp4) kit="$(dsv41_kit "$LANE")"; host="$DSV41_HEAD_HOST" ;;
       comfy-studio-4x) local n; for n in $(comfy_studio_nodes); do printf "%s== %s%s\n" "$B" "$n" "$N"; sshx "$n" "docker logs --tail ${TAIL:-20} $COMFY_STUDIO_CTN 2>&1 | tail -${TAIL:-20}"; done; exit 0 ;;
       dsv41-native) echo "${B}native head log on $DSV41_HEAD_HOST${N}"; sshx "$DSV41_HEAD_HOST" "docker logs --tail ${TAIL:-40} dsv41-1017-tf 2>&1"; exit 0 ;;
       dsv41-tf4|dsv41-tf4-ablit) echo "${B}tf4 head log on $DSV41_HEAD_HOST${N} (tail ${TAIL:-40})"; sshx "$DSV41_HEAD_HOST" "tail -${TAIL:-40} $TF4_ROOT/logs/tp4-lane.log"; exit 0 ;;
-      *) echo "usage: spark-lane logs <dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2>" >&2; exit 2 ;;
+      *) echo "usage: spark-lane logs <ernie55-tp4|dsv41-tp3|dsv41-tp4|glm53-tp3|glm53-tp4|glm53-tp4-ablit|glm53-gr8|glm53-vllm4|glm53-tf2>" >&2; exit 2 ;;
     esac
     echo "${B}newest bring-up log on $host${N} (tail ${TAIL:-40})"
     sshx "$host" "f=\$(ls -1t $kit/lane-up-*.log 2>/dev/null | head -1); if [[ -n \"\$f\" ]]; then echo \"--- \$f\"; tail -${TAIL:-40} \"\$f\"; else echo 'no lane-up log yet'; fi" ;;
