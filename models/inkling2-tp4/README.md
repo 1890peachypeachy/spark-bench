@@ -7,4 +7,6 @@ Weights: checkpoint was split-downloaded (spark1: shards 10,12,15,17,19,21,23,24
 Run: cd ~/recipe-db/inkling2-sparks/recipe/inkling2-tp4 && bash setup.sh <this dir>/our-sparks.conf {start|stop|status|smoke}
 Rollback: `setup.sh ... stop`, then `spark-lane up glm53-tp4`.
 Result 2026-11-23: boot 48s, SMOKE PASS, oracle: 1 near-tie departure (tool_call, informational). Single samples: code 88 tok/s, prose 38 tok/s, 10.4k prompt TTFT 6.1s. Not the recipe's 200G numbers.
-Defaults kept: CONTEXT=131072 (GLM lane was 1M), MAX_STREAMS=4.
+
+Context: CONTEXT=262144 (256k, Victor 2026-11-23) -> 4 streams (rank0 log: 4 whole contexts fit); MAX_STREAMS=4 default.
+Registered in ops/spark-lane as lane `inkling2-tp4` (up|down|verify|rotate; host-process census via pgrep pseudo-container; exclusive). Backup: ops/spark-lane.bak-20261124T055455Z.
