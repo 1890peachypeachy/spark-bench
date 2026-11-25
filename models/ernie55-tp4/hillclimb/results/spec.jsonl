@@ -1,0 +1,15 @@
+{"name": "C", "startup_s": 319, "drafts": 2145, "accept_rate": 0.465, "tokens_per_step": 2.396, "per_pos": {"0": 0.737, "1": 0.436, "2": 0.224}}
+{"name": "C", "startup_s": 310, "drafts": 2140, "accept_rate": 0.469, "tokens_per_step": 2.406, "per_pos": {"0": 0.728, "1": 0.447, "2": 0.231}}
+{"name": "X-ch2", "startup_s": 310, "drafts": 2154, "accept_rate": 0.463, "tokens_per_step": 2.389, "per_pos": {"0": 0.739, "1": 0.435, "2": 0.214}}
+{"name": "C", "startup_s": 309, "drafts": 2166, "accept_rate": 0.456, "tokens_per_step": 2.367, "per_pos": {"0": 0.72, "1": 0.429, "2": 0.218}}
+{"name": "X-ll", "startup_s": 321, "drafts": 2234, "accept_rate": 0.454, "tokens_per_step": 2.363, "per_pos": {"0": 0.72, "1": 0.417, "2": 0.226}}
+{"name": "C", "startup_s": 321, "drafts": 2142, "accept_rate": 0.466, "tokens_per_step": 2.398, "per_pos": {"0": 0.729, "1": 0.437, "2": 0.232}}
+{"name": "C", "startup_s": 309, "drafts": 2113, "accept_rate": 0.478, "tokens_per_step": 2.434, "per_pos": {"0": 0.747, "1": 0.45, "2": 0.237}}
+{"name": "X-gemv", "startup_s": 357, "drafts": 2110, "accept_rate": 0.479, "tokens_per_step": 2.438, "per_pos": {"0": 0.744, "1": 0.455, "2": 0.239}}
+{"name": "C", "startup_s": 345, "drafts": 2137, "accept_rate": 0.468, "tokens_per_step": 2.405, "per_pos": {"0": 0.728, "1": 0.446, "2": 0.231}}
+{"name": "X-tree2", "startup_s": 320, "drafts": 2145, "accept_rate": 0.466, "tokens_per_step": 2.397, "per_pos": {"0": 0.74, "1": 0.434, "2": 0.222}}
+{"name": "C", "startup_s": 310, "drafts": 2144, "accept_rate": 0.466, "tokens_per_step": 2.398, "per_pos": {"0": 0.722, "1": 0.442, "2": 0.234}}
+{"name": "X-gemv", "startup_s": 331, "drafts": 2197, "accept_rate": 0.447, "tokens_per_step": 2.34, "per_pos": {"0": 0.721, "1": 0.416, "2": 0.203}}
+{"name": "C", "startup_s": 331, "drafts": 2156, "accept_rate": 0.462, "tokens_per_step": 2.385, "per_pos": {"0": 0.716, "1": 0.438, "2": 0.231}}
+{"name": "C", "startup_s": 310, "drafts": 2131, "accept_rate": 0.471, "tokens_per_step": 2.413, "per_pos": {"0": 0.743, "1": 0.44, "2": 0.23}}
+{"name": "Q", "startup_s": 332, "drafts": 2067, "accept_rate": 0.477, "tokens_per_step": 2.431, "per_pos": {"0": 0.742, "1": 0.455, "2": 0.233}}

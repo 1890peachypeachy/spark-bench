@@ -1,0 +1,106 @@
+[
+ {
+  "reasoning": "We need answer user: \"Write a Python function that merges two sorted lists, with a docstring.\" Need provide code. Need likely simple merge two sorted lists. Need include docstring. Could include type hints? Need answer concise. Need maybe handle duplicates, stable. Need decide function name merge_sorted_lists. Provide code only maybe explanation. Need ensure docstring. Let's craft.\n\nNeed consider \"two sorted lists\" maybe ascending. Function merges into new sorted list. Use two pointers. Include docstring with Args, Returns, Example. Could include type hints. Need maybe no imports. Code:\n\ndef merge_sorted_lists(list1: list[int], list2: list[int]) -> list[int]:\n    \"\"\"\n    Merge two sorted lists into a single sorted list.\n\n    Args:\n        list1: A list sorted in non-decreasing order.\n        list2: A list sorted in non-decreasing order.\n\n    Returns:\n        A new list containing all elements from list1 and list2,\n        sorted in non-decreasing order.\n\n    Example:\n        >>> merge_sorted_lists([1, 3, 5], [2, 4, 6])\n        [1, 2, 3, 4, 5, 6]\n    \"\"\"\n    merged = []\n    i = j =",
+  "content": "",
+  "usage": {
+   "prompt_tokens": 39,
+   "total_tokens": 295,
+   "completion_tokens": 256,
+   "completion_tokens_details": {
+    "reasoning_tokens": 256
+   }
+  },
+  "finish": "length"
+ },
+ {
+  "reasoning": "We need to respond to user: \"Explain what a hash table is to a new programmer in one paragraph.\" Need final one paragraph. Keep concise. Ensure one paragraph.",
+  "content": "A hash table is a data structure that stores key-value pairs and lets you quickly find a value by its key. It works by using a hash function to convert the key into a number, which determines where the value is stored in an internal array. This makes operations like inserting, looking up, and deleting values very fast on average, often close to constant time, which is why hash tables are commonly used for things like dictionaries, caches, and lookup tables.",
+  "usage": {
+   "prompt_tokens": 39,
+   "total_tokens": 167,
+   "completion_tokens": 128,
+   "completion_tokens_details": {
+    "reasoning_tokens": 34
+   }
+  },
+  "finish": "stop"
+ },
+ {
+  "reasoning": "This is a simple factual question. No tools needed. Just answer directly.",
+  "content": "Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune.",
+  "usage": {
+   "prompt_tokens": 38,
+   "total_tokens": 72,
+   "completion_tokens": 34,
+   "completion_tokens_details": {
+    "reasoning_tokens": 15
+   }
+  },
+  "finish": "stop"
+ },
+ {
+  "reasoning": "We need answer simple arithmetic show steps. Need compute 1234*5678. Let's calculate carefully. 5678*1234 = 5678*(1200+34)=6,813,600 + 193,052? 5678*34=5678*30 170,340 +22,712=193,052. Sum 7,006,652. Check alternative 1234*5000=6,170,000; *600=740,400; *70=86,380; *8=9,872 sum 6,170,000+740,400=6,910,400; +86,380=6,996,780; +9,872=7,006,652. Yes.\n\nNeed show steps. Could use decomposition. Final concise.",
+  "content": "\\[\n1234 \\times 5678\n\\]\n\nBreak \\(5678\\) into place values:\n\n\\[\n5678 = 5000 + 600 + 70 + 8\n\\]\n\nNow multiply:\n\n\\[\n1234 \\times 5000 = 6{,}170{,}000\n\\]\n\n\\[\n1234 \\times 600 = 740{,}400\n\\]\n\n\\[\n1234 \\times 70 = 86{,}380\n\\]\n\n\\[\n1",
+  "usage": {
+   "prompt_tokens": 39,
+   "total_tokens": 295,
+   "completion_tokens": 256,
+   "completion_tokens_details": {
+    "reasoning_tokens": 168
+   }
+  },
+  "finish": "length"
+ },
+ {
+  "reasoning": "We need answer translation. Need be careful. \"The library opens at nine and closes at five.\" French: \"La biblioth\u00e8que ouvre \u00e0 neuf heures et ferme \u00e0 cinq heures.\" Could also \"La biblioth\u00e8que ouvre \u00e0 9 heures et ferme \u00e0 17 heures.\" Need translate. Since \"five\" ambiguous but likely 5 pm. In French, \"\u00e0 cinq heures\" could be 5 am? Context library closes at five likely 5 pm. Better \"\u00e0 dix-sept heures\" for clarity. But literal \"\u00e0 cinq heures\" okay. Need answer only. Maybe \"La biblioth\u00e8que ouvre \u00e0 neuf heures et ferme \u00e0 dix-sept heures.\" If preserving \"five\" maybe \"\u00e0 cinq heures\". The prompt asks translate into French. Use \"La biblioth\u00e8que ouvre \u00e0 neuf heures et ferme \u00e0 cinq heures.\" But if \"five\" means 5 PM, French often \"\u00e0 cinq heures\" in context. Let's provide natural: \"La biblioth\u00e8que ouvre \u00e0 neuf heures et ferme \u00e0 dix-sept heures.\" Could mention if 5 pm. Final concise.",
+  "content": "La biblioth\u00e8que ouvre \u00e0 neuf heures et ferme \u00e0 dix-sept heures.",
+  "usage": {
+   "prompt_tokens": 39,
+   "total_tokens": 279,
+   "completion_tokens": 240,
+   "completion_tokens_details": {
+    "reasoning_tokens": 222
+   }
+  },
+  "finish": "stop"
+ },
+ {
+  "reasoning": "We need to respond to user: \"Give three tips for writing clear commit messages.\" Simple. Need final concise. Ensure three tips. Could mention imperative mood, concise summary, explain why/context.",
+  "content": "1. **Use a short, clear summary line** \u2014 Start with a concise description of what changed, ideally under 50\u201372 characters.\n\n2. **Write in the imperative mood** \u2014 Phrase the message as a command, like \u201cFix login bug\u201d or \u201cAdd user profile page.\u201d\n\n3. **Explain the why, not just the what** \u2014 In the body, briefly describe the reason for the change and any important context.",
+  "usage": {
+   "prompt_tokens": 34,
+   "total_tokens": 164,
+   "completion_tokens": 130,
+   "completion_tokens_details": {
+    "reasoning_tokens": 39
+   }
+  },
+  "finish": "stop"
+ },
+ {
+  "reasoning": "The user wants a SQL query that returns the ten most recent orders per customer. This is a classic \"top N per group\" problem. Let me think about the best approach.\n\nThe standard modern approach uses a window function `ROW_NUMBER()` partitioned by customer and ordered by order date descending, then filter to keep only rows where the row number is <= 10.\n\nLet me write this out. I'll assume a typical schema:\n- `orders` table with columns like `order_id`, `customer_id`, `order_date` (and maybe other columns).\n\nThe query:\n\n```sql\nSELECT *\nFROM (\n    SELECT\n        o.*,\n        ROW_NUMBER() OVER (\n            PARTITION BY customer_id\n            ORDER BY order_date DESC\n        ) AS rn\n    FROM orders o\n) ranked\nWHERE rn <= 10;\n```\n\nThis is the cleanest, most portable approach that works across PostgreSQL, SQL Server, Oracle, MySQL 8.0+, SQLite 3.25+, etc.\n\nLet me think about edge cases and considerations:\n1. Ties in order_date \u2014 if two orders have the same date, ROW_NUMBER will arbitrarily pick one. If you want to include all ties, use RANK() or DENSE_RANK() instead. But \"ten",
+  "content": "",
+  "usage": {
+   "prompt_tokens": 39,
+   "total_tokens": 295,
+   "completion_tokens": 256,
+   "completion_tokens_details": {
+    "reasoning_tokens": 256
+   }
+  },
+  "finish": "length"
+ },
+ {
+  "reasoning": "This is a simple factual question about a well-known literary work. No need for tools or investigation. I'll just answer directly in three sentences.",
+  "content": "In Verona, Romeo Montague and Juliet Capulet fall in love at a masked ball despite their families' bitter feud. After secretly marrying, a chain of violent events leads to Romeo's banishment for killing Juliet's cousin Tybalt, and a failed plan to reunite the lovers goes tragically wrong. Believing Juliet dead, Romeo takes poison, and Juliet, waking to find him dead, stabs herself, prompting their grieving families to reconcile.",
+  "usage": {
+   "prompt_tokens": 38,
+   "total_tokens": 161,
+   "completion_tokens": 123,
+   "completion_tokens_details": {
+    "reasoning_tokens": 29
+   }
+  },
+  "finish": "stop"
+ }
+]

@@ -1,0 +1,1 @@
+{"device": "NVIDIA GB10", "torch": "2.14.0+cu130", "copy_GBps": 224.4, "read_GBps": 238.6, "bf16_gemm_4096_TFLOPS": 88.0, "bf16_gemm_8192_TFLOPS": 95.0, "fp8_gemm_8192_TFLOPS": 196.4}
