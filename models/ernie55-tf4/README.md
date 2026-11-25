@@ -60,6 +60,33 @@ Startup line now reads "a 16.8 GiB prompt cache".
 The lane serves real traffic (GBrain's LiteLLM bridge on the Mac mini points at :8888); concurrency benchmarks taken
 while it is busy are contaminated: check `POST` counts in the rank-0 log before trusting a cN number.
 
+## Prefill: expert-major tensor-core MoE, 1024-row chunks, ring all-reduce (build md5 5e534873)
+
+- `mxfp4_situ.cu` gains an expert-major path for rows >= 128 (`cuda_forward.grouped_min_rows`): picks sorted by expert
+  (`mxfp4_route_*`), w13+SITU and w2 as per-expert `mma.sync m16n8k16` bf16 GEMMs with the MXFP4 tile dequantized
+  to bf16 once a block (exact), then the per-pick kernel's in-order top-k combine. `moe_test.cu` (synthetic weights):
+  rel-L2 1.4e-4 vs the per-pick kernels, 99.7% of outputs bit-equal; 7.6 ms vs 66.7 ms a layer at 1024 rows,
+  9.5 vs 134 at 2048. (`mxfp4_grouped.cuh` = a CUDA-core expert-major variant, bit-identical but compute-bound.)
+- `prompt_rows` 256 -> 1024, `swa_cap` 1024 -> 2048 (ring >= chunk + 128). The cache grid stays 256 (`engine.snap_grid`):
+  a chunk ends early at a mark the store asked for.
+- All-reduces of >= 1 MiB go through `ncclAllReduce` (ring, 1.5x the shard on the wire) instead of the RoCE
+  all-gather + rank sum (3x at TP4); decode-sized messages keep the RoCE gather.
+- **Bug fixed:** the DSA indexer scored a whole chunk into `idx_scores`, which holds only `min(rows,64) x capacity`
+  floats: at 256-row chunks it overflowed into neighbouring scratch past ~65K context (untested before). It now
+  scores in 64-row slices, each bounded by its own last position.
+
+| Test (quiet lane, `suite.py`) | 256-row build | 1024-row MMA build |
+|---|---:|---:|
+| Cold 6,662-token prompt | 22.08 s | 9.98 s |
+| Prefill 3.3K tok | 301 tok/s | 683 tok/s |
+| Prefill 13K tok | 273 tok/s | 591 tok/s |
+| Prefill 33K / 66K tok (needle) | — | 439 / 312 tok/s, PASS / PASS |
+| c1 prose / code decode | 32.7 / 53.3 | 31.9 / 50.8 |
+| c4 aggregate | 30.4 | 29.7 |
+
+Long-context prefill now falls with context: the DSA lightning indexer (64 heads x 128 dims a (row, older token)
+pair, CUDA cores) is the next target.
+
 ## Profile (nsys rank 0, `--cuda-graph-trace=node`; default graph tracing hides graph kernels and reads ~17% busy)
 
 Decode is GPU-bound (~97% busy), ~57 ms GPU per verify round: FP8G qmmf GEMVs ~26 ms (80–190 GB/s on small
