@@ -42,6 +42,32 @@ MiniMax-M3's DSpark family already accepts depth 0. Earlier Antigravity fix (17:
 | Tool call `get_weather(Tokyo)` | PASS | PASS |
 | Back-to-back requests (crash trigger) | PASS after fix | — |
 
+## Prompt cache (Spark, 2026-11-24, build md5 2dcf5497)
+
+Added `snap_*` hooks (pattern from the MiniMax-M3 CUDA family): kept states stand on the 256-row prompt grid; rank 0's
+store marks a chunk start, `Leader.save` broadcasts `Kind.save` so every rank copies its own shard under one id,
+drops ride with the next step (`Kind.drop`), and a prompt pass resumes by sending the id in the chunk header (`seed`).
+State kept: DSA `mla_kv`+`idx_k` rows `[0,at)`, each HCA layer's last 256 SWA ring slots + compressed blocks
+`[0,at/128)` (the C128 compressor has no partial block at a 256-aligned mark), the DSpark ring. Prefill now absorbs
+every chunk's tail into the draft ring (was: only the prompt's last 128) so a resume carries drafter context.
+Startup line now reads "a 16.8 GiB prompt cache".
+
+| Test (greedy) | Cold | Warm |
+|---|---:|---:|
+| 6,662-token prompt, same request twice | 22.08 s | **0.73 s** (6,656 cached), output byte-identical |
+| Turn 2 = turn 1 + reply + new question (6,698 tok) | — | **0.97 s** (6,656 cached), answer correct |
+
+The lane serves real traffic (GBrain's LiteLLM bridge on the Mac mini points at :8888); concurrency benchmarks taken
+while it is busy are contaminated: check `POST` counts in the rank-0 log before trusting a cN number.
+
+## Profile (nsys rank 0, `--cuda-graph-trace=node`; default graph tracing hides graph kernels and reads ~17% busy)
+
+Decode is GPU-bound (~97% busy), ~57 ms GPU per verify round: FP8G qmmf GEMVs ~26 ms (80–190 GB/s on small
+shapes; `qmmf_bench.cu` shows TensorFold's default cluster split-K of 8 is 15–50% slower than sk 1–4 here), routed
+MXFP4 MoE ~10 ms (at bandwidth), RoCE gathers ~6.5 ms (~140/forward, latency-bound), `hca_attn` ~4 ms.
+Prefill (256-row chunks) is 100% busy: `mxfp4_w13_situ`+`w2_combine` 48% (per (row, expert) GEMVs, no reuse across
+rows), RoCE gathers 25%, DSA attention/absorb ~8%.
+
 Known gaps (not fixed): streams are served one at a time per round (single-sequence `Engine.cur`), so concurrency
 does not scale; prefill is ~5x slower than vLLM (256-row passes, no prompt cache); `libtfgrammar.so` missing →
 structured output / `tool_choice=required` return HTTP 400; no API key on a 0.0.0.0 bind (same as other lanes on the fabric).

@@ -3476,10 +3476,10 @@ index 0000000..521c26d
 +}
 diff --git a/zig/src/families/ernie55/cuda_engine.zig b/zig/src/families/ernie55/cuda_engine.zig
 new file mode 100644
-index 0000000..df34025
+index 0000000..1fcc466
 --- /dev/null
 +++ b/zig/src/families/ernie55/cuda_engine.zig
-@@ -0,0 +1,376 @@
+@@ -0,0 +1,471 @@
 +//! Multi-slot ERNIE 5.5 Flash Preview CUDA engine for tensorfold-native (TP=1/2/4, RoCE, chunked prefill, CUDA graphs, bundled 3-layer DSpark).
 +const std = @import("std");
 +const cuda = @import("cuda");
@@ -3517,6 +3517,14 @@ index 0000000..df34025
 +    }
 +};
 +
++/// A kept prompt state: its id (the same on every rank) and the position it stands at.
++pub const Kept = struct { id: u64, at: u32 };
++/// Where a prompt pass resumes: a kept state's id and position.
++pub const Resume = struct { id: u64, at: usize };
++const Snap = struct { buf: cuda.DeviceBuffer, at: usize };
++/// Kept states stand on the prompt grid; the HCA rings keep this many positions below one.
++const snap_ring: usize = 256;
++
 +pub const Options = struct {
 +    capacity: usize,
 +    load_dspark: bool = true,
@@ -3539,6 +3547,9 @@ index 0000000..df34025
 +    cur: ?*Seq = null,
 +    slot: u32 = 0,
 +    capacity: usize,
++    snaps: std.AutoHashMapUnmanaged(u64, Snap) = .empty,
++    next_snap: u64 = 1,
++    dropped: std.ArrayList(u32) = .empty, // ids rank 0 freed, sent to the other ranks with the next step
 +
 +    pub fn init(gpa: std.mem.Allocator, io: std.Io, d: *const cuda.Driver, dir: []const u8, rank: usize, world: usize, o: Options) !*Engine {
 +        const e = try gpa.create(Engine);
@@ -3592,6 +3603,10 @@ index 0000000..df34025
 +            e.gpa.destroy(sq);
 +        };
 +        e.seqs.deinit(e.gpa);
++        var it = e.snaps.valueIterator();
++        while (it.next()) |x| x.buf.free();
++        e.snaps.deinit(e.gpa);
++        e.dropped.deinit(e.gpa);
 +        if (e.drafter) |*dr| dr.deinit();
 +        e.smp.deinit();
 +        e.sc_dec.deinit();
@@ -3673,10 +3688,15 @@ index 0000000..df34025
 +
 +    /// Run one prompt chunk (`ids.len <= prompt_rows`) starting at `pos0` of a `total`-token prompt.
 +    /// If `is_last`, saves last row's logits for `firstMasked` and returns the drawn first token.
-+    pub fn chunk(e: *Engine, ids: []const u32, pos0: usize, total: usize, is_last: bool) !u32 {
++    pub fn chunk(e: *Engine, ids: []const u32, pos0: usize, total: usize, is_last: bool, resume_id: u64) !u32 {
 +        const sq = e.cur orelse return error.NoSequence;
 +        const n = ids.len;
 +        if (n == 0 or n > prompt_rows or pos0 + n > e.capacity) return error.BadChunk;
++        if (resume_id != 0) {
++            const at = try e.restoreState(resume_id);
++            if (at != pos0) return error.SnapshotOutOfStep;
++        }
++        if (sq.kv.pos != pos0) return error.ChunkOutOfStep;
 +
 +        var ids_i32: [prompt_rows]i32 = undefined;
 +        var pos_i32: [prompt_rows]i32 = undefined;
@@ -3687,20 +3707,15 @@ index 0000000..df34025
 +        try e.sc_pf.buf.upload(e.sc_pf.ids - e.sc_pf.buf.ptr, std.mem.sliceAsBytes(ids_i32[0..n]));
 +        try e.sc_pf.buf.upload(e.sc_pf.positions - e.sc_pf.buf.ptr, std.mem.sliceAsBytes(pos_i32[0..n]));
 +
-+        const win_lo = total -| e.w.config.sliding_window;
-+        const need_taps = (e.drafter != null) and (pos0 + n > win_lo);
++        // Every chunk's trailing rows go into the draft ring, so a state kept at any chunk start carries it.
++        _ = total;
++        const need_taps = e.drafter != null;
 +        const taps_ptr: u64 = if (need_taps) e.sc_pf.dspark_taps else 0;
 +
 +        const r = e.runner();
 +        try r.forwardWithTaps(e.stream, &sq.kv, &e.sc_pf, n, pos0 + n - 1, is_last, taps_ptr);
 +
-+        if (need_taps) {
-+            const ov_lo = @max(pos0, win_lo);
-+            const skip = ov_lo - pos0;
-+            const take = (pos0 + n) - ov_lo;
-+            const taps_sub = e.sc_pf.dspark_taps + skip * (3 * e.w.config.hidden) * 2;
-+            try e.drafter.?.absorb(&r, e.stream, &sq.draft.?, &e.sc_pf, taps_sub, take, ov_lo);
-+        }
++        if (need_taps) try e.drafter.?.absorb(&r, e.stream, &sq.draft.?, &e.sc_pf, e.sc_pf.dspark_taps, n, pos0);
 +
 +        if (is_last) {
 +            // Save last row F32 logits for optional firstMasked redraw
@@ -3825,6 +3840,86 @@ index 0000000..df34025
 +        for (out, out_i32[0..out.len]) |*dst, v| dst.* = @intCast(v);
 +    }
 +
++    /// Bytes a state kept at `at` takes on this rank: DSA rows below it, the HCA rings' last positions and
++    /// compressed blocks, the draft ring.
++    pub fn stateBytes(e: *const Engine, at: usize) u64 {
++        var total: u64 = 0;
++        for (0..e.w.loaded_layers) |li| {
++            if (e.w.config.isDsa(@intCast(li))) {
++                total += at * (576 + 128) * 2;
++            } else {
++                total += @as(u64, @min(at, snap_ring)) * 512 * 2 + (at / e.w.config.compress_ratio) * 512 * 2;
++            }
++        }
++        if (e.drafter != null) total += dspark.num_layers * dspark.ring_cap * 512 * 2;
++        return @max(total, 256);
++    }
++
++    fn copy(e: *const Engine, dst: u64, src: u64, n: usize) !void {
++        if (n == 0) return;
++        try e.d.check(e.d.api.cuMemcpyDtoDAsync_v2(dst, src, n, e.stream.handle), "cuMemcpyDtoDAsync");
++    }
++
++    /// The bound sequence's state at `at` and `buf` (out: to buf), part after part in stateBytes' order.
++    fn copyState(e: *Engine, sq: *Seq, buf: u64, at: usize, out: bool) !void {
++        var off: u64 = 0;
++        const c = &e.w.config;
++        for (sq.kv.layers[0..e.w.loaded_layers]) |ly| {
++            switch (ly) {
++                .dsa => |d| {
++                    for ([_]u64{ d.mla_kv, d.idx_k }, [_]usize{ at * 576 * 2, at * 128 * 2 }) |src, n| {
++                        try e.copy(if (out) buf + off else src, if (out) src else buf + off, n);
++                        off += n;
++                    }
++                },
++                .hca => |h| {
++                    const lo = at -| snap_ring; // at sits on the grid: these slots stand side by side in the ring
++                    const ring_at = h.swa_kv + (lo & kv_mod.swa_mask) * 512 * 2;
++                    const ring_n = (at - lo) * 512 * 2;
++                    try e.copy(if (out) buf + off else ring_at, if (out) ring_at else buf + off, ring_n);
++                    off += ring_n;
++                    const comp_n = (at / c.compress_ratio) * 512 * 2;
++                    try e.copy(if (out) buf + off else h.comp_kv, if (out) h.comp_kv else buf + off, comp_n);
++                    off += comp_n;
++                },
++            }
++        }
++        if (sq.draft) |*dc| {
++            const n = dspark.num_layers * dc.layer_bytes;
++            try e.copy(if (out) buf + off else dc.buf.ptr, if (out) dc.buf.ptr else buf + off, n);
++        }
++    }
++
++    /// The bound sequence's state at its position `at` (a chunk start) copied under `id` (every rank keeps one id).
++    pub fn keepAs(e: *Engine, id: u64, at: usize) !void {
++        const sq = e.cur orelse return error.NoSequence;
++        if (at == 0 or at != sq.kv.pos or at % prompt_rows != 0 or e.snaps.contains(id)) return error.BadKeep;
++        var buf = try cuda.DeviceBuffer.alloc(e.d, e.stateBytes(at));
++        errdefer buf.free();
++        try e.copyState(sq, buf.ptr, at, true);
++        try e.snaps.put(e.gpa, id, .{ .buf = buf, .at = at });
++    }
++
++    /// The bound sequence restored to state `id`: its caches below the state's position, its length there.
++    pub fn restoreState(e: *Engine, id: u64) !usize {
++        const sq = e.cur orelse return error.NoSequence;
++        const x = e.snaps.get(id) orelse return error.SnapshotStale;
++        try e.copyState(sq, x.buf.ptr, x.at, false);
++        sq.kv.pos = x.at;
++        return x.at;
++    }
++
++    pub fn holds(e: *const Engine, id: u64) bool {
++        return e.snaps.contains(id);
++    }
++
++    pub fn dropState(e: *Engine, id: u64) void {
++        const kv = e.snaps.fetchRemove(id) orelse return;
++        e.stream.synchronize() catch {};
++        var b = kv.value.buf;
++        b.free();
++    }
++
 +    fn pickGreedy(e: *const Engine, sc: *const kv_mod.Scratch, row0: usize, n_rows: usize, out: []u32) !void {
 +        const Pair16 = extern struct { val: f32, id: i32, pad0: u32 = 0, pad1: u32 = 0 };
 +        var ids_loc: [window_rows]i32 = undefined;
@@ -3858,10 +3953,10 @@ index 0000000..df34025
 +};
 diff --git a/zig/src/families/ernie55/cuda_follow.zig b/zig/src/families/ernie55/cuda_follow.zig
 new file mode 100644
-index 0000000..0bf8429
+index 0000000..a80bdf7
 --- /dev/null
 +++ b/zig/src/families/ernie55/cuda_follow.zig
-@@ -0,0 +1,275 @@
+@@ -0,0 +1,307 @@
 +//! TP over processes for ERNIE 5.5: rank 0 broadcasts each step (header + ids) over NCCL; ranks 1..world-1 follow in lockstep.
 +const std = @import("std");
 +const cuda = @import("cuda");
@@ -3879,6 +3974,8 @@ index 0000000..0bf8429
 +    release,
 +    idle,
 +    end,
++    save, // a: the kept state's id, seed: its position
++    drop, // ids: kept states rank 0 let go
 +};
 +
 +pub const Header = extern struct {
@@ -3987,7 +4084,31 @@ index 0000000..0bf8429
 +            cuda.tp_watch.wake();
 +            l.asleep = false;
 +        }
++        if (x.e.dropped.items.len > 0) { // the states rank 0's store let go since the last step, freed first
++            const n = @min(x.e.dropped.items.len, l.ids.len);
++            try l.send(x.e.k.put_words, .{ .kind = @intFromEnum(Kind.drop), .slot = x.e.slot }, x.e.dropped.items[0..n]);
++            x.e.dropped.replaceRangeAssumeCapacity(0, n, &.{});
++        }
 +        try l.send(x.e.k.put_words, hh, ids);
++    }
++
++    /// The bound sequence's state at `at` kept on every rank under one new id.
++    pub fn save(x: Leader, at: usize) !engine.Kept {
++        const id = x.e.next_snap;
++        x.e.next_snap += 1; // an id is used once, even when this rank's copy then fails
++        if (at == 0 or at != x.e.pos()) return error.BadKeep;
++        try x.send(.{ .kind = @intFromEnum(Kind.save), .a = id, .seed = at }, &.{});
++        x.e.keepAs(id, at) catch |err| {
++            x.drop(id); // the other ranks free their copy at the next step
++            return err;
++        };
++        return .{ .id = id, .at = @intCast(at) };
++    }
++
++    /// A state rank 0's store let go: freed here now, on the other ranks at the next step.
++    pub fn drop(x: Leader, id: u64) void {
++        x.e.dropState(id);
++        if (x.link != null) x.e.dropped.append(x.e.gpa, @intCast(id)) catch {};
 +    }
 +
 +    pub fn bind(x: Leader, slot: u32) !void {
@@ -4009,14 +4130,15 @@ index 0000000..0bf8429
 +        try x.e.begin(s);
 +    }
 +
-+    pub fn chunk(x: Leader, ids: []const u32, pos0: usize, total: usize, is_last: bool) !u32 {
++    pub fn chunk(x: Leader, ids: []const u32, pos0: usize, total: usize, is_last: bool, resume_id: u64) !u32 {
 +        try x.send(.{
 +            .kind = @intFromEnum(Kind.chunk),
 +            .depth = @intCast(pos0),
 +            .flags = if (is_last) 1 else 0,
 +            .a = total,
++            .seed = resume_id,
 +        }, ids);
-+        return x.e.chunk(ids, pos0, total, is_last);
++        return x.e.chunk(ids, pos0, total, is_last, resume_id);
 +    }
 +
 +    pub fn firstMasked(x: Leader, bits: u64, masks: []const u32) !u32 {
@@ -4102,7 +4224,7 @@ index 0000000..0bf8429
 +            },
 +            .chunk => {
 +                try e.bind(h.slot);
-+                _ = try e.chunk(msg.ids, h.depth, @intCast(h.a), h.flags != 0);
++                _ = try e.chunk(msg.ids, h.depth, @intCast(h.a), h.flags != 0, h.seed);
 +            },
 +            .first_masked => {
 +                try e.bind(h.slot);
@@ -4134,6 +4256,11 @@ index 0000000..0bf8429
 +                try e.bind(h.slot);
 +                try e.block(@intCast(h.a), h.flags, out_buf[0..h.depth]);
 +            },
++            .save => {
++                try e.bind(h.slot);
++                try e.keepAs(h.a, @intCast(h.seed));
++            },
++            .drop => for (msg.ids) |id| e.dropState(id),
 +        }
 +    }
 +}
@@ -5295,10 +5422,10 @@ index 0000000..2f4543f
 +}
 diff --git a/zig/src/families/ernie55/cuda_lanes.zig b/zig/src/families/ernie55/cuda_lanes.zig
 new file mode 100644
-index 0000000..fb083fc
+index 0000000..96b9bf5
 --- /dev/null
 +++ b/zig/src/families/ernie55/cuda_lanes.zig
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,309 @@
 +//! ERNIE 5.5 Flash Preview CUDA lanes backend (`lanes.backend.Backend` over `cuda_follow.Leader`).
 +const std = @import("std");
 +const cuda = @import("cuda");
@@ -5437,26 +5564,57 @@ index 0000000..fb083fc
 +        while (!(try prefillStepFn(ptr, s, 0))) {}
 +    }
 +
++    /// The stream's kept state, where its prompt pass starts (null: none, off the chunk grid, or no longer held).
++    fn resumeFrom(self: *Lanes, s: *lanes.Stream, len: usize) ?engine.Resume {
++        const saved = s.reuse.saved orelse return null;
++        const k: *const engine.Kept = @ptrCast(@alignCast(saved));
++        if (k.at != s.reuse.at or k.at == 0 or k.at >= len or k.at % engine.prompt_rows != 0 or !self.x.e.holds(k.id)) {
++            s.reuse_failed = true;
++            s.reuse_error = if (k.at == 0 or k.at >= len) error.SnapshotNotPrefix else if (k.at != s.reuse.at or k.at % engine.prompt_rows != 0) error.SnapshotOutOfStep else error.SnapshotStale;
++            return null;
++        }
++        s.cached = k.at;
++        return .{ .id = k.id, .at = k.at };
++    }
++
++    /// The prompt pass stands at `at` (a chunk start): the store keeps the state there when it marked it.
++    fn mark(s: *lanes.Stream, at: usize) void {
++        if (at == 0) return;
++        const hook = s.reuse.hook orelse return;
++        if (std.mem.indexOfScalar(u32, s.reuse.marks, @intCast(at)) == null) return;
++        hook.at(hook.ptr, s, @intCast(at));
++    }
++
 +    fn prefillStepFn(ptr: *anyopaque, s: *lanes.Stream, max_step: u32) anyerror!bool {
++        _ = max_step; // chunks stay on the prompt grid (kept states stand on it)
 +        const self = of(ptr);
 +        const l = try self.claim(s);
 +        const prompt = s.prompt();
-+        if (prompt.len == 0 or prompt.len > self.x.e.capacity) return error.BadPrompt;
++        if (prompt.len == 0 or prompt.len + max_rows >= self.x.e.capacity) return error.BadPrompt;
 +
 +        try self.x.bind(l.slot);
++        var resume_id: u64 = 0;
 +        if (l.fill == null) {
 +            try self.x.begin(s.sampling);
 +            l.fill = 0;
 +            l.pending_rows = null;
 +            l.held_n = 0;
 +            l.first = null;
++            s.cached = 0;
++            if (s.prompt_logprobs == null) if (self.resumeFrom(s, prompt.len)) |r| {
++                l.fill = r.at;
++                resume_id = r.id;
++            };
 +        }
 +
 +        const pos0 = l.fill.?;
-+        const cap_step: usize = if (max_step > 0) @min(@as(usize, max_step), engine.prompt_rows) else engine.prompt_rows;
-+        const take_n = @min(prompt.len - pos0, cap_step);
++        if (resume_id == 0) mark(s, pos0);
++        const take_n = @min(prompt.len - pos0, engine.prompt_rows);
 +        const is_last = (pos0 + take_n == prompt.len);
-+        const tok = try self.x.chunk(prompt[pos0 .. pos0 + take_n], pos0, prompt.len, is_last);
++        const tok = self.x.chunk(prompt[pos0 .. pos0 + take_n], pos0, prompt.len, is_last, resume_id) catch |err| {
++            l.fill = null;
++            return err;
++        };
 +        l.fill = pos0 + take_n;
 +        if (is_last) {
 +            l.first = self.take(tok);
@@ -5579,10 +5737,10 @@ index 0000000..fb083fc
 +};
 diff --git a/zig/src/families/ernie55/cuda_native.zig b/zig/src/families/ernie55/cuda_native.zig
 new file mode 100644
-index 0000000..d4242a1
+index 0000000..7965d5e
 --- /dev/null
 +++ b/zig/src/families/ernie55/cuda_native.zig
-@@ -0,0 +1,222 @@
+@@ -0,0 +1,258 @@
 +//! ERNIE 5.5 Flash Preview native CUDA family entry point for tensorfold-native (TP=1/2/4 over dual-rail RoCE + bundled 3-layer DSpark).
 +const std = @import("std");
 +const cuda = @import("cuda");
@@ -5600,6 +5758,8 @@ index 0000000..d4242a1
 +pub const prompt_rows: u32 = engine.prompt_rows;
 +pub const window_rows: u32 = engine.window_rows;
 +pub const explains_open = true;
++/// Kept prompt states stand at chunk starts (the HCA rings and compressed blocks line up there).
++pub const snap_grid: u32 = prompt_rows;
 +
 +pub const Room = struct { ctx: *anyopaque, read: *const fn (*anyopaque) ?u64 };
 +pub const Options = struct {
@@ -5629,7 +5789,40 @@ index 0000000..d4242a1
 +    deinit: *const fn (*anyopaque) void,
 +    peer_room: ?Peer = null,
 +    follow: ?*const fn (*anyopaque) anyerror!void = null,
++    target: *anyopaque, // the prompt cache keeps this rank group's states (snap_*)
 +};
++
++/// A state kept at `at`: its bytes on this rank.
++pub fn snap_bytes(ptr: *anyopaque, at: u32) u64 {
++    const own: *Owned = @ptrCast(@alignCast(ptr));
++    return own.e.stateBytes(at);
++}
++
++/// The prompt pass stands at `at` (a mark at a chunk start): every rank copies the state there under one new id.
++pub fn snap_save(ptr: *anyopaque, owner: ?*anyopaque, at: u32) anyerror!*anyopaque {
++    _ = owner;
++    const own: *Owned = @ptrCast(@alignCast(ptr));
++    if (own.e.pos() != at) return error.NotAtMark;
++    const k = try own.gpa.create(engine.Kept);
++    errdefer own.gpa.destroy(k);
++    k.* = try own.lanes.x.save(at);
++    return k;
++}
++
++/// A restore outside a prompt pass would leave the other ranks behind: states resume inside it (Lanes.resumeFrom).
++pub fn snap_restore(ptr: *anyopaque, owner: ?*anyopaque, saved: *anyopaque) anyerror!void {
++    _ = ptr;
++    _ = owner;
++    _ = saved;
++    return error.RestoredInPromptPass;
++}
++
++pub fn snap_drop(ptr: *anyopaque, saved: *anyopaque) void {
++    const own: *Owned = @ptrCast(@alignCast(ptr));
++    const k: *engine.Kept = @ptrCast(@alignCast(saved));
++    own.lanes.x.drop(k.id);
++    own.gpa.destroy(k);
++}
 +
 +pub fn place(o: anytype) !Place {
 +    if (o.tp < 1 or o.rank >= o.tp) return error.NoRank;
@@ -5762,6 +5955,7 @@ index 0000000..d4242a1
 +        .deinit = close,
 +        .peer_room = peer,
 +        .follow = if (p.rank > 0) followRank else null,
++        .target = own,
 +    };
 +}
 +
