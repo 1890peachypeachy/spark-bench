@@ -87,6 +87,32 @@ while it is busy are contaminated: check `POST` counts in the rank-0 log before 
 Long-context prefill now falls with context: the DSA lightning indexer (64 heads x 128 dims a (row, older token)
 pair, CUDA cores) is the next target.
 
+## Rounds 3-4: DSA layers and mHC on tensor cores (build md5 e8bf0a26)
+
+Profile of the 1024-row build at 13K context: indexer scores 24%, NCCL all-reduce 19% (NCCL picked the LL protocol),
+`dsa_attn` 10%, MoE 12%, `absorb_q` 6%, `mhc_pre_gemv` 6%. Changes (each kernel checked in a standalone harness first):
+
+| Kernel | Harness result | Speed |
+|---|---|---|
+| `dsa_indexer_scores_mma` (`indexer_mma.cuh`, `idx_test.cu`) | score rel-L2 1.8e-7, selected top-2048 sets identical | 7.4 -> 0.41 ms / 64-row slice at 13K; 36.4 -> 2.2 at 65K |
+| `dsa_absorb_q_mma` + `dsa_rope_copy` (`dsa_heads_mma.cuh`, `heads_test.cu`) | bf16 outputs 100% bit-equal | 17.3 -> 0.33 ms at 1024 rows; 134 -> 20 us at 8 rows |
+| `dsa_expand_v_mma` | bf16 outputs 100% bit-equal | 3.9 -> 0.16 ms at 1024 rows |
+| `mhc_pre_tiled` (rows >= 512) (`mhc_tiled.cuh`, `mhc_test.cu`) | rel-L2 2e-6 (fp32) | 1.23 -> 0.81 ms at 1024 rows |
+| Decode FP8G calls (<= 16 rows) pin 1-4 K slices (`cuda_forward.decodeSlices`) | different split sums | see `qmmf_bench.cu` |
+| `NCCL_PROTO=Simple` in `start_tensorfold.sh` | — | large prefill all-reduces off the LL protocol |
+
+Fatbins are rebuilt with TensorFold's own flags (`build_fatbins.sh`: `torch_flags` + per-kernel flags; `ops.cu` keeps
+`--fmad=false --ftz=false --prec-div/sqrt=true`).
+
+| `suite.py` (quiet lane) | 1024-row MMA build | Round 3 | **Round 4** |
+|---|---:|---:|---:|
+| Cold 6,662-token prompt | 9.98 s | 9.52 s | **7.58 s** |
+| Warm (cached) | 0.73 s | 1.17 s | **0.68 s** |
+| Prefill 3.3K / 13K tok/s | 683 / 591 | 675 / 778 | **829 / 889** |
+| Prefill 33K / 66K tok/s (needle PASS) | 439 / 312 | 750 / 685 | **857 / 780** |
+| c1 prose / code tok/s | 31.9 / 50.8 | 30.1 / 54.2 | **32.3 / 58.7** |
+| c4 aggregate tok/s | 29.7 | 30.4 | **31.8** |
+
 ## Profile (nsys rank 0, `--cuda-graph-trace=node`; default graph tracing hides graph kernels and reads ~17% busy)
 
 Decode is GPU-bound (~97% busy), ~57 ms GPU per verify round: FP8G qmmf GEMVs ~26 ms (80–190 GB/s on small

@@ -1,0 +1,76 @@
+{
+ "tag": "r4",
+ "t": "21:10:44",
+ "math": "400",
+ "cache_cold": {
+  "s": 7.58,
+  "cached": {
+   "cached_tokens": 0
+  },
+  "ok": true,
+  "text": "quartz delta quartz quartz delta fable cloud stone delta quartz fable stone DONE"
+ },
+ "cache_warm": {
+  "s": 0.68,
+  "cached": {
+   "cached_tokens": 6656
+  },
+  "ok": true,
+  "text": "quartz delta quartz quartz delta fable cloud stone delta quartz fable stone DONE"
+ },
+ "cache_identical": true,
+ "prefill_3000w": {
+  "prompt": 3339,
+  "s": 4.03,
+  "pf_tok_s": 829,
+  "ok": true
+ },
+ "prefill_12000w": {
+  "prompt": 13277,
+  "s": 14.94,
+  "pf_tok_s": 889,
+  "ok": true
+ },
+ "prefill_30000w": {
+  "prompt": 33027,
+  "s": 38.54,
+  "pf_tok_s": 857,
+  "ok": true
+ },
+ "prefill_60000w": {
+  "prompt": 65828,
+  "s": 84.43,
+  "pf_tok_s": 780,
+  "ok": true
+ },
+ "prose": {
+  "tok": 300,
+  "s": 9.28,
+  "tok_s": 32.3
+ },
+ "code": {
+  "tok": 500,
+  "s": 8.51,
+  "tok_s": 58.7
+ },
+ "c4": {
+  "c": 4,
+  "wall": 33.0,
+  "ok": 4,
+  "agg_tok_s": 31.8,
+  "errs": []
+ },
+ "tool": [
+  "tool_calls",
+  [
+   {
+    "id": "call_1881d41d91d93c88ba512f29",
+    "type": "function",
+    "function": {
+     "name": "get_weather",
+     "arguments": "{\"city\":\"Tokyo\"}"
+    }
+   }
+  ]
+ ]
+}

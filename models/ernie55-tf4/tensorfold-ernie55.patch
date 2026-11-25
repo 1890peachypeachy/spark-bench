@@ -82,10 +82,10 @@ index 0000000..3c64998
 +}
 diff --git a/zig/kernels/cuda/ernie55/dsa_attn.cu b/zig/kernels/cuda/ernie55/dsa_attn.cu
 new file mode 100644
-index 0000000..60379e5
+index 0000000..24e4ae6
 --- /dev/null
 +++ b/zig/kernels/cuda/ernie55/dsa_attn.cu
-@@ -0,0 +1,476 @@
+@@ -0,0 +1,665 @@
 +// ERNIE 5.5 Flash Preview MLA-DSA (6 layers: 7, 14, 21, 28, 35, 42):
 +//   - MLA KV cache [capacity, 576] BF16 (512 normed kv_c + 64 roped k_pe)
 +//   - Lightning Indexer K cache [capacity, 128] BF16 (LayerNorm + NeoX RoPE-64 + Hadamard-128)
@@ -561,6 +561,195 @@ index 0000000..60379e5
 +        dst[512 + pair * 2]     = f2bf(e * c - o * s);
 +        dst[512 + pair * 2 + 1] = f2bf(o * c + e * s);
 +    }
++}
++// Lightning Indexer scores on tensor cores (Spark, 2026-11-24; appended to dsa_attn.cu).
++// Same contract as tf_ernie55_dsa_indexer_scores: score[r, t] = sum_h (w[r,h] * scale) * relu(q[r,h,:] . k[t,:])
++// for t < n_older(r), -1e38 beyond. One block: one query row (its 64 heads) x 64 key tokens, four warps of 16 heads;
++// mma.sync m16n8k16 bf16 -> fp32 over the 128 dims, then relu, the weighted head sum (lanes, then warps).
++#define TF_IDX_LD 136  // bf16 row stride: 272 bytes, conflict-free fragment loads
++
++__device__ __forceinline__ void idx_mma16816(float* c, const uint32_t* a, const uint32_t* b) {
++    asm volatile(
++        "mma.sync.aligned.m16n8k16.row.col.f32.bf16.bf16.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};\n"
++        : "+f"(c[0]), "+f"(c[1]), "+f"(c[2]), "+f"(c[3])
++        : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]), "r"(b[0]), "r"(b[1]));
++}
++
++// Launch: grid=(ceil(max_older / 64), rows), block=(128), smem = (64 + 64) * TF_IDX_LD * 2 + 4 * 64 * 4.
++extern "C" __global__ void __launch_bounds__(128) tf_ernie55_dsa_indexer_scores_mma(
++    const __nv_bfloat16* __restrict__ q_idx,    // [rows, 64, 128]
++    const __nv_bfloat16* __restrict__ idx_k,    // [capacity, 128]
++    const __nv_bfloat16* __restrict__ weights,  // [rows, 64]
++    const int32_t* __restrict__ positions,      // [rows]
++    float* __restrict__ scores,                 // [rows, max_older]
++    int rows, int max_older, int window_size, float weights_scale) {
++    const int r = blockIdx.y;
++    const int t0 = blockIdx.x * 64;
++    if (r >= rows || t0 >= max_older) return;
++    const int n_older = positions[r] - window_size + 1;
++    extern __shared__ __align__(16) __nv_bfloat16 sm[];
++    __nv_bfloat16* qs = sm;                       // [64 heads][LD]
++    __nv_bfloat16* ks = qs + 64 * TF_IDX_LD;      // [64 tokens][LD]
++    float* red = reinterpret_cast<float*>(ks + 64 * TF_IDX_LD);  // [4 warps][64 tokens]
++    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31, g = lane >> 2, tq = lane & 3;
++
++    if (t0 >= n_older) {  // the whole tile is past this row's older tokens
++        for (int i = threadIdx.x; i < 64; i += blockDim.x)
++            if (t0 + i < max_older) scores[(int64_t)r * max_older + t0 + i] = -1e38f;
++        return;
++    }
++    // 64 x 128 bf16 each: 16 bytes a thread-step
++    const __nv_bfloat16* qr = q_idx + (int64_t)r * 64 * 128;
++    for (int i = threadIdx.x; i < 64 * 16; i += blockDim.x) {
++        const int row = i >> 4, c = (i & 15) * 8;
++        *reinterpret_cast<uint4*>(qs + row * TF_IDX_LD + c) = *reinterpret_cast<const uint4*>(qr + row * 128 + c);
++        const int t = t0 + row;
++        uint4 v = make_uint4(0, 0, 0, 0);
++        if (t < n_older) v = *reinterpret_cast<const uint4*>(idx_k + (int64_t)t * 128 + c);
++        *reinterpret_cast<uint4*>(ks + row * TF_IDX_LD + c) = v;
++    }
++    __syncthreads();
++
++    float acc[8][4];
++#pragma unroll
++    for (int j = 0; j < 8; ++j)
++#pragma unroll
++        for (int i = 0; i < 4; ++i) acc[j][i] = 0.0f;
++#pragma unroll
++    for (int kk = 0; kk < 128; kk += 16) {
++        uint32_t a[4];
++        const __nv_bfloat16* ap = qs + (warp * 16 + g) * TF_IDX_LD + kk + tq * 2;
++        a[0] = *reinterpret_cast<const uint32_t*>(ap);
++        a[1] = *reinterpret_cast<const uint32_t*>(ap + 8 * TF_IDX_LD);
++        a[2] = *reinterpret_cast<const uint32_t*>(ap + 8);
++        a[3] = *reinterpret_cast<const uint32_t*>(ap + 8 * TF_IDX_LD + 8);
++#pragma unroll
++        for (int j = 0; j < 8; ++j) {
++            uint32_t b[2];
++            const __nv_bfloat16* bp = ks + (j * 8 + g) * TF_IDX_LD + kk + tq * 2;
++            b[0] = *reinterpret_cast<const uint32_t*>(bp);
++            b[1] = *reinterpret_cast<const uint32_t*>(bp + 8);
++            idx_mma16816(acc[j], a, b);
++        }
++    }
++    // c0, c1: head warp*16 + g, tokens j*8 + tq*2 + {0,1}; c2, c3: head + 8
++    const float w_lo = __bfloat162float(weights[(int64_t)r * 64 + warp * 16 + g]) * weights_scale;
++    const float w_hi = __bfloat162float(weights[(int64_t)r * 64 + warp * 16 + g + 8]) * weights_scale;
++#pragma unroll
++    for (int j = 0; j < 8; ++j) {
++#pragma unroll
++        for (int e = 0; e < 2; ++e) {
++            float v = w_lo * fmaxf(acc[j][e], 0.0f) + w_hi * fmaxf(acc[j][e + 2], 0.0f);
++            v += __shfl_xor_sync(0xffffffffu, v, 4);  // the 8 lanes (g) sharing tq: the warp's 16 heads
++            v += __shfl_xor_sync(0xffffffffu, v, 8);
++            v += __shfl_xor_sync(0xffffffffu, v, 16);
++            if (g == 0) red[warp * 64 + j * 8 + tq * 2 + e] = v;
++        }
++    }
++    __syncthreads();
++    for (int i = threadIdx.x; i < 64; i += blockDim.x) {
++        const int t = t0 + i;
++        if (t >= max_older) continue;
++        const float total = red[i] + red[64 + i] + red[128 + i] + red[192 + i];
++        scores[(int64_t)r * max_older + t] = t < n_older ? total : -1e38f;
++    }
++}
++// Per-head projections of the MLA-DSA layers on tensor cores (Spark, 2026-11-24; appended to dsa_attn.cu).
++// C[r, h, n] = sum_k A[r, h, k] * B_h(k, n) for every local head h:
++//   absorb_q: A = q [rows, H, 256] (first 192 dims), B_h = wk[h] stored [k = 192][n = 512] (BKN = 1),
++//             C = q_abs [rows, H, 576] (first 512); the rope tail is copied by tf_ernie55_dsa_rope_copy.
++//   expand_v: A = o_lat [rows, H, 512], B_h = wv[h] stored [n = 256][k = 512] (BKN = 0), C = o_v [rows, H, 256].
++// One block: one head, 64 rows x 64 columns, K in steps of 64; four warps of 16 rows; mma.sync m16n8k16, fp32 sums.
++#define TF_HG_LD 72
++
++__device__ __forceinline__ void hg_mma16816(float* c, const uint32_t* a, const uint32_t* b) {
++    asm volatile(
++        "mma.sync.aligned.m16n8k16.row.col.f32.bf16.bf16.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%0,%1,%2,%3};\n"
++        : "+f"(c[0]), "+f"(c[1]), "+f"(c[2]), "+f"(c[3])
++        : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]), "r"(b[0]), "r"(b[1]));
++}
++
++template <int BKN>
++__device__ __forceinline__ void head_gemm_body(const __nv_bfloat16* __restrict__ A, int lda, int a_head,
++                                               const __nv_bfloat16* __restrict__ B, int b_head, int ldb,
++                                               __nv_bfloat16* __restrict__ C, int ldc, int c_head, int rows, int N, int K) {
++    const int n0 = blockIdx.x * 64, h = blockIdx.y, r0 = blockIdx.z * 64;
++    __shared__ __align__(16) __nv_bfloat16 as[64 * TF_HG_LD];
++    __shared__ __align__(16) __nv_bfloat16 bs[64 * TF_HG_LD];  // [n][k]
++    const int warp = threadIdx.x >> 5, lane = threadIdx.x & 31, g = lane >> 2, tq = lane & 3;
++    float acc[8][4];
++#pragma unroll
++    for (int j = 0; j < 8; ++j)
++#pragma unroll
++        for (int i = 0; i < 4; ++i) acc[j][i] = 0.0f;
++    const __nv_bfloat16* Bh = B + (int64_t)h * b_head;
++    for (int k0 = 0; k0 < K; k0 += 64) {
++        __syncthreads();
++        for (int i = threadIdx.x; i < 64 * 8; i += blockDim.x) {  // A: 64 rows x 64 k, 8 bf16 a step
++            const int rr = i >> 3, c = (i & 7) * 8, r = r0 + rr;
++            uint4 v = make_uint4(0, 0, 0, 0);
++            if (r < rows) v = *reinterpret_cast<const uint4*>(A + (int64_t)r * lda + (int64_t)h * a_head + k0 + c);
++            *reinterpret_cast<uint4*>(as + rr * TF_HG_LD + c) = v;
++        }
++        if (BKN == 0) {  // B stored [n][k]: rows of k, straight in
++            for (int i = threadIdx.x; i < 64 * 8; i += blockDim.x) {
++                const int nn = i >> 3, c = (i & 7) * 8, n = n0 + nn;
++                uint4 v = make_uint4(0, 0, 0, 0);
++                if (n < N) v = *reinterpret_cast<const uint4*>(Bh + (int64_t)n * ldb + k0 + c);
++                *reinterpret_cast<uint4*>(bs + nn * TF_HG_LD + c) = v;
++            }
++        } else {  // B stored [k][n]: coalesced along n, transposed into bs[n][k]
++            for (int i = threadIdx.x; i < 64 * 64; i += blockDim.x) {
++                const int kk = i >> 6, nn = i & 63, n = n0 + nn;
++                bs[nn * TF_HG_LD + kk] = n < N ? Bh[(int64_t)(k0 + kk) * ldb + n] : __float2bfloat16(0.0f);
++            }
++        }
++        __syncthreads();
++#pragma unroll
++        for (int kk = 0; kk < 64; kk += 16) {
++            uint32_t a[4];
++            const __nv_bfloat16* ap = as + (warp * 16 + g) * TF_HG_LD + kk + tq * 2;
++            a[0] = *reinterpret_cast<const uint32_t*>(ap);
++            a[1] = *reinterpret_cast<const uint32_t*>(ap + 8 * TF_HG_LD);
++            a[2] = *reinterpret_cast<const uint32_t*>(ap + 8);
++            a[3] = *reinterpret_cast<const uint32_t*>(ap + 8 * TF_HG_LD + 8);
++#pragma unroll
++            for (int j = 0; j < 8; ++j) {
++                uint32_t b[2];
++                const __nv_bfloat16* bp = bs + (j * 8 + g) * TF_HG_LD + kk + tq * 2;
++                b[0] = *reinterpret_cast<const uint32_t*>(bp);
++                b[1] = *reinterpret_cast<const uint32_t*>(bp + 8);
++                hg_mma16816(acc[j], a, b);
++            }
++        }
++    }
++#pragma unroll
++    for (int j = 0; j < 8; ++j)
++#pragma unroll
++        for (int i = 0; i < 4; ++i) {
++            const int r = r0 + warp * 16 + g + (i >= 2 ? 8 : 0);
++            const int n = n0 + j * 8 + tq * 2 + (i & 1);
++            if (r < rows && n < N) C[(int64_t)r * ldc + (int64_t)h * c_head + n] = __float2bfloat16_rn(acc[j][i]);
++        }
++}
++
++// Launch: grid=(ceil(512/64), H_loc, ceil(rows/64)), block=(128).
++extern "C" __global__ void __launch_bounds__(128) tf_ernie55_dsa_absorb_q_mma(
++    const __nv_bfloat16* __restrict__ q, const __nv_bfloat16* __restrict__ wk, __nv_bfloat16* __restrict__ q_abs, int rows, int H_loc) {
++    head_gemm_body<1>(q, H_loc * 256, 256, wk, 192 * 512, 512, q_abs, H_loc * 576, 576, rows, 512, 192);
++}
++
++// q_abs[r, h, 512 .. 576) = q[r, h, 192 .. 256) (the rope dims pass through). Launch: grid=(rows), block=(H_loc * 64).
++extern "C" __global__ void tf_ernie55_dsa_rope_copy(const __nv_bfloat16* __restrict__ q, __nv_bfloat16* __restrict__ q_abs, int rows, int H_loc) {
++    const int r = blockIdx.x, h = threadIdx.x >> 6, l = threadIdx.x & 63;
++    if (r >= rows || h >= H_loc) return;
++    q_abs[((int64_t)r * H_loc + h) * 576 + 512 + l] = q[((int64_t)r * H_loc + h) * 256 + 192 + l];
++}
++
++// Launch: grid=(ceil(256/64), H_loc, ceil(rows/64)), block=(128).
++extern "C" __global__ void __launch_bounds__(128) tf_ernie55_dsa_expand_v_mma(
++    const __nv_bfloat16* __restrict__ o_lat, const __nv_bfloat16* __restrict__ wv, __nv_bfloat16* __restrict__ o_v, int rows, int H_loc) {
++    head_gemm_body<0>(o_lat, H_loc * 512, 512, wv, 256 * 512, 512, o_v, H_loc * 256, 256, rows, 256, 512);
 +}
 diff --git a/zig/kernels/cuda/ernie55/hca_attn.cu b/zig/kernels/cuda/ernie55/hca_attn.cu
 new file mode 100644
@@ -1496,10 +1685,10 @@ index 0000000..012f961
 +}
 diff --git a/zig/kernels/cuda/ernie55/ops.cu b/zig/kernels/cuda/ernie55/ops.cu
 new file mode 100644
-index 0000000..acc4205
+index 0000000..f3fd364
 --- /dev/null
 +++ b/zig/kernels/cuda/ernie55/ops.cu
-@@ -0,0 +1,1257 @@
+@@ -0,0 +1,1300 @@
 +// ERNIE 5.5 Flash Preview core CUDA kernels (SM121 / GB10):
 +// mHC pre/post/contract, split-feature router, SITU, VHA, GPT-J RoPE/inv-RoPE,
 +// Walsh-Hadamard 128, RMSNorm/LayerNorm, MultiMax, and BF16 GEMV/GEMM.
@@ -2756,6 +2945,49 @@ index 0000000..acc4205
 +) {
 +    uint32_t i = threadIdx.x;
 +    if (i < count && i < 96) dst[i] = words.w[i];
++}
++// mHC pre-mix for prompt rows (Spark, 2026-11-24; appended to ops.cu). Same outputs as tf_ernie55_mhc_pre_gemv:
++//   mix_raw[r, j] = sum_i res[r, i] * fn[j, i] (j < 24), sqrsum[r] = sum_i res[r, i]^2, over hc_dim = 4 * hidden.
++// tf_ernie55_mhc_pre_gemv runs a block a (j, r) and reads row r 24 times and fn once a row; this one tiles 8 rows a
++// block over K chunks of 256 in shared memory: each of the 8 x 24 outputs (and 8 squares) is one thread's fp32 sum.
++// Launch: grid=(ceil(rows/8)), block=(256), smem static.
++#define TF_MHC_ROWS 8
++#define TF_MHC_KC 256
++extern "C" __global__ void __launch_bounds__(256) tf_ernie55_mhc_pre_tiled(
++    const __nv_bfloat16* __restrict__ res, const float* __restrict__ fn, float* __restrict__ mix_raw,
++    float* __restrict__ sqrsum_out, int rows, int hc_dim) {
++    __shared__ float xs[TF_MHC_ROWS][TF_MHC_KC + 1];
++    __shared__ float fs[24][TF_MHC_KC + 1];
++    const int r0 = blockIdx.x * TF_MHC_ROWS;
++    const int t = threadIdx.x;
++    // outputs: t < 192 -> (row t / 24, j t % 24); 192 <= t < 200 -> square of row t - 192
++    const int orow = t < 192 ? t / 24 : t - 192;
++    const int oj = t % 24;
++    float acc = 0.0f;
++    for (int k0 = 0; k0 < hc_dim; k0 += TF_MHC_KC) {
++        __syncthreads();
++        for (int i = t; i < TF_MHC_ROWS * TF_MHC_KC; i += blockDim.x) {
++            const int rr = i / TF_MHC_KC, c = i % TF_MHC_KC, r = r0 + rr;
++            xs[rr][c] = r < rows ? __bfloat162float(res[(int64_t)r * hc_dim + k0 + c]) : 0.0f;
++        }
++        for (int i = t; i < 24 * TF_MHC_KC; i += blockDim.x) {
++            const int jj = i / TF_MHC_KC, c = i % TF_MHC_KC;
++            fs[jj][c] = fn[(int64_t)jj * hc_dim + k0 + c];
++        }
++        __syncthreads();
++        if (t < 192) {
++#pragma unroll 8
++            for (int c = 0; c < TF_MHC_KC; ++c) acc = fmaf(xs[orow][c], fs[oj][c], acc);
++        } else if (t < 200) {
++#pragma unroll 8
++            for (int c = 0; c < TF_MHC_KC; ++c) acc = fmaf(xs[orow][c], xs[orow][c], acc);
++        }
++    }
++    const int r = r0 + orow;
++    if (r < rows) {
++        if (t < 192) mix_raw[(int64_t)r * 24 + oj] = acc;
++        else if (t < 200) sqrsum_out[r] = acc;
++    }
 +}
 diff --git a/zig/src/core/tokenizer/steps.zig b/zig/src/core/tokenizer/steps.zig
 index a1b5d16..b4056b0 100644
@@ -4546,10 +4778,10 @@ index 0000000..a80bdf7
 +}
 diff --git a/zig/src/families/ernie55/cuda_forward.zig b/zig/src/families/ernie55/cuda_forward.zig
 new file mode 100644
-index 0000000..85c99ea
+index 0000000..441dc0b
 --- /dev/null
 +++ b/zig/src/families/ernie55/cuda_forward.zig
-@@ -0,0 +1,458 @@
+@@ -0,0 +1,476 @@
 +//! ERNIE 5.5 Flash Preview full CUDA forward pass (TP=1/2/4, HCA + C128 + MLA-DSA + Latent MXFP4 SITU MoE + mHC + MultiMax).
 +const std = @import("std");
 +const cuda = @import("cuda");
@@ -4572,6 +4804,19 @@ index 0000000..85c99ea
 +/// Bytes from which a TP all-reduce is NCCL's ring (1.5x the shard on the wire) rather than the RoCE all-gather
 +/// plus rank sum (3x at TP4, but one hop's latency): prompt chunks take the ring, decode windows the gather.
 +pub const ring_min_bytes: usize = 1 << 20;
++
++/// Decode-sized calls (verify windows, drafts) take their own K slices (qmmf_bench.cu on GB10, FP8G, M <= 8):
++/// TensorFold's shape rule slices up to 8 in a cluster, which runs 15-50% slower here than 1-4 slices.
++pub const decode_rows: usize = 16;
++
++/// The fewest K slices that still give a call about 64 blocks: 1, 2 or 4, each slice at least 8 groups of 64.
++pub fn decodeSlices(n: usize, k: usize) u32 {
++    const tiles = (n + 63) / 64;
++    const groups = k / 64;
++    var sk: usize = 1;
++    while (sk < 4 and tiles * sk * 2 <= 64 and groups % (sk * 2) == 0 and groups / (sk * 2) >= 8) sk *= 2;
++    return @intCast(sk);
++}
 +
 +pub const Runner = struct {
 +    k: *const Kernels,
@@ -4602,6 +4847,11 @@ index 0000000..85c99ea
 +    }
 +
 +    pub fn fp8(self: *const Runner, s: Stream, x: u64, ldx: usize, rows: usize, w: cuda.qmmf.Weight, y: u64, part: u64) !void {
++        if (rows <= decode_rows and w.sk == 0) {
++            var wd = w;
++            wd.sk = decodeSlices(w.n, w.k);
++            return self.lane.matmul(s, x, ldx, rows, wd, y, part);
++        }
 +        try self.lane.matmul(s, x, ldx, rows, w, y, part);
 +    }
 +
@@ -4923,7 +5173,7 @@ index 0000000..85c99ea
 +                const older = slice_max + 1 - c.sliding_window;
 +                if (b * older > score_rows * sc.capacity) return error.IndexerScoresTooSmall;
 +                const pos_at = sc.positions + r0 * 4;
-+                try k.dsaIndexerScores(s, sc.idx_q + r0 * c.index_heads * c.index_dim * 2, lkv.idx_k, sc.idx_w + r0 * c.index_heads * 2, pos_at, sc.idx_scores, b, older, c.sliding_window, w_scale);
++                try k.dsaIndexerScoresMma(s, sc.idx_q + r0 * c.index_heads * c.index_dim * 2, lkv.idx_k, sc.idx_w + r0 * c.index_heads * 2, pos_at, sc.idx_scores, b, older, c.sliding_window, w_scale);
 +                try k.dsaSelectTopk(s, sc.idx_scores, pos_at, sc.idx_sel + r0 * dense_width * 4, sc.idx_cnt + r0 * 4, b, older, c.index_topk, c.sliding_window);
 +            }
 +            _ = max_older;
@@ -5010,10 +5260,10 @@ index 0000000..85c99ea
 +};
 diff --git a/zig/src/families/ernie55/cuda_kernels.zig b/zig/src/families/ernie55/cuda_kernels.zig
 new file mode 100644
-index 0000000..3ec4b38
+index 0000000..8fae589
 --- /dev/null
 +++ b/zig/src/families/ernie55/cuda_kernels.zig
-@@ -0,0 +1,453 @@
+@@ -0,0 +1,473 @@
 +//! ERNIE 5.5 Flash Preview CUDA kernel module loader and typed launchers.
 +const std = @import("std");
 +const cuda = @import("cuda");
@@ -5083,6 +5333,11 @@ index 0000000..3ec4b38
 +    mxfp4_w13_mma: Function,
 +    mxfp4_w2_mma: Function,
 +    mxfp4_moe_combine: Function,
++    dsa_indexer_scores_mma: Function,
++    dsa_absorb_q_mma: Function,
++    dsa_rope_copy: Function,
++    dsa_expand_v_mma: Function,
++    mhc_pre_tiled: Function,
 +
 +    // hca_attn.cu
 +    hca_kv_rope_store: Function,
@@ -5155,7 +5410,11 @@ index 0000000..3ec4b38
 +    pub fn mhcPreFast(k: *const Kernels, s: Stream, res: u64, fn_w: u64, mix_raw: u64, sqrsum: u64, scale: u64, base: u64, norm_w: u64, post_mix: u64, comb_mix: u64, layer_in: u64, rows: usize, hidden: usize, rms_eps: f32, hc_eps: f32, post_alpha: f32, iters: u32, norm_eps: f32) !void {
 +        var a1: cuda.Args = .{};
 +        inline for (.{ res, fn_w, mix_raw, sqrsum, ci(rows), ci(4 * hidden) }) |v| a1.add(v);
-+        try cuda.launch.launch(k.mhc_pre_gemv, .{ .grid = .{ .x = 24, .y = @intCast(rows) }, .block = .{ .x = 256 } }, s, &a1);
++        if (rows >= 512) { // prompt rows: 8 rows a block over shared K chunks (ops.cu tf_ernie55_mhc_pre_tiled)
++            try cuda.launch.launch(k.mhc_pre_tiled, .{ .grid = .{ .x = cdiv(rows, 8) }, .block = .{ .x = 256 } }, s, &a1);
++        } else {
++            try cuda.launch.launch(k.mhc_pre_gemv, .{ .grid = .{ .x = 24, .y = @intCast(rows) }, .block = .{ .x = 256 } }, s, &a1);
++        }
 +        var a2: cuda.Args = .{};
 +        inline for (.{ res, mix_raw, sqrsum, scale, base, norm_w, post_mix, comb_mix, layer_in, ci(rows), ci(hidden), rms_eps, hc_eps, post_alpha, @as(c_int, @intCast(iters)), norm_eps }) |v| a2.add(v);
 +        try cuda.launch.launch(k.mhc_pre_finish, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = 256 }, .shared = @intCast(hidden * 2 + 256) }, s, &a2);
@@ -5398,19 +5657,30 @@ index 0000000..3ec4b38
 +    pub fn dsaAbsorbQ(k: *const Kernels, s: Stream, q: u64, wk: u64, q_abs: u64, rows: usize, h_loc: usize) !void {
 +        var a: cuda.Args = .{};
 +        inline for (.{ q, wk, q_abs, ci(rows), ci(h_loc) }) |v| a.add(v);
-+        try cuda.launch.launch(k.dsa_absorb_q, .{ .grid = .{ .x = 512 / 4, .y = @intCast(h_loc), .z = @intCast(rows) }, .block = .{ .x = 128 } }, s, &a);
++        // per-head tensor-core GEMM (dsa_attn.cu tf_ernie55_dsa_absorb_q_mma: bf16 outputs equal the per-warp kernel's)
++        try cuda.launch.launch(k.dsa_absorb_q_mma, .{ .grid = .{ .x = 512 / 64, .y = @intCast(h_loc), .z = cdiv(rows, 64) }, .block = .{ .x = 128 } }, s, &a);
++        var rc: cuda.Args = .{};
++        inline for (.{ q, q_abs, ci(rows), ci(h_loc) }) |v| rc.add(v);
++        try cuda.launch.launch(k.dsa_rope_copy, .{ .grid = .{ .x = @intCast(rows) }, .block = .{ .x = @intCast(h_loc * 64) } }, s, &rc);
 +    }
 +
 +    pub fn dsaExpandV(k: *const Kernels, s: Stream, o_lat: u64, wv: u64, o_v: u64, rows: usize, h_loc: usize) !void {
 +        var a: cuda.Args = .{};
 +        inline for (.{ o_lat, wv, o_v, ci(rows), ci(h_loc) }) |v| a.add(v);
-+        try cuda.launch.launch(k.dsa_expand_v, .{ .grid = .{ .x = 256 / 4, .y = @intCast(h_loc), .z = @intCast(rows) }, .block = .{ .x = 128 } }, s, &a);
++        try cuda.launch.launch(k.dsa_expand_v_mma, .{ .grid = .{ .x = 256 / 64, .y = @intCast(h_loc), .z = cdiv(rows, 64) }, .block = .{ .x = 128 } }, s, &a);
 +    }
 +
 +    pub fn dsaIndexerScores(k: *const Kernels, s: Stream, q_idx: u64, idx_k: u64, weights: u64, positions: u64, scores: u64, rows: usize, max_older: usize, window: usize, w_scale: f32) !void {
 +        var a: cuda.Args = .{};
 +        inline for (.{ q_idx, idx_k, weights, positions, scores, ci(rows), ci(max_older), ci(window), w_scale }) |v| a.add(v);
 +        try cuda.launch.launch(k.dsa_indexer_scores, .{ .grid = .{ .x = cdiv(max_older, 4), .y = @intCast(rows) }, .block = .{ .x = 128 } }, s, &a);
++    }
++
++    /// dsaIndexerScores on tensor cores (dsa_attn.cu): one block a query row x 64 key tokens.
++    pub fn dsaIndexerScoresMma(k: *const Kernels, s: Stream, q_idx: u64, idx_k: u64, weights: u64, positions: u64, scores: u64, rows: usize, max_older: usize, window: usize, w_scale: f32) !void {
++        var a: cuda.Args = .{};
++        inline for (.{ q_idx, idx_k, weights, positions, scores, ci(rows), ci(max_older), ci(window), w_scale }) |v| a.add(v);
++        try cuda.launch.launch(k.dsa_indexer_scores_mma, .{ .grid = .{ .x = cdiv(max_older, 64), .y = @intCast(rows) }, .block = .{ .x = 128 }, .shared = 128 * 136 * 2 + 4 * 64 * 4 }, s, &a);
 +    }
 +
 +    pub fn dsaSelectTopk(k: *const Kernels, s: Stream, scores: u64, positions: u64, out_idx: u64, out_cnt: u64, rows: usize, max_older: usize, topk: usize, window: usize) !void {
