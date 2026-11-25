@@ -3084,8 +3084,8 @@ ernie55_tp4_up() {
   ok "not serving yet"
 
   step "start" "recipe start.sh on $ERNIE55_HEAD (checks 4 nodes, builds image if absent, starts ranks 3,2,1,0, waits for /health; first boot ~minutes)"
-  if ! timeout_run "${ERNIE55_START_TIMEOUT:-4200}" sshx "$ERNIE55_HEAD" "cd $ERNIE55_KIT && ./start.sh" > /tmp/ernie55-start.$$.log 2>&1; then
-    note_fail "start" "start.sh failed or timed out: $(grep -E '^\[E_|FAIL|error' /tmp/ernie55-start.$$.log | tail -2 | tr '\n' ' ' | cut -c1-220)"
+  if ! timeout_run "${ERNIE55_START_TIMEOUT:-4200}" ssh -n -o ConnectTimeout=10 -o BatchMode=yes -o ServerAliveInterval=30 "$ERNIE55_HEAD" "cd $ERNIE55_KIT && ./start.sh" > /tmp/ernie55-start.$$.log 2>&1; then
+    note_fail "start" "start.sh failed or timed out: $(grep -E '^\[E_|FAIL|rror' /tmp/ernie55-start.$$.log | tail -2 | tr '\n' ' ' | cut -c1-220) (full log: /tmp/ernie55-start.$$.log)"
     NEXT_CMD="spark-lane logs $lane   # the head's container log; ranks may still be alive: check docker ps on all 4 nodes before relaunching"
     result "$lane" "up" "$GLM53_ENDPOINT" "$GLM53_MODEL"; return 1
   fi
@@ -3105,7 +3105,7 @@ ernie55_tp4_down() {
   STEPS=2; STEPNO=0; FAILED=0; NEXT_CMD="nothing"
 
   step "stop" "recipe stop.sh on $ERNIE55_HEAD (rank 0 first, logs saved), bounded ${DSV41_STOP_TIMEOUT:-180}s"
-  timeout_run "${DSV41_STOP_TIMEOUT:-180}" sshx "$ERNIE55_HEAD" "cd $ERNIE55_KIT && ./stop.sh" >/dev/null 2>&1 || warn "stop.sh returned non-zero — verifying anyway"
+  timeout_run "${DSV41_STOP_TIMEOUT:-180}" ssh -n -o ConnectTimeout=10 -o BatchMode=yes "$ERNIE55_HEAD" "cd $ERNIE55_KIT && ./stop.sh" >/dev/null 2>&1 || warn "stop.sh returned non-zero — verifying anyway"
   ok "stop issued"
 
   step "verify torn down" "no $ERNIE55_CTN container on $(lane_nodes "$lane")"
