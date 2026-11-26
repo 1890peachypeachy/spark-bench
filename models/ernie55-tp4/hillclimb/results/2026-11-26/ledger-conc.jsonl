@@ -1,0 +1,31 @@
+{"name": "C", "time": "2026-11-25T23:13:52", "c8_aggregate": 156.13, "c8_per_stream_median": 21.57, "c16_aggregate": 232.52, "c16_per_stream_median": 16.31}
+{"name": "X-k5", "time": "2026-11-25T23:24:35", "c8_aggregate": 135.84, "c8_per_stream_median": 19.64, "c16_aggregate": 175.02, "c16_per_stream_median": 12.1}
+{"name": "C", "time": "2026-11-25T23:35:15", "c8_aggregate": 157.24, "c8_per_stream_median": 22.06, "c16_aggregate": 134.54, "c16_per_stream_median": 8.7}
+{"name": "X-k7", "time": "2026-11-25T23:46:40", "c8_aggregate": 120.82, "c8_per_stream_median": 16.56, "c16_aggregate": 160.8, "c16_per_stream_median": 10.95}
+{"name": "C", "time": "2026-11-25T23:56:51", "c8_aggregate": 158.49, "c8_per_stream_median": 22.02, "c16_aggregate": 222.12, "c16_per_stream_median": 15.21}
+{"name": "X-kadapt", "time": "2026-11-26T00:07:18", "c8_aggregate": 153.01, "c8_per_stream_median": 21.24, "c16_aggregate": 221.02, "c16_per_stream_median": 15.11}
+{"name": "C", "time": "2026-11-26T00:17:46", "c8_aggregate": 104.7, "c8_per_stream_median": 19.85, "c16_aggregate": 193.19, "c16_per_stream_median": 13.08}
+{"name": "C", "time": "2026-11-26T00:35:24", "c8_aggregate": 158.62, "c8_per_stream_median": 22.51, "c16_aggregate": 224.44, "c16_per_stream_median": 15.14}
+{"name": "X-mnbt16k", "time": "2026-11-26T00:46:22", "c8_aggregate": 159.89, "c8_per_stream_median": 22.42, "c16_aggregate": 224.01, "c16_per_stream_median": 15.43}
+{"name": "C", "time": "2026-11-26T00:56:47", "c8_aggregate": 155.94, "c8_per_stream_median": 22.06, "c16_aggregate": 227.93, "c16_per_stream_median": 16.13}
+{"name": "C", "time": "2026-11-26T01:14:14", "c8_aggregate": 159.6, "c8_per_stream_median": 21.39, "c16_aggregate": 230.13, "c16_per_stream_median": 15.99}
+{"name": "X-fi2off", "time": "2026-11-26T01:25:09", "c8_aggregate": 159.47, "c8_per_stream_median": 22.33, "c16_aggregate": 230.59, "c16_per_stream_median": 16.47}
+{"name": "X-fi2", "time": "2026-11-26T01:35:55", "c8_aggregate": 157.83, "c8_per_stream_median": 22.44, "c16_aggregate": 223.85, "c16_per_stream_median": 15.15}
+{"name": "C", "time": "2026-11-26T01:47:45", "c8_aggregate": 155.1, "c8_per_stream_median": 21.74, "c16_aggregate": 226.28, "c16_per_stream_median": 15.81}
+{"name": "X-kbs2", "time": "2026-11-26T01:59:19", "c8_aggregate": 160.8, "c8_per_stream_median": 21.65, "c16_aggregate": 236.46, "c16_per_stream_median": 16.0}
+{"name": "C", "time": "2026-11-26T02:09:42", "c8_aggregate": 157.35, "c8_per_stream_median": 21.52, "c16_aggregate": 230.55, "c16_per_stream_median": 16.19}
+{"name": "X-kbs1", "time": "2026-11-26T02:20:05", "c8_aggregate": 158.72, "c8_per_stream_median": 21.14, "c16_aggregate": 220.34, "c16_per_stream_median": 14.48}
+{"name": "C", "time": "2026-11-26T02:30:33", "c8_aggregate": 159.32, "c8_per_stream_median": 21.86, "c16_aggregate": 230.74, "c16_per_stream_median": 16.07}
+{"name": "X-seq32", "time": "2026-11-26T02:41:06", "c8_aggregate": 159.58, "c8_per_stream_median": 22.44, "c16_aggregate": 229.12, "c16_per_stream_median": 15.97, "c32_aggregate": 329.36, "c32_per_stream_median": 11.32}
+{"name": "C", "time": "2026-11-26T02:52:19", "c8_aggregate": 155.59, "c8_per_stream_median": 22.38, "c16_aggregate": 226.37, "c16_per_stream_median": 15.74}
+{"name": "X-lg1g", "time": "2026-11-26T03:02:43", "c8_aggregate": 158.26, "c8_per_stream_median": 22.11, "c16_aggregate": 230.75, "c16_per_stream_median": 15.53}
+{"name": "C", "time": "2026-11-26T03:12:53", "c8_aggregate": 159.16, "c8_per_stream_median": 22.84, "c16_aggregate": 230.51, "c16_per_stream_median": 16.06}
+{"name": "X-mnbt16k", "time": "2026-11-26T03:23:48", "c8_aggregate": 166.39, "c8_per_stream_median": 23.11, "c16_aggregate": 226.23, "c16_per_stream_median": 15.62}
+{"name": "C", "time": "2026-11-26T03:34:12", "c8_aggregate": 154.42, "c8_per_stream_median": 22.55, "c16_aggregate": 227.99, "c16_per_stream_median": 15.36}
+{"name": "X-seq64", "time": "2026-11-26T03:44:47", "c8_aggregate": 159.87, "c8_per_stream_median": 22.75, "c16_aggregate": 227.79, "c16_per_stream_median": 15.83, "c32_aggregate": 328.52, "c32_per_stream_median": 11.28, "c64_aggregate": 439.25, "c64_per_stream_median": 7.71}
+{"name": "C-L", "time": "2026-11-26T03:57:20", "c8_aggregate": 160.02, "c8_per_stream_median": 22.23, "c16_aggregate": 229.73, "c16_per_stream_median": 15.74}
+{"name": "X-fi2L", "time": "2026-11-26T04:13:29", "c8_aggregate": 160.97, "c8_per_stream_median": 22.34, "c16_aggregate": 225.85, "c16_per_stream_median": 15.47}
+{"name": "C-L", "time": "2026-11-26T04:29:11", "c8_aggregate": 156.98, "c8_per_stream_median": 22.22, "c16_aggregate": 226.58, "c16_per_stream_median": 15.68}
+{"name": "X-fi2L", "time": "2026-11-26T04:44:33", "c8_aggregate": 155.81, "c8_per_stream_median": 22.44, "c16_aggregate": 228.45, "c16_per_stream_median": 16.1}
+{"name": "X-seq32", "time": "2026-11-26T04:59:36", "c8_aggregate": 160.32, "c8_per_stream_median": 22.03, "c16_aggregate": 228.19, "c16_per_stream_median": 15.95, "c32_aggregate": 324.32, "c32_per_stream_median": 11.13}
+{"name": "Q2", "time": "2026-11-26T05:11:25", "c8_aggregate": 158.04, "c8_per_stream_median": 22.45, "c16_aggregate": 225.28, "c16_per_stream_median": 15.28, "c32_aggregate": 329.54, "c32_per_stream_median": 11.47, "c64_aggregate": 438.55, "c64_per_stream_median": 7.5}

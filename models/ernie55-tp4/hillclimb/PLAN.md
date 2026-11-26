@@ -129,3 +129,45 @@ beyond 72K in this pass, `spark-lane down` and a harness-driven cold `up`.
 Next (code, after the config pass): router weights bf16 + cuBLAS fp32-out epilogue (`GateLinear` tier 6, products identical,
 fp32 accumulation; worth it only if bf16 M=4 GEMMs get a good kernel, which X-lt tests), and a GEMV-class kernel for the
 compressor projection if cuBLASLt does not fix it.
+
+
+### 2026-11-25 23:04 → 11-26 05:20 — stage 3: public-recipe levers, FlashIndexer on GB10, concurrency (hc3.sh, 33 boots)
+
+Trigger: Baidu's vLLM recipe (k=7, FlashIndexer) and SGLang's low-latency blog; Victor: "faster prefill, decode and
+concurrency across the board". Same bench (6-prompt panel, seed 1234, T=0.6, thinking on), plus `conc.py` (c8/c16, and
+c32/c64 where MAX_SEQS allows) and `longpf.py` (cold 156K/231K-token prefill + 3 needles). Raw: `results/2026-11-26/`.
+
+| Exp | One change | c1 | c4 | c16 | c32 / c64 | prefill 82K / 156K / 231K | Verdict |
+|---|---|---:|---:|---:|---:|---:|---|
+| C (x13) | recipe f8388f4 | 44.5-49.7 | 99-108 | 222-233 (one 134, one 193 outlier) | — | ~1,515 / 1,424 / 1,302-1,331 | control |
+| X-k5 | SPEC_TOKENS 3->5 | 43.66 | 93.6 | 175.0 | | flat | **reject** (tok/step 2.59 vs 2.33: not enough to pay for the wider verify) |
+| X-k7 | SPEC_TOKENS 3->7 (Baidu default) | 39.92 | 84.1 | 160.8 | | flat | **reject** (wins only on the bash prompt, 55 vs 47) |
+| X-kadapt | k by batch 7/5/3/2 | 39.00 | 99.1 | 221.0 | | flat | **reject** |
+| X-kbs2 | k 3 @bs1-4, 2 @5-16 | 33.52 | 95.1 | 236.5 | | flat | **reject** (c16 inside noise; c1 anomaly) |
+| X-kbs1 | k 3/2/1 by batch | 47.08 | 108.6 | 220.3 | | flat | **reject** (neutral) |
+| X-mnbt16k (x2) | max-num-batched-tokens 16384 | 45.66 / 47.72 | 110.4 / 101.4 | 224 / 226 | | flat | **reject** (first c4 win did not repeat) |
+| X-lg1g | VLLM_SPARSE_INDEXER_MAX_LOGITS_MB 256->1024 | 46.52 | 103.2 | 230.8 | | flat | **reject** (neutral) |
+| X-fi | `--hf-overrides {"enable_flashindexer": true}` | — | — | — | | — | **invalid**: `fp8_fp4_mqa_logits() got an unexpected keyword argument 'clean_logits'` |
+| X-fi2 (+9b) | same, patch 9b | — | — | — | | — | **invalid**: DeepGEMM `num_heads == 16 or 32 or 64` (FlashIndexer keeps 8) |
+| X-fi2off | 9b+9c image, flag off | 46.70 | 104.0 | 230.6 | | 1,507 | patch inert when off |
+| **X-fi2 / X-fi2L x2** (+9c) | FlashIndexer on | 45.8 / 47.4 / 46.2 | 104-107 | 224-228 | | **1,560 / 1,487-1,492 / 1,392-1,428** | **keep: prefill +3% @82K, +4.5-4.8% @156K, +6.9-7.3% @231K**; needles 3/3 everywhere, qual all_ok |
+| **X-seq32 x2** | MAX_SEQS 32, graphs to 128 | 45.9 / 47.9 | 109 / 105 | 229 / 228 | **329 / 324** | flat | **keep** (c32 +42% over the c16 ceiling; c1-c16 unchanged) |
+| **X-seq64** | MAX_SEQS 64, graphs to 256 | 45.39 | 105.1 | 227.8 | 328.5 / **439.3** | flat | **keep** (still rising at 64) |
+| **Q2** | FlashIndexer + MAX_SEQS 64 together | 46.17 | 102.5 | 225.3 | 329.5 / **438.6** | 1,554 / 1,474 / 1,382 | **qualified**: chat, reasoning, tool round trip, needles 36K/72K/156K/231K all 3/3 |
+
+Patch 9b (`scripts/patch9b.py`): vLLM 0.34 made the 6th positional arg of `fp8_fp4_mqa_logits` `max_seqlen_k` (int) and
+dropped `clean_logits`; the plugin wrapper forwarded it as `clean_logits=`. Forward `*args` instead.
+Patch 9c (`scripts/patch9c.py`): GB10's DeepGEMM MQA-logits kernel takes 16/32/64 heads only; FlashIndexer selects 8.
+Pad to 16 by repeating the selected heads with weight exactly 0 (relu(q.k) x 0 = 0): same logits as the 8-head
+selection, computed by a 16-head kernel (4x fewer heads than 64, not 8x). FlashIndexer itself is Baidu's learned
+approximation of the full-head selection (not bit-lossless); gated by needles to 231K, all 3/3.
+
+Why k>3 loses here when Baidu's default is 7: with sampling (T=0.6) and thinking on, per-position acceptance falls
+70/41/21% and positions 4-7 add ~0.25 tokens/step while every verify row costs bandwidth (THEORY.md: step = 24.4 ms floor
+at k=3). Baidu's ~5.1 accept length is measured on coding/agent traffic at 1M context on GB200; not our panel.
+
+State: lane serves Q2 from candidate kit `/var/tmp/ernie55/recipe-fi` (image `ernie55-vllm:0d89801c0b01`). Recipe branch
+`hillclimb-2026-11-26` (FLASHINDEXER=1 default, MAX_SEQS 64, graphs to 256, patches 9b/9c, preflight checks the
+flashindexer file) generates byte-identical argv for all four ranks and the same image hash (DRY_RUN compared on spark3).
+Not pushed; `spark-lane up ernie55-tp4` still starts `main` (the old config) until the branch is merged and the node kit
+updated. Not verified: c64 per-stream TTFT under load, c128, KV-pool pressure at 64 long-context streams (pool 572K tokens).

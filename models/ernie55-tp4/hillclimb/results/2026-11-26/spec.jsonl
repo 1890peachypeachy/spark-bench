@@ -1,0 +1,31 @@
+{"name": "C", "startup_s": 320, "drafts": 2207, "accept_rate": 0.444, "tokens_per_step": 2.331, "per_pos": {"0": 0.708, "1": 0.409, "2": 0.214}}
+{"name": "X-k5", "startup_s": 333, "drafts": 1990, "accept_rate": 0.318, "tokens_per_step": 2.589, "per_pos": {"0": 0.73, "1": 0.435, "2": 0.239, "3": 0.121, "4": 0.065}}
+{"name": "C", "startup_s": 321, "drafts": 2197, "accept_rate": 0.447, "tokens_per_step": 2.342, "per_pos": {"0": 0.718, "1": 0.416, "2": 0.208}}
+{"name": "X-k7", "startup_s": 308, "drafts": 2013, "accept_rate": 0.222, "tokens_per_step": 2.557, "per_pos": {"0": 0.707, "1": 0.41, "2": 0.223, "3": 0.112, "4": 0.057, "5": 0.034, "6": 0.015}}
+{"name": "C", "startup_s": 310, "drafts": 2266, "accept_rate": 0.424, "tokens_per_step": 2.271, "per_pos": {"0": 0.699, "1": 0.383, "2": 0.188}}
+{"name": "X-kadapt", "startup_s": 310, "drafts": 2080, "accept_rate": 0.272, "tokens_per_step": 2.472, "per_pos": {"0": 0.712, "1": 0.411, "2": 0.22, "3": 0.068, "4": 0.036, "5": 0.015, "6": 0.01}}
+{"name": "C", "startup_s": 321, "drafts": 2124, "accept_rate": 0.474, "tokens_per_step": 2.421, "per_pos": {"0": 0.746, "1": 0.441, "2": 0.235}}
+{"name": "C", "startup_s": 321, "drafts": 2115, "accept_rate": 0.478, "tokens_per_step": 2.433, "per_pos": {"0": 0.755, "1": 0.437, "2": 0.24}}
+{"name": "X-mnbt16k", "startup_s": 355, "drafts": 2137, "accept_rate": 0.469, "tokens_per_step": 2.407, "per_pos": {"0": 0.743, "1": 0.44, "2": 0.225}}
+{"name": "C", "startup_s": 320, "drafts": 2154, "accept_rate": 0.463, "tokens_per_step": 2.39, "per_pos": {"0": 0.733, "1": 0.432, "2": 0.225}}
+{"name": "C", "startup_s": 342, "drafts": 2141, "accept_rate": 0.468, "tokens_per_step": 2.404, "per_pos": {"0": 0.725, "1": 0.449, "2": 0.23}}
+{"name": "X-fi2off", "startup_s": 355, "drafts": 2153, "accept_rate": 0.463, "tokens_per_step": 2.389, "per_pos": {"0": 0.723, "1": 0.437, "2": 0.229}}
+{"name": "X-fi2", "startup_s": 321, "drafts": 2157, "accept_rate": 0.461, "tokens_per_step": 2.383, "per_pos": {"0": 0.726, "1": 0.424, "2": 0.234}}
+{"name": "C", "startup_s": 331, "drafts": 2188, "accept_rate": 0.45, "tokens_per_step": 2.35, "per_pos": {"0": 0.72, "1": 0.414, "2": 0.217}}
+{"name": "X-kbs2", "startup_s": 310, "drafts": 2984, "accept_rate": 0.528, "tokens_per_step": 2.479, "per_pos": {"0": 0.763, "1": 0.487, "2": 0.229}}
+{"name": "C", "startup_s": 321, "drafts": 2177, "accept_rate": 0.455, "tokens_per_step": 2.365, "per_pos": {"0": 0.725, "1": 0.422, "2": 0.217}}
+{"name": "X-kbs1", "startup_s": 319, "drafts": 2120, "accept_rate": 0.475, "tokens_per_step": 2.426, "per_pos": {"0": 0.739, "1": 0.451, "2": 0.236}}
+{"name": "C", "startup_s": 321, "drafts": 2210, "accept_rate": 0.442, "tokens_per_step": 2.326, "per_pos": {"0": 0.703, "1": 0.411, "2": 0.212}}
+{"name": "X-seq32", "startup_s": 332, "drafts": 2117, "accept_rate": 0.476, "tokens_per_step": 2.428, "per_pos": {"0": 0.732, "1": 0.455, "2": 0.241}}
+{"name": "C", "startup_s": 321, "drafts": 2125, "accept_rate": 0.473, "tokens_per_step": 2.418, "per_pos": {"0": 0.739, "1": 0.438, "2": 0.241}}
+{"name": "X-lg1g", "startup_s": 332, "drafts": 2189, "accept_rate": 0.449, "tokens_per_step": 2.348, "per_pos": {"0": 0.72, "1": 0.423, "2": 0.206}}
+{"name": "C", "startup_s": 322, "drafts": 2188, "accept_rate": 0.45, "tokens_per_step": 2.351, "per_pos": {"0": 0.718, "1": 0.417, "2": 0.216}}
+{"name": "X-mnbt16k", "startup_s": 354, "drafts": 2114, "accept_rate": 0.477, "tokens_per_step": 2.432, "per_pos": {"0": 0.736, "1": 0.449, "2": 0.247}}
+{"name": "C", "startup_s": 321, "drafts": 2179, "accept_rate": 0.454, "tokens_per_step": 2.362, "per_pos": {"0": 0.728, "1": 0.416, "2": 0.218}}
+{"name": "X-seq64", "startup_s": 321, "drafts": 2195, "accept_rate": 0.448, "tokens_per_step": 2.344, "per_pos": {"0": 0.72, "1": 0.415, "2": 0.208}}
+{"name": "C-L", "startup_s": 321, "drafts": 2238, "accept_rate": 0.433, "tokens_per_step": 2.299, "per_pos": {"0": 0.695, "1": 0.399, "2": 0.205}}
+{"name": "X-fi2L", "startup_s": 342, "drafts": 2171, "accept_rate": 0.457, "tokens_per_step": 2.37, "per_pos": {"0": 0.719, "1": 0.43, "2": 0.221}}
+{"name": "C-L", "startup_s": 343, "drafts": 2122, "accept_rate": 0.475, "tokens_per_step": 2.426, "per_pos": {"0": 0.736, "1": 0.447, "2": 0.243}}
+{"name": "X-fi2L", "startup_s": 332, "drafts": 2176, "accept_rate": 0.454, "tokens_per_step": 2.362, "per_pos": {"0": 0.723, "1": 0.42, "2": 0.219}}
+{"name": "X-seq32", "startup_s": 332, "drafts": 2115, "accept_rate": 0.477, "tokens_per_step": 2.432, "per_pos": {"0": 0.743, "1": 0.448, "2": 0.241}}
+{"name": "Q2", "startup_s": 343, "drafts": 2177, "accept_rate": 0.454, "tokens_per_step": 2.363, "per_pos": {"0": 0.728, "1": 0.418, "2": 0.217}}

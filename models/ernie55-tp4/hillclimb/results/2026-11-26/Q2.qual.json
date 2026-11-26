@@ -1,0 +1,29 @@
+{
+ "chat": {
+  "content": "Tokyo",
+  "reasoning_present": true,
+  "ok": true
+ },
+ "tools": {
+  "call": {
+   "name": "get_weather",
+   "arguments": "{\"city\": \"Paris\", \"unit\": \"c\"}"
+  },
+  "args_valid_json": true,
+  "final": "The weather in Paris is currently **17\u00b0C** with a **cloudy** sky.",
+  "ok": true
+ },
+ "needle_50000": {
+  "prompt_tokens": 35815,
+  "found": "3/3",
+  "wall_s": 25.1,
+  "ok": true
+ },
+ "needle_100000": {
+  "prompt_tokens": 71530,
+  "found": "3/3",
+  "wall_s": 47.9,
+  "ok": true
+ },
+ "all_ok": true
+}

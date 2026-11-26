@@ -1,0 +1,12 @@
+{
+ "name": "@NAME@",
+ "base_url": "http://127.0.0.1:8888",
+ "model": "GLM-5.3-Flash-EXL3",
+ "concurrency": 4,
+ "prefill_lengths": [
+  8192,
+  32768,
+  131072
+ ],
+ "temperature": 0.6
+}
