@@ -1,0 +1,119 @@
+From da999346f4e26b5e2524ef1e0bb6614dafb83367 Mon Sep 17 00:00:00 2001
+From: Spark Agent <spark-agent@localhost>
+Date: Fri, 27 Nov 2026 11:58:58 -0800
+Subject: [PATCH] ernie55: TF_ERNIE55_WINDOW_MS / TF_ERNIE55_SHARED_MS /
+ TF_ERNIE55_BLOCK_MS / TF_ERNIE55_LEARN_ROWS env overrides for the lane's cost
+ tables (measured-table tuning without rebuilds, as the DSV4.1 TP4 recipe's
+ TF_DS_ROUND_MS)
+
+---
+ zig/src/families/ernie55/cuda_lanes.zig | 76 +++++++++++++++++++++++--
+ 1 file changed, 72 insertions(+), 4 deletions(-)
+
+diff --git a/zig/src/families/ernie55/cuda_lanes.zig b/zig/src/families/ernie55/cuda_lanes.zig
+index 27be0b6..66d3bd7 100644
+--- a/zig/src/families/ernie55/cuda_lanes.zig
++++ b/zig/src/families/ernie55/cuda_lanes.zig
+@@ -25,6 +25,71 @@ const gb10_shared_costs = [_]lanes.allocate.Cost{
+     .{ .width = 48, .ms = 91.0 }, .{ .width = 56, .ms = 99.0 }, .{ .width = 64, .ms = 107.0 },
+ };
+ 
++/// Cost tables a launch may set in place of the built-in ones (rank 0 prices rounds; every rank reads the same env):
++/// TF_ERNIE55_WINDOW_MS / TF_ERNIE55_SHARED_MS = "width:ms,width:ms,..." with widths ascending, the way the
++/// DeepSeek-V4.1 TP4 recipe sets its measured TF_DS_ROUND_MS. Anything malformed keeps the built-in table.
++/// TF_ERNIE55_LEARN_ROWS=1 lets the lane core learn what a row costs here past the table (learn_row_costs).
++const Overrides = struct {
++    window: [24]lanes.allocate.Cost = undefined,
++    window_n: usize = 0,
++    shared: [48]lanes.allocate.Cost = undefined,
++    shared_n: usize = 0,
++    learn_rows: bool = false,
++    block_ms: f64 = 4.5, // TF_ERNIE55_BLOCK_MS: one DSpark block pass (all 7 drafts), the lane's mtp_step_ms x 7
++    read: bool = false,
++};
++var overrides: Overrides = .{};
++
++fn readOverrides() *const Overrides {
++    if (!overrides.read) {
++        overrides.read = true;
++        overrides.window_n = parseCosts(std.c.getenv("TF_ERNIE55_WINDOW_MS"), &overrides.window);
++        overrides.shared_n = parseCosts(std.c.getenv("TF_ERNIE55_SHARED_MS"), &overrides.shared);
++        if (std.c.getenv("TF_ERNIE55_LEARN_ROWS")) |v| overrides.learn_rows = std.mem.eql(u8, std.mem.span(v), "1");
++        if (std.c.getenv("TF_ERNIE55_BLOCK_MS")) |v| {
++            const ms = std.fmt.parseFloat(f64, std.mem.span(v)) catch 0;
++            if (ms > 0 and ms < 200) {
++                overrides.block_ms = ms;
++                std.log.info("ernie55: DSpark block pass priced at {d:.2} ms (TF_ERNIE55_BLOCK_MS)", .{ms});
++            }
++        }
++        if (overrides.window_n > 0) std.log.info("ernie55: window costs from TF_ERNIE55_WINDOW_MS ({d} widths)", .{overrides.window_n});
++        if (overrides.shared_n > 0) std.log.info("ernie55: shared costs from TF_ERNIE55_SHARED_MS ({d} widths)", .{overrides.shared_n});
++        if (overrides.learn_rows) std.log.info("ernie55: learn_row_costs on (TF_ERNIE55_LEARN_ROWS=1)", .{});
++    }
++    return &overrides;
++}
++
++/// "w:ms,w:ms,..." into `out`; 0 (no override) on any malformed pair, a width out of order, or too many pairs.
++fn parseCosts(text: ?[*:0]const u8, out: []lanes.allocate.Cost) usize {
++    const t = std.mem.span(text orelse return 0);
++    var n: usize = 0;
++    var it = std.mem.tokenizeScalar(u8, t, ',');
++    while (it.next()) |pair| {
++        if (n == out.len) return 0;
++        const colon = std.mem.indexOfScalar(u8, pair, ':') orelse return 0;
++        const w = std.fmt.parseInt(u32, std.mem.trim(u8, pair[0..colon], " "), 10) catch return 0;
++        const ms = std.fmt.parseFloat(f64, std.mem.trim(u8, pair[colon + 1 ..], " ")) catch return 0;
++        if (w == 0 or !(ms > 0)) return 0;
++        if (n > 0 and w <= out[n - 1].width) return 0;
++        out[n] = .{ .width = w, .ms = ms };
++        n += 1;
++    }
++    return n;
++}
++
++test "parseCosts reads ascending width:ms pairs and refuses anything else" {
++    var buf: [4]lanes.allocate.Cost = undefined;
++    try std.testing.expectEqual(@as(usize, 3), parseCosts("1:36,8:51.5, 16:80", &buf));
++    try std.testing.expectEqual(@as(u32, 16), buf[2].width);
++    try std.testing.expectEqual(@as(f64, 51.5), buf[1].ms);
++    try std.testing.expectEqual(@as(usize, 0), parseCosts("8:51,1:36", &buf)); // out of order
++    try std.testing.expectEqual(@as(usize, 0), parseCosts("1:36,x:5", &buf));
++    try std.testing.expectEqual(@as(usize, 0), parseCosts("1:0", &buf));
++    try std.testing.expectEqual(@as(usize, 0), parseCosts("1:1,2:2,3:3,4:4,5:5", &buf)); // too many
++    try std.testing.expectEqual(@as(usize, 0), parseCosts(null, &buf));
++}
++
+ const Lane = struct {
+     slot: u32,
+     pending_rows: ?usize = null,
+@@ -68,6 +133,9 @@ pub const Lanes = struct {
+ 
+     pub fn facts(self: *const Lanes) lanes.Model {
+         const head = self.x.e.drafter != null;
++        const o = readOverrides();
++        const window_costs: []const lanes.allocate.Cost = if (o.window_n > 0) o.window[0..o.window_n] else &gb10_window_costs;
++        const shared_costs: []const lanes.allocate.Cost = if (o.shared_n > 0) o.shared[0..o.shared_n] else &gb10_shared_costs;
+         return .{
+             .root_copies = false,
+             .context_copies = false,
+@@ -80,13 +148,13 @@ pub const Lanes = struct {
+             .fixed_draft_block = head,
+             .drafts = if (head) max_held else 0,
+             .draft_streams = head,
+-            .mtp_step_ms = if (head) 4.5 / @as(f64, max_held) else 0,
++            .mtp_step_ms = if (head) o.block_ms / @as(f64, max_held) else 0,
+             .shared_step_ms = if (head) 0.12 else null,
+-            .window_costs = if (head) &gb10_window_costs else &.{},
++            .window_costs = if (head) window_costs else &.{},
+             .hidden_rows = true,
+             .batch_rows = engine.window_rows, // shared verifies: every stream's window in one forward (verifyShared)
+-            .shared_costs = if (head) &gb10_shared_costs else &.{},
+-            .learn_row_costs = false,
++            .shared_costs = if (head) shared_costs else &.{},
++            .learn_row_costs = o.learn_rows,
+             .max_streams = engine.max_parts,
+         };
+     }
+-- 
+2.50.1 (Apple Git-155)
+

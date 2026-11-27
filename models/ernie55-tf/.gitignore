@@ -1,0 +1,5 @@
+# raw server logs carry tailnet client IPs; live-traffic files are private usage data (kept in GBrain, not here)
+*_r0.log
+hillclimb/e0/*.log
+results/*/live-*
+results/*/*.log

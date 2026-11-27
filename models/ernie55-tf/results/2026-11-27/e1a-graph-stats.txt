@@ -1,0 +1,4 @@
+graphs: shared verify launches=339 eager=106 captures=55 | shared draft launches=447 eager=29 captures=23 (cache 64)
+graphs: shared verify launches=489 eager=363 captures=148 | shared draft launches=863 eager=78 captures=58 (cache 64)
+graphs: shared verify launches=641 eager=618 captures=241 | shared draft launches=1293 eager=124 captures=82 (cache 64)
+graphs: shared verify launches=748 eager=917 captures=335 | shared draft launches=1679 eager=194 captures=126 (cache 64)
