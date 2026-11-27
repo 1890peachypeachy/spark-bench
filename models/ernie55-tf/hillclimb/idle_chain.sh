@@ -54,6 +54,7 @@ for name in "$@"; do
     mv $HC/results/$name $HC/results/$name.contaminated.$try 2>/dev/null || true
   done
 done
+rm -f $HC/STOP   # STOP ends the experiments; the production restore still waits for an idle minute
 wait_idle 1 || true
 say "restoring production (recipe launcher)"
 bash /var/tmp/ernie55/start_tensorfold.sh >> $LOG 2>&1
