@@ -12,7 +12,7 @@ OUT=$HC/results/$NAME
 mkdir -p "$OUT"
 rm -f "$OUT/contaminated"
 # an exp env file may pin its own phases (SKIP_LONG=0 adds the 66K cold/warm block, CONC/SHORTCTX/LONGCTX levels)
-eval "$(grep -E '^(SKIP_LONG|CONC|LONG|SHORTCTX|LONGCTX|LONGCTX_TOK|LONGCTX_REPS)=' "$HC/exps/$NAME.env" 2>/dev/null)"
+eval "$(grep -E '^(SKIP_LONG|CONC|LONG|SHORTCTX|LONGCTX|LONGCTX_TOK|LONGCTX_REPS|PROBES)=' "$HC/exps/$NAME.env" 2>/dev/null)"
 metric() { curl -s --max-time 3 http://127.0.0.1:8888/metrics | awk -v k="$1" '$1==k{print $2}'; }
 count() { local c; c=$(metric tensorfold:request_latency_seconds_count); echo "${c%.*}"; }
 running() { local r; r=$(metric tensorfold:requests_running); echo "${r%.*}"; }
@@ -72,6 +72,17 @@ print(n)")
     echo "== long"
     python3 -I /var/tmp/ernie55/w3_bench.py --only cold66k,warm450,warm3312 > "$OUT/long.txt" 2>&1; echo "long rc=$?"
     grep -E "COLD|WARM" "$OUT/long.txt"
+  fi
+  if [ "${PROBES:-0}" = 1 ]; then
+    # correctness on the WARM server, after the whole workload (the PAD corruption seen in x0 try 1 needed a long
+    # session: fresh servers passed). Any PAD reply or missing code writes $OUT/probe_fail.
+    echo "== probes (warm server)"
+    timeout 900 python3 -I $HC/probe_mixed.py --out "$OUT/probe-mixed.json" > "$OUT/probe-mixed.log" 2>&1; echo "probe_mixed rc=$?"
+    timeout 600 python3 -I $HC/probe_concurrency.py --out "$OUT/probe-concurrency.json" > "$OUT/probe-concurrency.log" 2>&1; echo "probe_concurrency rc=$?"
+    cat "$OUT/probe-mixed.log" "$OUT/probe-concurrency.log" | grep -E '^\{"(phase|mode)"' | cut -c1-260
+    if grep -h -E '^\{"(phase|mode)"' "$OUT/probe-mixed.log" "$OUT/probe-concurrency.log" | grep -q -E '"pad": true|"pad": [1-9]|"pad_replies": [1-9]|"all3": [0-7],'; then
+      echo "PROBE FAIL: PAD or missing codes on the warm server" | tee "$OUT/probe_fail"
+    else echo "probes clean"; fi
   fi
   if [ -f "$OUT/contaminated" ]; then echo "RESULT: CONTAMINATED"; else echo "RESULT: CLEAN"; fi
   echo "== $(date -Is) done $NAME"
