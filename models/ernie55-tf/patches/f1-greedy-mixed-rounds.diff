@@ -1,0 +1,73 @@
+diff --git a/zig/src/families/ernie55/cuda_engine.zig b/zig/src/families/ernie55/cuda_engine.zig
+index 03f572f..f47ecad 100644
+--- a/zig/src/families/ernie55/cuda_engine.zig
++++ b/zig/src/families/ernie55/cuda_engine.zig
+@@ -628,16 +628,31 @@ pub const Engine = struct {
+             for (parts, 0..) |pt, i| @memcpy(pt.out, all[segs[i].row0..][0..segs[i].n]);
+             return;
+         }
+-        // Single RoCE allGather + single-sync drawBatch for ALL concurrent streams!
++        // A round with a sampled stream: one RoCE allGather + one drawBatch for the sampled streams. Greedy streams
++        // in the same round take the F32 argmax an all-greedy round takes (pickGreedy), so a greedy stream's tokens
++        // never depend on whether a sampled stream shares its round.
+         try e.smp.gatherF32(&e.k, e.stream, e.group, &e.w.share, e.sc_dec.logits, rows);
+         var draw_items: [max_parts]sampler.Sampler.DrawItem = undefined;
++        var n_draw: usize = 0;
++        var any_greedy = false;
+         for (parts, 0..) |pt, i| {
++            const scfg = seqs[i].sampling orelse {
++                any_greedy = true;
++                continue;
++            };
+             const g = segs[i];
+-            const rl = if (seqs[i].sampling) |scfg| sampler.rule(scfg) else sampler.greedyRule();
+-            draw_items[i] = .{ .row0 = g.row0, .rows = g.n, .first_pos = seqs[i].kv.pos + 1, .rule = rl, .out = pt.out };
++            draw_items[n_draw] = .{ .row0 = g.row0, .rows = g.n, .first_pos = seqs[i].kv.pos + 1, .rule = sampler.rule(scfg), .out = pt.out };
++            n_draw += 1;
+         }
+-        try e.smp.drawBatch(e.stream, draw_items[0..parts.len], rows);
++        try e.smp.drawBatch(e.stream, draw_items[0..n_draw], rows);
+         if (e.group) |grp| try grp.check();
++        if (any_greedy) {
++            var all: [window_rows]u32 = undefined;
++            try e.pickGreedy(&e.sc_dec, 0, rows, all[0..rows]);
++            for (parts, 0..) |pt, i| {
++                if (seqs[i].sampling == null) @memcpy(pt.out, all[segs[i].row0..][0..segs[i].n]);
++            }
++        }
+     }
+ 
+     pub fn keep(e: *Engine, n: usize) !void {
+diff --git a/zig/src/families/ernie55/cuda_sampler.zig b/zig/src/families/ernie55/cuda_sampler.zig
+index 2547712..8801d64 100644
+--- a/zig/src/families/ernie55/cuda_sampler.zig
++++ b/zig/src/families/ernie55/cuda_sampler.zig
+@@ -17,10 +17,14 @@ pub fn rule(s: Sampling) Rule {
+     return cuda.sample.rule(s);
+ }
+ 
++/// The argmax as a draw, for the paths that must draw a greedy row from `full` (a grammar-masked row). sample.cu
++/// ranks candidates by logit * inv_t, so inv_t = 1 with top_k = 1 keeps exactly the largest logit. (inv_t = 0
++/// scaled every logit to 0, and the tie went to token 0, <|ERNIE_PAD|>.) Unmasked greedy rows take
++/// Engine.pickGreedy, the F32 argmax, instead.
+ pub fn greedyRule() Rule {
+     return .{
+         .seed = 0,
+-        .inv_t = 0,
++        .inv_t = 1,
+         .top_p = 1,
+         .near = 0,
+         .min_log = -std.math.inf(f32),
+@@ -28,6 +32,12 @@ pub fn greedyRule() Rule {
+     };
+ }
+ 
++test "greedyRule keeps the logits as they are and one candidate" {
++    const r = greedyRule();
++    try std.testing.expectEqual(@as(f32, 1), r.inv_t);
++    try std.testing.expectEqual(@as(u32, 1), r.top_k);
++}
++
+ pub const Sampler = struct {
+     d: *const cuda.Driver,
+     module: cuda.Module,

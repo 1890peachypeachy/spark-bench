@@ -18,6 +18,8 @@ EXTRA_ARGS=""
 source "$EXP"
 mkdir -p $HC/logs
 LOG=$HC/logs/${NAME}_r0.log
+# keep the previous run's rank-0 log (a relaunch used to truncate it, losing forensics)
+[ -s "$LOG" ] && mv "$LOG" "$LOG.$(date -r "$LOG" +%Y%m%dT%H%M%S)"
 
 # --- idle gate: three clean reads 5 s apart (skip when the server is already down)
 if curl -fsS --max-time 2 http://127.0.0.1:8888/v1/models >/dev/null 2>&1; then

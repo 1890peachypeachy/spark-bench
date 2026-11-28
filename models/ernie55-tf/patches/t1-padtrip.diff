@@ -1,0 +1,231 @@
+diff --git a/zig/src/families/ernie55/cuda_engine.zig b/zig/src/families/ernie55/cuda_engine.zig
+index 03f572f..0b06e5f 100644
+--- a/zig/src/families/ernie55/cuda_engine.zig
++++ b/zig/src/families/ernie55/cuda_engine.zig
+@@ -122,6 +122,28 @@ const SharedDraftEntry = struct {
+     }
+ };
+ 
++/// TF_ERNIE55_PAD_TRIP=1 (debug, off by default): token 0 is <|ERNIE_PAD|>, which argmax returns for NaN or
++/// degenerate logits and which a healthy model never emits. A round that emits it logs its configuration and, for
++/// verifies, runs the same forward again eagerly (inputs and tables are still in place, and every write is
++/// idempotent: the same rows rewrite the same KV and taps) and logs whether the eager logits are clean too, so a
++/// graph or launch fault (eager clean) tells apart from corrupt state (eager PAD too). Every rank sees the same
++/// tokens, so every rank re-runs and the collectives stay matched.
++var pad_trip_on: ?bool = null;
++var pad_trips: u32 = 0;
++fn padTripOn() bool {
++    if (pad_trip_on) |o| return o;
++    const o = if (std.c.getenv("TF_ERNIE55_PAD_TRIP")) |v| std.mem.eql(u8, std.mem.span(v), "1") else false;
++    if (o) std.log.info("ernie55: PAD tripwire on (TF_ERNIE55_PAD_TRIP=1)", .{});
++    pad_trip_on = o;
++    return o;
++}
++fn hasPad(out: []const u32) usize {
++    var n: usize = 0;
++    for (out) |t| n += @intFromBool(t == 0);
++    return n;
++}
++const how_names = [_][]const u8{ "graph", "eager-first", "capture", "eager" };
++
+ pub const Options = struct {
+     capacity: usize,
+     load_dspark: bool = true,
+@@ -353,7 +375,6 @@ pub const Engine = struct {
+         try e.sc_pf.buf.upload(e.sc_pf.positions - e.sc_pf.buf.ptr, std.mem.sliceAsBytes(pos_i32[0..n]));
+ 
+         // Every chunk's trailing rows go into the draft ring, so a state kept at any chunk start carries it.
+-        _ = total;
+         const need_taps = e.drafter != null;
+         const taps_ptr: u64 = if (need_taps) e.sc_pf.dspark_taps else 0;
+ 
+@@ -386,19 +407,21 @@ pub const Engine = struct {
+             return 0;
+         }
+ 
++        var out: [1]u32 = undefined;
+         if (sq.sampling) |smp_cfg| {
+             try e.smp.gatherF32(&e.k, e.stream, e.group, &e.w.share, e.sc_pf.logits, 1);
+-            var out: [1]u32 = undefined;
+             try e.smp.drawFull(e.stream, 1, pos0 + n, sampler.rule(smp_cfg), &out);
+             if (e.group) |g| try g.check();
+-            return out[0];
+         } else {
+             try e.stream.synchronize();
+             if (e.group) |g| try g.check();
+-            var out: [1]u32 = undefined;
+             try e.pickGreedy(&e.sc_pf, 0, 1, &out);
+-            return out[0];
+         }
++        if (padTripOn() and out[0] == 0) {
++            pad_trips += 1;
++            if (pad_trips <= 40) std.log.warn("ernie55 PAD trip #{d}: first token after prefill slot={d} pos0={d} chunk={d} prompt={d} resumed={} late_mark={d} sampled={}", .{ pad_trips, e.slot, pos0, n, total, resume_id != 0, late_mark, sq.sampling != null });
++        }
++        return out[0];
+     }
+ 
+     /// Redraw the prompt's first token under a grammar mask (`bits` device ptr to bitmask words).
+@@ -434,15 +457,20 @@ pub const Engine = struct {
+         const r = e.runner();
+         const can_graph = (e.group == null or e.group.?.fast != null) and rows <= 8;
+         const max_pos = sq.kv.pos + rows - 1;
++        var how: u8 = 3;
++        var bucket_used: usize = 0;
+ 
+         if (can_graph and max_pos + 1 <= 2176) {
+             const gi = rows - 1;
+             if (sq.verify_graphs[gi]) |ge| {
++                how = 0;
+                 try ge.launchOn(e.stream);
+             } else if (!sq.verify_warmed[gi]) {
++                how = 1;
+                 try r.forwardWithTaps(e.stream, &sq.kv, &e.sc_dec, rows, max_pos, true, taps_out);
+                 sq.verify_warmed[gi] = true;
+             } else {
++                how = 2;
+                 try cuda.graph.beginCapture(e.stream, .thread_local);
+                 try r.forwardWithTaps(e.stream, &sq.kv, &e.sc_dec, rows, max_pos, true, taps_out);
+                 var g = try cuda.graph.endCapture(e.stream);
+@@ -460,13 +488,17 @@ pub const Engine = struct {
+                 sq.clearSparseGraphs();
+                 sq.sparse_ceil = bucket;
+             }
++            bucket_used = bucket;
+             const gi = rows - 1;
+             if (sq.sparse_graphs[gi]) |ge| {
++                how = 0;
+                 try ge.launchOn(e.stream);
+             } else if (!sq.sparse_warmed[gi]) {
++                how = 1;
+                 try r.forwardWithTapsBucket(e.stream, &sq.kv, &e.sc_dec, rows, max_pos, true, taps_out, bucket);
+                 sq.sparse_warmed[gi] = true;
+             } else {
++                how = 2;
+                 try cuda.graph.beginCapture(e.stream, .thread_local);
+                 try r.forwardWithTapsBucket(e.stream, &sq.kv, &e.sc_dec, rows, max_pos, true, taps_out, bucket);
+                 var g = try cuda.graph.endCapture(e.stream);
+@@ -496,6 +528,31 @@ pub const Engine = struct {
+             if (e.group) |g| try g.check();
+             try e.pickGreedy(&e.sc_dec, 0, rows, out);
+         }
++        if (padTripOn() and bits == 0) try e.padTripSolo(sq, ids, out[0..rows], rows, max_pos, how, bucket_used, taps_out);
++    }
++
++    fn padTripSolo(e: *Engine, sq: *Seq, ids: []const u32, out: []const u32, rows: usize, max_pos: usize, how: u8, bucket: usize, taps_out: u64) !void {
++        const hit = hasPad(out);
++        if (hit == 0) return;
++        pad_trips += 1;
++        const verbose = pad_trips <= 40;
++        var vals: [window_rows]f32 = undefined;
++        try cuda.memory.download(e.d, e.sc_dec.argmax_val, std.mem.sliceAsBytes(vals[0..rows]));
++        if (verbose) std.log.warn("ernie55 PAD trip #{d}: solo verify slot={d} pos={d} rows={d} max_pos={d} bucket={d} how={s} sampled={} ids={any} out={any} local_max={any}", .{ pad_trips, e.slot, sq.kv.pos, rows, max_pos, bucket, how_names[how], sq.sampling != null, ids, out, vals[0..rows] });
++        const r = e.runner();
++        if (bucket == 0) {
++            try r.forwardWithTaps(e.stream, &sq.kv, &e.sc_dec, rows, max_pos, true, taps_out);
++        } else {
++            try r.forwardWithTapsBucket(e.stream, &sq.kv, &e.sc_dec, rows, max_pos, true, taps_out, bucket);
++        }
++        try e.stream.synchronize();
++        if (e.group) |grp| try grp.check();
++        var all: [window_rows]u32 = undefined;
++        try e.pickGreedy(&e.sc_dec, 0, rows, all[0..rows]);
++        try cuda.memory.download(e.d, e.sc_dec.argmax_val, std.mem.sliceAsBytes(vals[0..rows]));
++        const eager_pads = hasPad(all[0..rows]);
++        if (verbose) std.log.warn("  eager: argmax={any} local_max={any}", .{ all[0..rows], vals[0..rows] });
++        std.log.warn("ernie55 PAD trip #{d} verdict: solo {s} verify had {d} PAD; eager re-run has {d} ({s})", .{ pad_trips, how_names[how], hit, eager_pads, if (eager_pads == 0) "eager clean: graph/launch fault" else "eager PAD too: state/data fault" });
+     }
+ 
+     /// Several streams' windows (no grammar masks) through one forward: weights read once for all of them.
+@@ -575,6 +632,7 @@ pub const Engine = struct {
+         const tap_elems = 3 * e.w.config.hidden;
+         const r = e.runner();
+         const can_graph = (e.group == null or e.group.?.fast != null) and e.w.share.heads == 16;
++        var how: u8 = 3;
+ 
+         if (can_graph) {
+             e.graph_tick += 1;
+@@ -601,12 +659,15 @@ pub const Engine = struct {
+             };
+             ent.tick = e.graph_tick;
+             if (ent.graph) |ge| {
++                how = 0;
+                 try ge.launchOn(e.stream);
+             } else if (!ent.warmed) {
++                how = 1;
+                 try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
+                 if (taps_out != 0) try e.k.stashTapsTab(e.stream, taps_out, e.sc_dec.row_seg, e.sc_dec.seg_tab, bucket_rows, tap_elems);
+                 ent.warmed = true;
+             } else {
++                how = 2;
+                 try cuda.graph.beginCapture(e.stream, .thread_local);
+                 try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
+                 if (taps_out != 0) try e.k.stashTapsTab(e.stream, taps_out, e.sc_dec.row_seg, e.sc_dec.seg_tab, bucket_rows, tap_elems);
+@@ -626,18 +687,48 @@ pub const Engine = struct {
+             var all: [window_rows]u32 = undefined;
+             try e.pickGreedy(&e.sc_dec, 0, rows, all[0..rows]);
+             for (parts, 0..) |pt, i| @memcpy(pt.out, all[segs[i].row0..][0..segs[i].n]);
+-            return;
++        } else {
++            // Single RoCE allGather + single-sync drawBatch for ALL concurrent streams!
++            try e.smp.gatherF32(&e.k, e.stream, e.group, &e.w.share, e.sc_dec.logits, rows);
++            var draw_items: [max_parts]sampler.Sampler.DrawItem = undefined;
++            for (parts, 0..) |pt, i| {
++                const g = segs[i];
++                const rl = if (seqs[i].sampling) |scfg| sampler.rule(scfg) else sampler.greedyRule();
++                draw_items[i] = .{ .row0 = g.row0, .rows = g.n, .first_pos = seqs[i].kv.pos + 1, .rule = rl, .out = pt.out };
++            }
++            try e.smp.drawBatch(e.stream, draw_items[0..parts.len], rows);
++            if (e.group) |grp| try grp.check();
+         }
+-        // Single RoCE allGather + single-sync drawBatch for ALL concurrent streams!
+-        try e.smp.gatherF32(&e.k, e.stream, e.group, &e.w.share, e.sc_dec.logits, rows);
+-        var draw_items: [max_parts]sampler.Sampler.DrawItem = undefined;
+-        for (parts, 0..) |pt, i| {
+-            const g = segs[i];
+-            const rl = if (seqs[i].sampling) |scfg| sampler.rule(scfg) else sampler.greedyRule();
+-            draw_items[i] = .{ .row0 = g.row0, .rows = g.n, .first_pos = seqs[i].kv.pos + 1, .rule = rl, .out = pt.out };
++        if (padTripOn()) try e.padTripShared(parts, segs[0..parts.len], seqs[0..parts.len], how, any_sparse, max_older, bucket_rows, rows, greedy, taps_out);
++    }
++
++    fn padTripShared(e: *Engine, parts: []const Part, segs: []const fw.Seg, seqs: []const *Seq, how: u8, any_sparse: bool, max_older: usize, bucket_rows: usize, rows: usize, greedy: bool, taps_out: u64) !void {
++        var hit: usize = 0;
++        for (parts) |pt| hit += hasPad(pt.out);
++        if (hit == 0) return;
++        pad_trips += 1;
++        const verbose = pad_trips <= 40;
++        var vals: [window_rows]f32 = undefined;
++        try cuda.memory.download(e.d, e.sc_dec.argmax_val, std.mem.sliceAsBytes(vals[0..rows]));
++        if (verbose) {
++            std.log.warn("ernie55 PAD trip #{d}: shared verify streams={d} rows={d} bucket={d} any_sparse={} max_older={d} how={s} greedy={}", .{ pad_trips, parts.len, rows, bucket_rows, any_sparse, max_older, how_names[how], greedy });
++            for (parts, 0..) |pt, i| {
++                std.log.warn("  part {d}: slot={d} pos={d} n={d} row0={d} older_ceil={d} sampled={} pads={d} ids={any} out={any} local_max={any}", .{ i, pt.slot, seqs[i].kv.pos, segs[i].n, segs[i].row0, segs[i].older_ceil, seqs[i].sampling != null, hasPad(pt.out), pt.ids, pt.out, vals[segs[i].row0..][0..segs[i].n] });
++            }
+         }
+-        try e.smp.drawBatch(e.stream, draw_items[0..parts.len], rows);
++        // the same round again, eagerly
++        const r = e.runner();
++        try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
++        try e.stream.synchronize();
+         if (e.group) |grp| try grp.check();
++        var all: [window_rows]u32 = undefined;
++        try e.pickGreedy(&e.sc_dec, 0, rows, all[0..rows]);
++        try cuda.memory.download(e.d, e.sc_dec.argmax_val, std.mem.sliceAsBytes(vals[0..rows]));
++        const eager_pads = hasPad(all[0..rows]);
++        if (verbose) for (0..parts.len) |i| {
++            std.log.warn("  eager part {d}: argmax={any} local_max={any}", .{ i, all[segs[i].row0..][0..segs[i].n], vals[segs[i].row0..][0..segs[i].n] });
++        };
++        std.log.warn("ernie55 PAD trip #{d} verdict: shared {s} round had {d} PAD; eager re-run has {d} ({s})", .{ pad_trips, how_names[how], hit, eager_pads, if (eager_pads == 0) "eager clean: graph/launch fault" else "eager PAD too: state/data fault" });
+     }
+ 
+     pub fn keep(e: *Engine, n: usize) !void {
+@@ -769,6 +860,10 @@ pub const Engine = struct {
+             for (0..n_draft) |di| {
+                 const pt = parts[draft_part_idx[di]];
+                 for (pt.out, out_i32[di][0..pt.out.len]) |*dst, v| dst.* = @intCast(v);
++                if (padTripOn() and hasPad(pt.out) > 0) {
++                    pad_trips += 1;
++                    if (pad_trips <= 40) std.log.warn("ernie55 PAD trip #{d}: shared draft streams={d} part={d} slot={d} pos={d} anchor={d} kept_n={d} drafts={any}", .{ pad_trips, n_draft, di, pt.slot, e.seqs.items[pt.slot].?.kv.pos, pt.anchor, pt.kept_n, pt.out });
++                }
+             }
+         }
+     }

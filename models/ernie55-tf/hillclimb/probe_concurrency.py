@@ -31,6 +31,9 @@ MODES = {  # name: (concurrency, thinking, temperature, max_tokens)
     "c8-nothink": (8, False, 0.0, 96),
     "c8-think": (8, True, 0.0, 1536),
     "c8-nothink-t06": (8, False, 0.6, 96),
+    # temperature -1: even docs greedy, odd docs sampled at 0.6, all at once, so the shared rounds mix the two.
+    # Regression test for greedy streams drawn with a zero-temperature rule in a sampled round (all PAD).
+    "c8-mix": (8, False, -1.0, 96),
     "solo-again": (1, False, 0.0, 96),
 }
 
@@ -85,8 +88,10 @@ def main():
     for mode in a.modes.split(","):
         conc, thinking, temp, mt = MODES[mode]
         t0 = time.perf_counter()
+        def t_of(i):
+            return (0.0 if i % 2 == 0 else 0.6) if temp < 0 else temp
         with cf.ThreadPoolExecutor(conc) as ex:
-            rs = list(ex.map(lambda i: post(a.url, a.model, docs[i][0] + q, mt, temp, thinking), range(a.docs)))
+            rs = list(ex.map(lambda i: post(a.url, a.model, docs[i][0] + q, mt, t_of(i), thinking), range(a.docs)))
         sent += a.docs
         found = [sum(c in r["content"] for c in docs[i][1]) for i, r in enumerate(rs)]
         pad = sum("PAD" in (r["content"] + r["reasoning"]) for r in rs)
@@ -101,6 +106,10 @@ def main():
             solo = shas
         elif solo and not thinking and temp == 0.0:
             row["identical_to_solo"] = f"{sum(x == y for x, y in zip(shas, solo))}/{a.docs}"
+        elif solo and not thinking and temp < 0:
+            greedy = [i for i in range(a.docs) if t_of(i) == 0.0]
+            row["greedy_identical_to_solo"] = f"{sum(shas[i] == solo[i] for i in greedy)}/{len(greedy)}"
+            row["greedy_all3"] = sum(found[i] == 3 for i in greedy)
         results[mode] = {"row": row, "replies": [r["content"] for r in rs]}
         print(json.dumps(row), flush=True)
     if a.out:
