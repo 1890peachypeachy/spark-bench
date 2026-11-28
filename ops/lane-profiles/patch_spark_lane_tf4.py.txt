@@ -31,7 +31,7 @@ cfg = '''
 # ── dsv41-tf4: TensorFold TP4, LibertAI EXL3 3.5bpw pack (added 2026-10-24) ───────────────────────
 # Source of truth: ~/recipe-db/DeepSeek-V4.1-Flash-TP2-and-TP4-DGX-Sparks (tonyd2wild) @ v0.3.5 (b88fae2),
 # engine 0a0b69a + TF_RDMA_GID / TF_SEED_RANDOM patches. Our adapted config: models/dsv41-exl3-3.5bpw-tf/config.spark-fleet.env.
-# Serves the SAME endpoint and model name as dsv41-tp4 (Hermes needs no change); context capped at 262144 (Victor, 2026-10-24).
+# Serves the SAME endpoint and model name as dsv41-tp4 (Hermes needs no change); context capped at 262144 (the owner, 2026-10-24).
 TF4_ROOT="${TF4_ROOT:-/var/tmp/tf1017}"
 TF4_CONFIG="${TF4_CONFIG:-$TF4_ROOT/config.spark-fleet.env}"
 TF4_RECIPE="${TF4_RECIPE:-$TF4_ROOT/recipe}"

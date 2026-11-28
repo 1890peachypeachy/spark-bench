@@ -73,7 +73,7 @@ cleanup never deletes something a lane needs at bring-up. Verified live on spark
 3. `start.sh` stops any running ranks before relaunching, so a manual `start.sh` while a lane is
    live tears that lane down.
 
-## 2026-11-22: spark4 payload dropped (Victor: "drop comfy and deepseek from spark4")
+## 2026-11-22: spark4 payload dropped (the owner: "drop comfy and deepseek from spark4")
 
 spark4 has the only small drive (916 GB). Freed **425 GB: 113 GB -> 538 GB free (39% used)**, with the 101 GB gr8 KV store full.
 

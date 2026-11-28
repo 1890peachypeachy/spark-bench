@@ -1,6 +1,6 @@
 # dsv41-tp4: thinking on by default at effort 100 — DEPLOYED 2026-10-17 ~21:05 PDT
 
-Victor 2026-10-17: "Lane wide. But don't take it down yet. I got work happening. Max thinking...
+The owner 2026-10-17: "Lane wide. But don't take it down yet. I got work happening. Max thinking...
 but look online to see what others are saying is better for this model."
 
 ## What the profile now generates (build-dsv41-tp4-env.py)
@@ -39,7 +39,7 @@ Revert: `THINK_DEFAULT_EFFORT = "75"` in the builder, rerun, redeploy.
   require `reasoning_content` to be echoed back (no 400), so Hermes tool loops are safe.
 - Effort 100 on a hard proof: 38 s, 2,507 completion tokens, finish=stop (well under the 65k cap).
 
-## Deploy (when Victor's work is clear)
+## Deploy (when the owner's work is clear)
 1. `spark-lane down dsv41-tp4` (this is the untested path — the stop script carries the dsv41-nfs
    guard but has not been run against the 1017 kit).
 2. Regenerate the kit profile from the builder and push `.env.tp4` to spark3:/home/spark3/dsv41-4x/.

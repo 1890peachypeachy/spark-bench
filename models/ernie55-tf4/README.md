@@ -1,6 +1,6 @@
 # ernie55-tf4 — ERNIE-5.5-Flash-Preview on TensorFold-native, TP4 (4x DGX Spark)
 
-Experimental TensorFold port of `baidu/ERNIE-5.5-Flash-Preview`, written by Antigravity (Victor's MacBook Pro) on 2026-11-24
+Experimental TensorFold port of `baidu/ERNIE-5.5-Flash-Preview`, written by Antigravity (the owner's MacBook Pro) on 2026-11-24
 and finished/brought up by Spark the same day. The vLLM lane (`../ernie55-tp4`, recipe `ERNIE-5.5-Flash-Preview-4x-DGX-Sparks`)
 remains the production-grade recipe; this one is a bring-up, not tuned.
 

@@ -1,4 +1,4 @@
-# Mia TensorFold TP4 trial — staging plan (NOT executed; bring-up is Victor's call)
+# Mia TensorFold TP4 trial — staging plan (NOT executed; bring-up is the owner's call)
 
 Found: `MiaAI-Lab/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold` branch `tp4` (tip `d220030`, 2026-10-10).
 Working checkout: `~/recipe-db/GLM-5.3-Flash-EXL3-2x-DGX-Sparks-TensorFold/tp4-trial` (branch `fleet/tp4-trial`).
@@ -25,11 +25,11 @@ Registry: `glm53-tp4` needs spark1-4 and owns :8888. The TF trial lane is a NEW 
 (`glm53-tf4`) in `spark-bench/ops/spark-lane`, same endpoint class, mutually exclusive.
 Consumers must NOT be re-pointed during the trial. Live lane stays untouched and serving.
 
-## Bring-up sequence (when Victor green-lights)
+## Bring-up sequence (when the owner green-lights)
 
 1. **spark4 disk gate (binding constraint).** 349G free of 916G; her stack wants ~205 GB/Spark
    (176 GB checkpoint + drafter + image ~25 GB). Do NOT put the checkpoint on spark4 unless
-   cleanup first frees ≥210G — rotation decision is Victor's. Alternatives: run trial on
+   cleanup first frees ≥210G — rotation decision is the owner's. Alternatives: run trial on
    spark1+2+3-only is NOT possible (TP=4 needs 4 ranks); so spark4 cleanup or NFS-weights
    (our live lane already proves NFS-weights works) — prefer NFS weights from spark1/3, keeping
    spark4's payload to drafter+image (~28 GB).
@@ -49,13 +49,13 @@ Consumers must NOT be re-pointed during the trial. Live lane stays untouched and
   friction in mesh discovery / NCCL IB HCA pinning.
 - GPU memory: ~110 GiB free/Spark required at boot — lanes co-tenanted on nodes must be
   checked before launch (live glm53-tp4 holds the GPUs; trial runs ONLY while it is down,
-  which is itself an outage decision for Victor).
+  which is itself an outage decision for the owner).
 - DFlash2 license: CC BY-NC-ND 4.0 non-commercial (flagged in branch README). Our use is
   non-commercial; DRAFTER=mtp avoids the license if ever needed.
 - Benchmark trap (from our own lane history): GLM_LV_MODE=batch-uniform — a c1 benchmark
   with any concurrent consumer reads 1.6x low. Idle-gate on num_requests_running==0.
 
-## Decision point for Victor
+## Decision point for the owner
 
 The trial requires taking the live glm53-tp4 lane DOWN (same nodes, same GPUs). That is an
 outage of the model that serves this fleet's own profile. Recommended shape: a bounded window

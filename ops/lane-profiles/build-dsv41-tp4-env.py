@@ -151,7 +151,7 @@ def main():
         lines[live],
     )
 
-    # 2b-bis. THINKING, LANE-WIDE (Victor, 2026-10-17). Profile edit only — this
+    # 2b-bis. THINKING, LANE-WIDE (the owner, 2026-10-17). Profile edit only — this
     #     builder never restarts anything. Two independent switches are required:
     #       SGLANG_DEFAULT_THINKING=1 — SGLang's OpenAI path reads
     #           request.chat_template_kwargs["thinking"], else this env

@@ -1,0 +1,243 @@
+diff --git a/zig/src/families/ernie55/cuda_engine.zig b/zig/src/families/ernie55/cuda_engine.zig
+index 03f572f..01ba1fe 100644
+--- a/zig/src/families/ernie55/cuda_engine.zig
++++ b/zig/src/families/ernie55/cuda_engine.zig
+@@ -122,6 +122,49 @@ const SharedDraftEntry = struct {
+     }
+ };
+ 
++/// TF_ERNIE55_GRAPH_STATS=1: every 256 shared verifies, each rank logs how its shared verify and shared draft
++/// rounds ran (graph launch, eager, capture) by stream count, with the mean host-timed ms of each (verify and draft
++/// both end in a host sync, so the time is the round's GPU time plus its launch overhead). Off by default.
++const GraphStats = struct {
++    on: ?bool = null,
++    n: [2][max_parts + 1][3]u64 = @splat(@splat(@splat(0))), // [verify, draft][streams][launch, eager, capture]
++    ns: [2][max_parts + 1][3]u64 = @splat(@splat(@splat(0))),
++    verifies: u64 = 0,
++
++    fn enabled(g: *GraphStats) bool {
++        if (g.on) |o| return o;
++        const o = if (std.c.getenv("TF_ERNIE55_GRAPH_STATS")) |v| std.mem.eql(u8, std.mem.span(v), "1") else false;
++        g.on = o;
++        return o;
++    }
++
++    fn add(g: *GraphStats, io: std.Io, which: usize, kind: usize, t0: std.Io.Timestamp, streams: usize) void {
++        const d = t0.durationTo(std.Io.Timestamp.now(io, .awake));
++        const s = @min(streams, max_parts);
++        g.n[which][s][kind] += 1;
++        g.ns[which][s][kind] += if (d.nanoseconds > 0) @intCast(d.nanoseconds) else 0;
++        if (which == 0) {
++            g.verifies += 1;
++            if (g.verifies % 256 == 0) g.print();
++        }
++    }
++
++    fn print(g: *const GraphStats) void {
++        const names = [_][]const u8{ "verify", "draft" };
++        for (0..2) |w| for (1..max_parts + 1) |s| {
++            const c = g.n[w][s];
++            if (c[0] + c[1] + c[2] == 0) continue;
++            std.log.info("ernie55 graph stats: {s} streams={d} launch={d} ({d:.2} ms) eager={d} ({d:.2} ms) capture={d} ({d:.2} ms)", .{
++                names[w], s, c[0], meanMs(g.ns[w][s][0], c[0]), c[1], meanMs(g.ns[w][s][1], c[1]), c[2], meanMs(g.ns[w][s][2], c[2]),
++            });
++        };
++    }
++
++    fn meanMs(ns: u64, n: u64) f64 {
++        return if (n == 0) 0 else @as(f64, @floatFromInt(ns)) / @as(f64, @floatFromInt(n)) / 1e6;
++    }
++};
++
+ pub const Options = struct {
+     capacity: usize,
+     load_dspark: bool = true,
+@@ -151,8 +194,24 @@ pub const Engine = struct {
+     next_snap: u64 = 1,
+     dropped: std.ArrayList(u32) = .empty, // ids rank 0 freed, sent to the other ranks with the next step
+     shared_verify_graphs: [32]SharedVerifyEntry = @splat(.{}),
+-    shared_draft_graphs: [8]SharedDraftEntry = @splat(.{}),
++    shared_draft_graphs: [16]SharedDraftEntry = @splat(.{}), // 8 in use unless TF_ERNIE55_DRAFT_STAGE=1
+     graph_tick: u64 = 0,
++    gstats: GraphStats = .{},
++    draft_stage_on: ?bool = null,
++    draft_stage: ?cuda.DeviceBuffer = null, // max_parts staged DSpark ring sets (TF_ERNIE55_DRAFT_STAGE=1)
++
++    fn draftStageOn(e: *Engine) bool {
++        if (e.draft_stage_on) |o| return o;
++        const o = if (std.c.getenv("TF_ERNIE55_DRAFT_STAGE")) |v| std.mem.eql(u8, std.mem.span(v), "1") else false;
++        if (o) std.log.info("ernie55: shared drafts read staged rings, graphs keyed without slots (TF_ERNIE55_DRAFT_STAGE=1)", .{});
++        e.draft_stage_on = o;
++        return o;
++    }
++
++    fn draftStage(e: *Engine) !*const cuda.DeviceBuffer {
++        if (e.draft_stage == null) e.draft_stage = try cuda.DeviceBuffer.alloc(e.d, max_parts * dspark.num_layers * dspark.ring_cap * 512 * 2);
++        return &e.draft_stage.?;
++    }
+ 
+     pub fn init(gpa: std.mem.Allocator, io: std.Io, d: *const cuda.Driver, dir: []const u8, rank: usize, world: usize, o: Options) !*Engine {
+         const e = try gpa.create(Engine);
+@@ -220,6 +279,7 @@ pub const Engine = struct {
+         e.snaps.deinit(e.gpa);
+         e.dropped.deinit(e.gpa);
+         if (e.drafter) |*dr| dr.deinit();
++        if (e.draft_stage) |*b| b.free();
+         e.smp.deinit();
+         e.sc_dec.deinit();
+         e.sc_pf.deinit();
+@@ -502,6 +562,9 @@ pub const Engine = struct {
+     /// Like verify(), positions do not advance; each stream's keep() follows.
+     pub fn verifyMany(e: *Engine, parts: []const Part) !void {
+         if (parts.len == 0 or parts.len > max_parts) return error.BadParts;
++        const stats_t0: ?std.Io.Timestamp = if (e.gstats.enabled()) std.Io.Timestamp.now(e.io, .awake) else null;
++        var stats_kind: usize = 1;
++        defer if (stats_t0) |t0| e.gstats.add(e.io, 0, stats_kind, t0, parts.len);
+         var ids_i32: [window_rows]i32 = @splat(0);
+         var pos_i32: [window_rows]i32 = @splat(0);
+         var row_seg_i32: [window_rows]i32 = @splat(-1);
+@@ -601,12 +664,14 @@ pub const Engine = struct {
+             };
+             ent.tick = e.graph_tick;
+             if (ent.graph) |ge| {
++                stats_kind = 0;
+                 try ge.launchOn(e.stream);
+             } else if (!ent.warmed) {
+                 try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
+                 if (taps_out != 0) try e.k.stashTapsTab(e.stream, taps_out, e.sc_dec.row_seg, e.sc_dec.seg_tab, bucket_rows, tap_elems);
+                 ent.warmed = true;
+             } else {
++                stats_kind = 2;
+                 try cuda.graph.beginCapture(e.stream, .thread_local);
+                 try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
+                 if (taps_out != 0) try e.k.stashTapsTab(e.stream, taps_out, e.sc_dec.row_seg, e.sc_dec.seg_tab, bucket_rows, tap_elems);
+@@ -683,6 +748,9 @@ pub const Engine = struct {
+     /// Batched absorb + DSpark drafting across multiple concurrent streams (reads draft weights ONCE!).
+     pub fn blockMany(e: *Engine, parts: []const BlockPart) !void {
+         if (parts.len == 0 or parts.len > max_parts) return error.BadParts;
++        const stats_t0: ?std.Io.Timestamp = if (e.gstats.enabled()) std.Io.Timestamp.now(e.io, .awake) else null;
++        var stats_kind: usize = 3; // 3: no draft body ran this round (absorb only), not counted
++        defer if (stats_t0) |t0| if (stats_kind < 3) e.gstats.add(e.io, 1, stats_kind, t0, parts.len);
+         const dr = &(e.drafter orelse return error.NoDraftHead);
+         const r = e.runner();
+ 
+@@ -719,17 +787,37 @@ pub const Engine = struct {
+         }
+         if (n_abs > 0) try dr.absorbMany(&r, e.stream, &e.sc_pf, abs_items[0..n_abs]);
+         if (n_draft > 0) {
++            // TF_ERNIE55_DRAFT_STAGE=1: copy each drafting stream's DSpark rings into a fixed staging ring per batch
++            // position, so the shared draft graph reads the same addresses whatever slots draft (its key drops the
++            // slots). The draft reads exactly the values it read in place; what it writes into the staged rings
++            // (its own block) absorb rewrites from the target's taps before any later draft reads it.
++            const stage_on = e.draftStageOn();
++            var stage_caches: [max_parts]dspark.Caches = undefined;
++            if (stage_on) {
++                const stage = try e.draftStage();
++                const bytes = dspark.num_layers * dspark.ring_cap * 512 * 2;
++                for (0..n_draft) |di| {
++                    const src = draft_items[di].caches;
++                    std.debug.assert(src.buf.len >= bytes);
++                    stage_caches[di] = .{ .buf = .{ .d = e.d, .ptr = stage.ptr + di * bytes, .len = bytes, .borrowed = true }, .layer_bytes = src.layer_bytes };
++                    try e.d.check(e.d.api.cuMemcpyDtoDAsync_v2(stage_caches[di].buf.ptr, src.buf.ptr, bytes, e.stream.handle), "cuMemcpyDtoDAsync");
++                    draft_items[di].caches = &stage_caches[di];
++                }
++            }
+             const max_out = try dr.prepareDraftMany(&e.sc_pf, draft_items[0..n_draft]);
+             if (max_out > 0) {
+                 const can_graph = (e.group == null or e.group.?.fast != null) and e.w.share.heads == 16;
+                 if (can_graph) {
+                     var dkey: SharedDraftKey = .{ .np = @intCast(n_draft), .max_out = @intCast(max_out) };
+-                    for (0..n_draft) |di| dkey.slots[di] = @intCast(parts[draft_part_idx[di]].slot);
++                    if (!stage_on) {
++                        for (0..n_draft) |di| dkey.slots[di] = @intCast(parts[draft_part_idx[di]].slot);
++                    }
++                    const draft_cap: usize = if (stage_on) e.shared_draft_graphs.len else 8;
+                     e.graph_tick += 1;
+                     var slot_idx: ?usize = null;
+                     var lru_idx: usize = 0;
+                     var lru_tick: u64 = std.math.maxInt(u64);
+-                    for (&e.shared_draft_graphs, 0..) |*ent, ei| {
++                    for (e.shared_draft_graphs[0..draft_cap], 0..) |*ent, ei| {
+                         if (std.meta.eql(ent.key, dkey)) {
+                             slot_idx = ei;
+                             break;
+@@ -749,11 +837,14 @@ pub const Engine = struct {
+                     };
+                     ent.tick = e.graph_tick;
+                     if (ent.graph) |ge| {
++                        stats_kind = 0;
+                         try ge.launchOn(e.stream);
+                     } else if (!ent.warmed) {
++                        stats_kind = 1;
+                         try dr.launchDraftManyBody(&r, e.stream, &e.sc_pf, draft_items[0..n_draft], max_out);
+                         ent.warmed = true;
+                     } else {
++                        stats_kind = 2;
+                         try cuda.graph.beginCapture(e.stream, .thread_local);
+                         try dr.launchDraftManyBody(&r, e.stream, &e.sc_pf, draft_items[0..n_draft], max_out);
+                         var g = try cuda.graph.endCapture(e.stream);
+@@ -762,6 +853,7 @@ pub const Engine = struct {
+                         try ent.graph.?.launchOn(e.stream);
+                     }
+                 } else {
++                    stats_kind = 1;
+                     try dr.launchDraftManyBody(&r, e.stream, &e.sc_pf, draft_items[0..n_draft], max_out);
+                 }
+                 try dr.finishDraftMany(&r, e.stream, draft_items[0..n_draft]);
+diff --git a/zig/src/families/ernie55/cuda_forward.zig b/zig/src/families/ernie55/cuda_forward.zig
+index 80f49d4..939d281 100644
+--- a/zig/src/families/ernie55/cuda_forward.zig
++++ b/zig/src/families/ernie55/cuda_forward.zig
+@@ -38,6 +38,19 @@ pub fn decodeSlices(n: usize, k: usize) u32 {
+ /// One sequence's rows in a shared forward: its caches, its first row, its row count, its last position.
+ pub const Seg = struct { kv: *KvCache, row0: usize, n: usize, max_pos: usize, older_ceil: usize = 0 };
+ 
++/// TF_ERNIE55_IDX_SPLIT=<n>: a shared verify whose DSA indexer looks back n positions or more (its older bucket)
++/// splits the indexer's rows across the ranks: each rank scores and picks one block of rows, then the picks are
++/// all-gathered. A row's scores and picks are the same arithmetic as before; only who computes them changes.
++/// 0 or unset: every rank scores every row (as before).
++var idx_split_from: ?usize = null;
++fn idxSplitFrom() usize {
++    if (idx_split_from) |v| return v;
++    const v: usize = if (std.c.getenv("TF_ERNIE55_IDX_SPLIT")) |t| std.fmt.parseInt(usize, std.mem.span(t), 10) catch 0 else 0;
++    if (v > 0) std.log.info("ernie55: shared-verify DSA indexer rows split across ranks from {d} older positions (TF_ERNIE55_IDX_SPLIT)", .{v});
++    idx_split_from = v;
++    return v;
++}
++
+ pub const Runner = struct {
+     k: *const Kernels,
+     lane: *const Lane,
+@@ -603,8 +616,30 @@ pub const Runner = struct {
+ 
+             const w_scale: f32 = @floatCast(1.0 / (@sqrt(@as(f64, @floatFromInt(c.index_dim))) * @sqrt(@as(f64, @floatFromInt(c.index_heads)))));
+             if (rows * tm.max_older > @min(sc.max_rows, 64) * sc.capacity) return error.IndexerScoresTooSmall;
+-            try k.dsaIndexerScoresMmaTab(s, sc.idx_q, sc.idx_w, sc.positions, sc.idx_scores, sc.row_seg, sc.seg_tab, kv_li, layer_stride, rows, tm.max_older, c.sliding_window, w_scale);
+-            try k.dsaSelectTopkTab(s, sc.idx_scores, sc.positions, sc.idx_sel, sc.idx_cnt, sc.row_seg, sc.seg_tab, rows, tm.max_older, c.index_topk, c.sliding_window);
++            const split_from = idxSplitFrom();
++            const grp: ?*const Group = if (self.group) |g| (if (g.world > 1) g else null) else null;
++            if (grp != null and split_from > 0 and tm.max_older >= split_from and rows >= grp.?.world) {
++                const g = grp.?;
++                // rank r scores and picks rows [r * per, r * per + n); the picks go to a block past its own scores,
++                // then every rank's block is all-gathered into idx_sel in rank (= row) order. Counts: a row reads its
++                // picks only when pos + 1 > dense_width, and then its count is dense_width, so every row starts at
++                // dense_width and this rank's own rows take what the pick kernel writes.
++                const per = (rows + g.world - 1) / g.world;
++                const lo = @min(rows, g.rank * per);
++                const n = @min(rows - lo, per);
++                const picks = sc.idx_scores + per * tm.max_older * 4;
++                if (per * tm.max_older + per * dense_width > @min(sc.max_rows, 64) * sc.capacity) return error.IndexerScoresTooSmall;
++                const d = k.dsa_mod.d;
++                try d.check(d.api.cuMemsetD32Async(sc.idx_cnt, @intCast(dense_width), rows, s.handle), "cuMemsetD32Async");
++                if (n > 0) {
++                    try k.dsaIndexerScoresMmaTab(s, sc.idx_q + lo * c.index_heads * c.index_dim * 2, sc.idx_w + lo * c.index_heads * 2, sc.positions + lo * 4, sc.idx_scores, sc.row_seg + lo * 4, sc.seg_tab, kv_li, layer_stride, n, tm.max_older, c.sliding_window, w_scale);
++                    try k.dsaSelectTopkTab(s, sc.idx_scores, sc.positions + lo * 4, picks, sc.idx_cnt + lo * 4, sc.row_seg + lo * 4, sc.seg_tab, n, tm.max_older, c.index_topk, c.sliding_window);
++                }
++                try g.allGather(s, picks, sc.idx_sel, per * dense_width * 4);
++            } else {
++                try k.dsaIndexerScoresMmaTab(s, sc.idx_q, sc.idx_w, sc.positions, sc.idx_scores, sc.row_seg, sc.seg_tab, kv_li, layer_stride, rows, tm.max_older, c.sliding_window, w_scale);
++                try k.dsaSelectTopkTab(s, sc.idx_scores, sc.positions, sc.idx_sel, sc.idx_cnt, sc.row_seg, sc.seg_tab, rows, tm.max_older, c.index_topk, c.sliding_window);
++            }
+         }
+ 
+         const q_head = c.mla_qk_nope + c.mla_qk_rope;

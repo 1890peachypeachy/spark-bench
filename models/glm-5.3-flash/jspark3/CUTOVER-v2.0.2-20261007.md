@@ -12,7 +12,7 @@ tags:
 
 # jspark3 v2.0.2 live on GLM-5.3 TP3
 
-Cutover executed 2026-10-07 ~04:03Z on Victor's approval, replacing jspark3
+Cutover executed 2026-10-07 ~04:03Z on the owner's approval, replacing jspark3
 v2.0.1 (which had itself replaced Mia's TensorFold recipe on 2026-10-04).
 
 ## Lane identity (live-verified, not recalled)
@@ -188,7 +188,7 @@ Upstream's own `release/v2.0.2/ROOTCAUSE.md` and `LIMITATIONS.md` explain why:
 So this is a **self-reinforcing trap**, not a transient:
 
 1. Our agents RESUME long conversations (~155K contexts) rather than starting
-   new ones (Victor, 2026-10-07 — this is the demand shape that makes the
+   new ones (the owner, 2026-10-07 — this is the demand shape that makes the
    checkpoint store load-bearing in the first place).
 2. Resuming requires a persisted anchor.
 3. The writer only persists during >=0.5 s of true quiet.
@@ -279,7 +279,7 @@ sessions resident, which should reduce the `store-evicted` re-prefills as well a
 raise usable concurrency. Untested.
 
 Not changed, and must NOT be changed on the live lane: raising it requires a
-restart, so it needs a drained lane plus Victor's approval, and the GB10
+restart, so it needs a drained lane plus the owner's approval, and the GB10
 crash-forensics rule applies (an NVRM OOM wedges the node). The honest test is
 to raise the request on a drained lane and read back the
 `usable tokens (requested N)` line to discover the true ceiling empirically.
@@ -342,7 +342,7 @@ Notes and cautions:
   pool without needing a disk snapshot at all. That sidesteps the quiet-gate
   writer rather than fixing it. Must be measured, not assumed.
 - Raising `TF_GLM_POOL_TOKENS` requires a lane restart. Needs a drained window
-  and Victor's approval. Verify after start by reading
+  and the owner's approval. Verify after start by reading
   `GLM shared token pool: N usable tokens (requested N)` — if usable < requested
   the engine clamped and the real ceiling is lower than this math.
 
@@ -370,7 +370,7 @@ and 429 + Retry-After capacity refusals.
 
 ## APPLIED 2026-10-07 07:31-07:45 PDT: pool raised 360,448 -> 786,432 (3x context)
 
-Victor approved step 1 (explicitly NOT the max). Done on an idle lane.
+The owner approved step 1 (explicitly NOT the max). Done on an idle lane.
 
 Change: `config/serve.env:42` `TF_GLM_POOL_TOKENS=360448` -> `786432` on ALL
 THREE ranks. That file is the only sanctioned source — `scripts/lib.sh:178-197`

@@ -13,7 +13,7 @@ LINES = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
 OUT = "/home/jun/tf4/logs/prefill-200k-prompt.txt"
 
 vocab = ("alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima "
-         "mike november oscar papa quebec romeo sierra tango uniform victor whiskey "
+         "mike november oscar papa quebec romeo sierra tango uniform the owner whiskey "
          "xray yankee zulu amber basalt cedar dune ember flint granite hazel ivory "
          "jasper kelp lantern marble nimbus onyx pebble quartz ridge slate thistle "
          "umber verdant willow xenon yarrow zinc acorn birch cirrus dew elder fern "

@@ -1,6 +1,6 @@
 # GLM-5.3-Flash LVKP-S-L2 TP4 — output corruption under concurrency (2026-09-28)
 
-**Status:** reproduced, root cause NOT isolated. Lane taken down by Victor; rotated to the
+**Status:** reproduced, root cause NOT isolated. Lane taken down by the owner; rotated to the
 known-good EXL3 TP3 lane.
 
 **Lane:** `glm53-lvkp-s-l2-r{0..3}`, TP4, rank0 on spark3, port 8888, up ~9h at time of report.
@@ -9,7 +9,7 @@ Recipe: `1890peachypeachy/GLM-5.3-Flash-4x-DGX-Spark-TP4`, accepted profile **LV
 
 ## Symptom
 
-Agent-facing output degenerates into a repeated-token run mid-response. Victor's report: a
+Agent-facing output degenerates into a repeated-token run mid-response. The owner's report: a
 minion triage answer that collapsed into `lock` repeated several hundred times after an
 initially coherent paragraph. The corruption is **silent** — HTTP 200, `finish_reason=stop`,
 no error in logs. Downstream consumers cannot tell the output is bad.

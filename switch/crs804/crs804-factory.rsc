@@ -1,10 +1,10 @@
 # 2026-09-02 10:27:39 by RouterOS 7.24.2
-# software id = 63WI-1DTC
+# software id = <redacted>
 #
 # model = CRS804-4DDQ
-# serial number = HN90BS1PW7K
+# serial number = <redacted>
 /interface bridge
-add admin-mac=38:32:7A:94:C4:5F auto-mac=no comment=defconf name=bridge
+add admin-mac=<redacted> auto-mac=no comment=defconf name=bridge
 /interface bridge port
 add bridge=bridge comment=defconf interface=ether1
 add bridge=bridge comment=defconf interface=ether2

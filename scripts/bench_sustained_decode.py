@@ -3,7 +3,7 @@
 
 Holds N agents in CONTINUOUS sustained decode simultaneously (long prose/code outputs,
 no idle gaps between turns), measuring per-agent and aggregate accepted tok/s.
-This is Victor's real workload: 3-4 tool-calling agents generating continuously.
+This is the owner's real workload: 3-4 tool-calling agents generating continuously.
 
 Usage:
   python3 bench_sustained_decode.py --endpoint http://HOST:8001/v1 --model glm-5.3-flash \

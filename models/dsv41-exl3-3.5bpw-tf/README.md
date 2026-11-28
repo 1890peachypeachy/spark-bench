@@ -7,7 +7,7 @@ Weights: LibertAIDAI/DeepSeek-V4.1-Flash-1017-EXL3-3.5bpw @ 04a492fc (239.95 GiB
 NOTE: the v0.3.5 recipe is benchmarked on bertholomus 4.0bpw. 3.5bpw on this engine is not a documented combination;
 it booted and passed chat/math/tool-call here (2026-10-24).
 
-Same endpoint and name as before so Hermes needs no change: http://100.99.120.29:8888/v1, GLM-5.3-Flash-EXL3. Context capped 262144 (Victor).
+Same endpoint and name as before so Hermes needs no change: http://100.99.120.29:8888/v1, GLM-5.3-Flash-EXL3. Context capped 262144 (the owner).
 Rank order: 0=spark3 (10.73.0.3) 1=spark4 2=spark1 3=spark2. Both rails: rocep1s0f1+roceP2p1s0f1, RoCE v2 GID index 3.
 
 Measured 2026-10-24 (temperature 0, 400 tokens): 1 stream 74.0 tok/s; 4 streams 180.8 tok/s aggregate (45.6 each).

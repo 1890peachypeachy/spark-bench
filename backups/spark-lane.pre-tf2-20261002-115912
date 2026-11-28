@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spark-lane — ONE-SHOT bring-up / teardown / rotation for the lanes on Victor's DGX Spark fleet.
+# spark-lane — ONE-SHOT bring-up / teardown / rotation for the lanes on the owner's DGX Spark fleet.
 #
 # Written to be followed by ANY model, including one with no judgement and no fleet
 # knowledge: it checks the fleet itself, refuses to clobber a running lane, verifies

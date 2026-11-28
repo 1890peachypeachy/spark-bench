@@ -56,5 +56,5 @@ Per-kind (from per-case JSONs in `results_graded/`):
   speed improved +20-45% (commit 64543c9). No reason to keep v4/hibrid47 primary; rollback
   images remain on both nodes.
 - **GLM EXL3 default-routing: numbers support parity-within-1-point** (28 vs 29) with 1M-class
-  context vs 262k. Decision stays with Victor (per 1:1 section 3); this run is the gate data
+  context vs 262k. Decision stays with the owner (per 1:1 section 3); this run is the gate data
   Peachy's hold asked for.

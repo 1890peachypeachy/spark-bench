@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# spark-lane — ONE-SHOT bring-up / teardown / rotation for the lanes on Victor's DGX Spark fleet.
+# spark-lane — ONE-SHOT bring-up / teardown / rotation for the lanes on the owner's DGX Spark fleet.
 #
 # Written to be followed by ANY model, including one with no judgement and no fleet
 # knowledge: it checks the fleet itself, refuses to clobber a running lane, verifies
@@ -22,7 +22,7 @@
 #   comfy-engine      spark2        ComfyUI (music/image/design/video) -> :8188 (no LLM lane)
 #   dsv41-tp3         spark1,3,4    DeepSeek V4.1-Flash TP3  -> :8888/v1 (served as GLM-5.3-Flash-EXL3)
 #   dsv41-tp4         spark1-4      DeepSeek V4.1-Flash TP4  -> :8888/v1 (served as GLM-5.3-Flash-EXL3; Mia's fast line)
-# NOTE 2026-10-12: dsv41 lanes are PARKED-INVENTORY per Victor 2026-10-05 (GLM = main).
+# NOTE 2026-10-12: dsv41 lanes are PARKED-INVENTORY per the owner 2026-10-05 (GLM = main).
 # Not an open decision; restore only on explicit request. See GBrain
 # dsv41-g19-lane-parked-inventory.
 #   glm53-tp3         spark1,3,4    GLM-5.3-Flash EXL3 TP3   -> :8888/v1 (TensorFold engine, v1.5, CONTAINER glm53-tf3)
@@ -42,7 +42,7 @@
 set -uo pipefail
 
 # ── stable identity ──────────────────────────────────────────────────────────
-# 2026-10-13 (Victor): DeepSeek lanes now share the GLM lanes' endpoint AND served name (:8888, GLM-5.3-Flash-EXL3)
+# 2026-10-13 (the owner): DeepSeek lanes now share the GLM lanes' endpoint AND served name (:8888, GLM-5.3-Flash-EXL3)
 # so GBrain/profile configs never change when the model behind it is swapped. Lanes stay mutually exclusive.
 # Previously http://100.99.120.29:8000/v1 + deepseek-v4.1-flash. The name no longer tells you which model answers.
 DSV41_ENDPOINT="${DSV41_ENDPOINT:-http://100.99.120.29:8888/v1}"
@@ -98,20 +98,20 @@ GLM53_TP3_KIT="/home/spark3/GLM53-TF3"
 # the head, container glm53-tf4, workers spark1+spark2+spark4 (scripts/local.sh WORKER/2/3),
 # weights over NFS from spark3's dsv41-nfs export. See spark-bench
 # models/glm-5.3-flash/tensorfold-tp4-trial/CUTOVER-2026-10-10.md.
-# The pre-repoint knapcio/vLLM stack was DELETED 2026-10-10 (Victor's call, ~203G freed):
+# The pre-repoint knapcio/vLLM stack was DELETED 2026-10-10 (the owner's call, ~203G freed):
 # containers glm53-alignfix-20260929-r0..r3 rm'd, image glm53-roce:v11-b58f34ea rmi'd on
 # all 4 nodes (+ ghcr base on spark1), kit /var/tmp/glm53-recipe-tp4 and weights
 # /var/tmp/models/glm-quant-mix + nvidia/GLM-5.3-Flash-NVFP4 removed on spark3.
 # Kit + qmix plan archived at spark-bench backups/old-tp4-deleted-20261010/. NVFP4 base is
 # re-downloadable (nvidia/GLM-5.3-Flash-NVFP4, public); overlay rebuild documented in
 # glm53-flash-nvfp4-4x-dspark-recipe runs/2026-09-29-knapcio-stack/RUNBOOK.md.
-# glm53-tp4 dense weights: DENSE=fp8 since 2026-10-13 (Victor), set in the kit's scripts/local.sh
+# glm53-tp4 dense weights: DENSE=fp8 since 2026-10-13 (the owner), set in the kit's scripts/local.sh
 # (config.sh sources it; default is q4). Verify: docker exec glm53-tf4 env | grep TF_GLM_DENSE.
 # Mia: q4 ~+14% prose decode over fp8 (44.4 vs 38.9 tok/s); fp8 is higher fidelity. A/B pending.
 GLM53_TP4_TF_HEAD="spark3"
 GLM53_TP4_TF_KIT="/var/tmp/glm53-tf4-trial"
 GLM53_TP4_ENV=".env"
-# glm53-gr8 added 2026-10-13 (Victor): kindlingai/gr8 f4d1d4e, full GLM-5.3 exlr8 3.25bpw, TP=4, docker compose per
+# glm53-gr8 added 2026-10-13 (the owner): kindlingai/gr8 f4d1d4e, full GLM-5.3 exlr8 3.25bpw, TP=4, docker compose per
 # node at $GLM53_GR8_DIR (docker/.env + docker/compose.override.yaml: PORT=8888, PEERS spark3-first, front-wrap.sh
 # so the front end ALSO answers to GLM-5.3-Flash-EXL3). Weights are LOCAL per node (no NFS):
 # /var/tmp/gr8/cache (~86G/node). Context 310,514 tokens; thinking cannot be disabled (use reasoning_effort).
@@ -1496,7 +1496,7 @@ glm53_tp4_core_down() {
 # Two variants of the SAME TensorFold TP4 kit/container (glm53-tf4); they exclude each other.
 #   glm53-tp4        standard weights Mia-AiLab/GLM-5.3-Flash-EXL3-4bpw-TensorFold   (ABLIT=0)
 #   glm53-tp4-ablit  Ablit weights   ...-TensorFold-Ablit                             (ABLIT=1)
-# Both think at the template default (max) via THINKING=1 in the kit's local.sh. Added 2026-10-13 (Victor).
+# Both think at the template default (max) via THINKING=1 in the kit's local.sh. Added 2026-10-13 (the owner).
 glm53_tp4_up()        { glm53_tp4_core_up glm53-tp4; }
 glm53_tp4_down()      { glm53_tp4_core_down glm53-tp4; }
 glm53_tp4_ablit_up()  { glm53_tp4_core_up glm53-tp4-ablit; }

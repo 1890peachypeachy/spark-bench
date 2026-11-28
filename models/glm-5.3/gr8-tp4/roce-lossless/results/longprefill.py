@@ -6,7 +6,7 @@ import json, sys, threading, time, urllib.request, random
 K, C = int(sys.argv[1]), int(sys.argv[2])
 base = "http://100.99.120.29:8888/v1/chat/completions"
 words = ("alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango "
-         "uniform victor whiskey xray yankee zulu fabric tensor queue packet kernel buffer switch rank decode prefill cache latent").split()
+         "uniform the owner whiskey xray yankee zulu fabric tensor queue packet kernel buffer switch rank decode prefill cache latent").split()
 res = [None] * C
 
 

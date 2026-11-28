@@ -1,17 +1,17 @@
 # sparkDash Lane-Control Switches — Spec
 
-Status: DRAFT rev3 (multi-select + co-tenancy gates) for Victor review · 2026-09-26
+Status: DRAFT rev3 (multi-select + co-tenancy gates) for the owner review · 2026-09-26
 Owner: Spark
 Depends on: `spark-lane` harness (`~/recipe-db/spark-bench/ops/spark-lane`), proven
 working end-to-end 2026-09-26 (all 4 lanes boot + verify + tear down).
 
-**rev3 decisions (Victor, 2026-09-26):** Overview panel only. Registered lanes,
+**rev3 decisions (the owner, 2026-09-26):** Overview panel only. Registered lanes,
 more added over time. **Multi-select, gated by node-disjointness** (see §2.5 — this
 is the core of rev3). Token gate: tailnet-only, no extra password (consistent with
 the existing power buttons). Confirm: simple dialog for a single lane, type-to-confirm
 for the production lane.
 
-**rev2 change:** Victor does not want rotation. The unit of control is a plain
+**rev2 change:** the owner does not want rotation. The unit of control is a plain
 **up / down switch per lane**. The user decides what comes down and what goes up.
 No prescribed sequence, no automatic parking, no end-lane. This removes the entire
 class of rotation-ordering bugs; there is no ordering left to get wrong.
@@ -71,7 +71,7 @@ Node requirements (authority: `spark-lane lane_nodes()`):
 | `glm53-tp3` | spark1, spark3, spark4 | **collides with dsv41-tp3** (same nodes) |
 | `dsv41-tp4` | spark1, spark2, spark3, spark4 | **owns every node → only up alone** |
 
-Worked examples (Victor's, verbatim in effect):
+Worked examples (the owner's, verbatim in effect):
 
 | selection | node sets | verdict |
 |---|---|---|
@@ -164,7 +164,7 @@ concurrent up/down operations can wedge the fleet. One active job at a time, per
 
 Design notes:
 - `verb` ∈ `["up","down","verify"]`. **No `rotate`, no `endLane`.**
-- **Cancel returns the fleet to a FREE state** (Victor, rev4). Cancelling SIGTERMs the
+- **Cancel returns the fleet to a FREE state** (the owner, rev4). Cancelling SIGTERMs the
   running step, then takes back down whatever the job brought up (`up` for a batch,
   `lane` for a plain up), excluding what it was itself tearing down. The undo runs
   inside the job, so it stays within the fleet-wide single-flight. Lanes already up
@@ -262,7 +262,7 @@ Per-lane controls:
 - **Cancel running job** — SIGTERM the current step, then undo: whatever the job
   brought up is taken back down, so those nodes end up **free** rather than
   half-swapped. See §4.2.
-- **Put up on a lane that is already up** — stays up and says nothing (Victor, rev4):
+- **Put up on a lane that is already up** — stays up and says nothing (the owner, rev4):
   no warning, no error, the job just reports success. Do not add a guard for it.
 
 The gate is recomputed live as boxes are ticked, so you can *see* that
@@ -422,7 +422,7 @@ The switches are "done" only when, from the UI on a live fleet:
 
 ---
 
-## 9. Decisions (resolved by Victor, 2026-09-26)
+## 9. Decisions (resolved by the owner, 2026-09-26)
 
 1. **Token gate** — **tailnet-only, no extra password.** Consistent with the existing
    power buttons. (No wider exposure without fresh approval; still revisit if the

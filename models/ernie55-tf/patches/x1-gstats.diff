@@ -1,0 +1,120 @@
+diff --git a/zig/src/families/ernie55/cuda_engine.zig b/zig/src/families/ernie55/cuda_engine.zig
+index 03f572f..95ff963 100644
+--- a/zig/src/families/ernie55/cuda_engine.zig
++++ b/zig/src/families/ernie55/cuda_engine.zig
+@@ -122,6 +122,49 @@ const SharedDraftEntry = struct {
+     }
+ };
+ 
++/// TF_ERNIE55_GRAPH_STATS=1: every 256 shared verifies, each rank logs how its shared verify and shared draft
++/// rounds ran (graph launch, eager, capture) by stream count, with the mean host-timed ms of each (verify and draft
++/// both end in a host sync, so the time is the round's GPU time plus its launch overhead). Off by default.
++const GraphStats = struct {
++    on: ?bool = null,
++    n: [2][max_parts + 1][3]u64 = @splat(@splat(@splat(0))), // [verify, draft][streams][launch, eager, capture]
++    ns: [2][max_parts + 1][3]u64 = @splat(@splat(@splat(0))),
++    verifies: u64 = 0,
++
++    fn enabled(g: *GraphStats) bool {
++        if (g.on) |o| return o;
++        const o = if (std.c.getenv("TF_ERNIE55_GRAPH_STATS")) |v| std.mem.eql(u8, std.mem.span(v), "1") else false;
++        g.on = o;
++        return o;
++    }
++
++    fn add(g: *GraphStats, io: std.Io, which: usize, kind: usize, t0: std.Io.Timestamp, streams: usize) void {
++        const d = t0.durationTo(std.Io.Timestamp.now(io, .awake));
++        const s = @min(streams, max_parts);
++        g.n[which][s][kind] += 1;
++        g.ns[which][s][kind] += if (d.nanoseconds > 0) @intCast(d.nanoseconds) else 0;
++        if (which == 0) {
++            g.verifies += 1;
++            if (g.verifies % 256 == 0) g.print();
++        }
++    }
++
++    fn print(g: *const GraphStats) void {
++        const names = [_][]const u8{ "verify", "draft" };
++        for (0..2) |w| for (1..max_parts + 1) |s| {
++            const c = g.n[w][s];
++            if (c[0] + c[1] + c[2] == 0) continue;
++            std.log.info("ernie55 graph stats: {s} streams={d} launch={d} ({d:.2} ms) eager={d} ({d:.2} ms) capture={d} ({d:.2} ms)", .{
++                names[w], s, c[0], meanMs(g.ns[w][s][0], c[0]), c[1], meanMs(g.ns[w][s][1], c[1]), c[2], meanMs(g.ns[w][s][2], c[2]),
++            });
++        };
++    }
++
++    fn meanMs(ns: u64, n: u64) f64 {
++        return if (n == 0) 0 else @as(f64, @floatFromInt(ns)) / @as(f64, @floatFromInt(n)) / 1e6;
++    }
++};
++
+ pub const Options = struct {
+     capacity: usize,
+     load_dspark: bool = true,
+@@ -153,6 +196,7 @@ pub const Engine = struct {
+     shared_verify_graphs: [32]SharedVerifyEntry = @splat(.{}),
+     shared_draft_graphs: [8]SharedDraftEntry = @splat(.{}),
+     graph_tick: u64 = 0,
++    gstats: GraphStats = .{},
+ 
+     pub fn init(gpa: std.mem.Allocator, io: std.Io, d: *const cuda.Driver, dir: []const u8, rank: usize, world: usize, o: Options) !*Engine {
+         const e = try gpa.create(Engine);
+@@ -502,6 +546,9 @@ pub const Engine = struct {
+     /// Like verify(), positions do not advance; each stream's keep() follows.
+     pub fn verifyMany(e: *Engine, parts: []const Part) !void {
+         if (parts.len == 0 or parts.len > max_parts) return error.BadParts;
++        const stats_t0: ?std.Io.Timestamp = if (e.gstats.enabled()) std.Io.Timestamp.now(e.io, .awake) else null;
++        var stats_kind: usize = 1;
++        defer if (stats_t0) |t0| e.gstats.add(e.io, 0, stats_kind, t0, parts.len);
+         var ids_i32: [window_rows]i32 = @splat(0);
+         var pos_i32: [window_rows]i32 = @splat(0);
+         var row_seg_i32: [window_rows]i32 = @splat(-1);
+@@ -601,12 +648,14 @@ pub const Engine = struct {
+             };
+             ent.tick = e.graph_tick;
+             if (ent.graph) |ge| {
++                stats_kind = 0;
+                 try ge.launchOn(e.stream);
+             } else if (!ent.warmed) {
+                 try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
+                 if (taps_out != 0) try e.k.stashTapsTab(e.stream, taps_out, e.sc_dec.row_seg, e.sc_dec.seg_tab, bucket_rows, tap_elems);
+                 ent.warmed = true;
+             } else {
++                stats_kind = 2;
+                 try cuda.graph.beginCapture(e.stream, .thread_local);
+                 try r.forwardSegsTab(e.stream, any_sparse, max_older, &e.sc_dec, bucket_rows, taps_out);
+                 if (taps_out != 0) try e.k.stashTapsTab(e.stream, taps_out, e.sc_dec.row_seg, e.sc_dec.seg_tab, bucket_rows, tap_elems);
+@@ -683,6 +732,9 @@ pub const Engine = struct {
+     /// Batched absorb + DSpark drafting across multiple concurrent streams (reads draft weights ONCE!).
+     pub fn blockMany(e: *Engine, parts: []const BlockPart) !void {
+         if (parts.len == 0 or parts.len > max_parts) return error.BadParts;
++        const stats_t0: ?std.Io.Timestamp = if (e.gstats.enabled()) std.Io.Timestamp.now(e.io, .awake) else null;
++        var stats_kind: usize = 3; // 3: no draft body ran this round (absorb only), not counted
++        defer if (stats_t0) |t0| if (stats_kind < 3) e.gstats.add(e.io, 1, stats_kind, t0, parts.len);
+         const dr = &(e.drafter orelse return error.NoDraftHead);
+         const r = e.runner();
+ 
+@@ -749,11 +801,14 @@ pub const Engine = struct {
+                     };
+                     ent.tick = e.graph_tick;
+                     if (ent.graph) |ge| {
++                        stats_kind = 0;
+                         try ge.launchOn(e.stream);
+                     } else if (!ent.warmed) {
++                        stats_kind = 1;
+                         try dr.launchDraftManyBody(&r, e.stream, &e.sc_pf, draft_items[0..n_draft], max_out);
+                         ent.warmed = true;
+                     } else {
++                        stats_kind = 2;
+                         try cuda.graph.beginCapture(e.stream, .thread_local);
+                         try dr.launchDraftManyBody(&r, e.stream, &e.sc_pf, draft_items[0..n_draft], max_out);
+                         var g = try cuda.graph.endCapture(e.stream);
+@@ -762,6 +817,7 @@ pub const Engine = struct {
+                         try ent.graph.?.launchOn(e.stream);
+                     }
+                 } else {
++                    stats_kind = 1;
+                     try dr.launchDraftManyBody(&r, e.stream, &e.sc_pf, draft_items[0..n_draft], max_out);
+                 }
+                 try dr.finishDraftMany(&r, e.stream, draft_items[0..n_draft]);

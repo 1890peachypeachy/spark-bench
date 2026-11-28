@@ -11,7 +11,7 @@
    "tier": 1,
    "ok": true,
    "latency_s": 38.02,
-   "output": "{\"commitments\": [{\"owner\": \"Victor\", \"deadline\": \"Wednesday\"}, {\"owner\": \"The team\", \"deadline\": \"Friday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}",
+   "output": "{\"commitments\": [{\"owner\": \"the owner\", \"deadline\": \"Wednesday\"}, {\"owner\": \"The team\", \"deadline\": \"Friday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}",
    "prompt_tokens": 91,
    "completion_tokens": 715,
    "tok_s": 18.81,

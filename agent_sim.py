@@ -2,7 +2,7 @@
 """
 GLM NVFP4 vs EXL3 — Hermes agent-turn head-to-head harness.
 
-Replicates how Victor actually drives the Hermes agents (mined from last-2-weeks
+Replicates how the owner actually drives the Hermes agents (mined from last-2-weeks
 usage): 1-3 concurrent agents, thinking-low, tool-call loops that grow context
 across turns, long-context reads with follow-ups, and a structured/code/prose
 output mix. Runs the SAME scenario file against both lanes so the numbers are
@@ -13,7 +13,7 @@ Design notes (from usage mining 2026-09-04):
 - GLM agents are capped at 256K (root model_overrides spark-glm53). We test to 250K.
 - Dominant pattern = tool-call loop (decide -> call tool -> get result -> continue),
   which grows context turn over turn and stresses prefix-cache reuse.
-- Pain that pushed Victor off DeepSeek: stream-stale 900s kills at 371-441K ctx.
+- Pain that pushed the owner off DeepSeek: stream-stale 900s kills at 371-441K ctx.
   So we also time LONG generations to catch stalls, not just steady-state tok/s.
 - 'Thinking low' is the agent regime.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Idle-window experiment chain for the shared :8888 lane (Victor's live agents use it).
+# Idle-window experiment chain for the shared :8888 lane (live agents use it).
 #  - waits until the lane has served NO request for IDLE_MIN minutes (request counter frozen, nothing running);
 #  - runs one experiment; if foreign requests arrive during it (counter delta beyond the bench's own), marks it
 #    CONTAMINATED and waits for the next idle window before re-running it (max 2 tries);
@@ -27,29 +27,36 @@ wait_idle() { # $1 minutes of no traffic
 }
 
 run_one() { # name -> 0 clean, 2 contaminated, 1 failed
-  local name=$1 c0 c1 exp_n
-  c0=$(count)
+  local name=$1 c1 exp_n
   if [[ " ${PROFILE_EXPS:-} " == *" $name "* ]]; then
     bash $HC/prof_run.sh "$name" > $HC/logs/$name.tmux.log 2>&1 || return 1
-    exp_n=8      # warm 1 + dec1 2 + dec4 4 + pre16k 1
-  else
-    SKIP_LONG=${SKIP_LONG:-1} bash $HC/run_exp.sh "$name" > $HC/logs/$name.tmux.log 2>&1 || return 1
-    exp_n=71     # measured: a clean SKIP_LONG run (e1a) finishes exactly 71 requests
+    grep -q "LAUNCH_FAILED" $HC/logs/$name.tmux.log && return 1
+    exp_n=$(grep -E '^EXP_N=' $HC/exps/$name.env | cut -d= -f2)
+    exp_n=${exp_n:-8}      # prof_drive.py: warm 1 + dec1 2 + dec4 4 + pre16k 1
+    c1=$(count)
+    r1=$(metric tensorfold:requests_running); r1=${r1%.*}
+    # the launch restarts the server (counter resets to 0), so the post-run count IS the run's own request count
+    if [ -n "$c1" ] && { [ "$c1" -gt "$exp_n" ] || [ "${r1:-0}" != 0 ]; }; then say "$name CONTAMINATED: $c1 requests (expected $exp_n), $r1 running"; return 2; fi
+    say "$name clean: $c1 requests"; return 0
   fi
-  c1=$(count)
-  r1=$(metric tensorfold:requests_running); r1=${r1%.*}
-  # the launch restarts the server (counter resets to 0), so the post-run count IS the run's own request count
-  if [ -n "$c1" ] && { [ "$c1" -gt "$exp_n" ] || [ "${r1:-0}" != 0 ]; }; then say "$name CONTAMINATED: $c1 requests (expected $exp_n), $r1 running"; return 2; fi
-  say "$name clean: $c1 requests"; return 0
+  bash $HC/run_exp.sh "$name" > $HC/logs/$name.tmux.log 2>&1 || return 1
+  grep -q "LAUNCH_FAILED" $HC/logs/$name.tmux.log && return 1
+  # run_exp.sh checks every phase's own request count against the server's and writes results/<name>/contaminated
+  if [ -f $HC/results/$name/contaminated ]; then say "$name CONTAMINATED: $(head -1 $HC/results/$name/contaminated)"; return 2; fi
+  say "$name clean"; return 0
 }
 
-say "chain start: $* (idle window ${IDLE_MIN} min)"
+say "chain start: $* (idle window ${IDLE_MIN} min, ${IDLE_NEXT:-3} min after a clean run)"
+need=$IDLE_MIN
 for name in "$@"; do
   for try in 1 2; do
-    wait_idle "$IDLE_MIN" || { say "aborted before $name"; break 2; }
+    wait_idle "$need" || { say "aborted before $name"; break 2; }
     say "running $name (try $try)"
     run_one "$name"; rc=$?
-    [ $rc = 0 ] && break
+    # a clean run just showed the lane idle for its whole length, so the next one needs only a short quiet check;
+    # foreign traffic (contamination) or a failure goes back to the full window
+    if [ $rc = 0 ]; then need=${IDLE_NEXT:-3}; break; fi
+    need=$IDLE_MIN
     [ $rc = 1 ] && { say "$name FAILED"; break; }
     mv $HC/results/$name $HC/results/$name.contaminated.$try 2>/dev/null || true
   done

@@ -2,8 +2,8 @@
 
 **Author:** Spark · **Date:** 2026-09-05 · **Status:** PLAN — execute read-only on the live NVFP4 lane, then decide knobs.
 
-> Grounds Victor's "3–4 agents at 400K ctx, mixed thinking, no OOM" goal in a
-> measurement BEFORE any weight/flag change. Written down because Victor does not
+> Grounds the owner's "3–4 agents at 400K ctx, mixed thinking, no OOM" goal in a
+> measurement BEFORE any weight/flag change. Written down because the owner does not
 > trust memory (correctly — past reads drifted). Facts below were re-verified live
 > on 2026-09-05, not recalled.
 
@@ -62,7 +62,7 @@ per-step cost on this lane. If decode were the wall, EXL3 would have won.
 ## 4. The single discriminating profile
 
 Read-only, no restart, on the live idle NVFP4 lane. Use the existing
-`agent_sim.py` harness (matches how Victor drives agents; measures per-turn
+`agent_sim.py` harness (matches how the owner drives agents; measures per-turn
 TTFT, decode, wall, and prefix-cache `cached_tokens`).
 
 **Scenario battery per agent (agent_sim `full`):**
@@ -196,7 +196,7 @@ edge effect near 400K×3. Levers = **prefill throughput** (FP8 / prefill kernels
 
 ## Execution log — (a) window/seq relaunch (2026-09-05)
 
-**Decision (Victor):** (a) run now, 480K ctx + seq 12; then (b) FP8 trial. Pull FP8 weights on spark2 in parallel.
+**Decision (the owner):** (a) run now, 480K ctx + seq 12; then (b) FP8 trial. Pull FP8 weights on spark2 in parallel.
 
 **spark4 disk cleanup (approved):** removed EXL3 duplicate (164G, verified identical on spark2/3), Qwen 27B leftover (23G), stale sglang/exl3/runtime docker images (~120G). spark4: 158G→**366G free**. Live topkfix lane untouched.
 

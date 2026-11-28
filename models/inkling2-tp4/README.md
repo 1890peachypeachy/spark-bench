@@ -8,5 +8,5 @@ Run: cd ~/recipe-db/inkling2-sparks/recipe/inkling2-tp4 && bash setup.sh <this d
 Rollback: `setup.sh ... stop`, then `spark-lane up glm53-tp4`.
 Result 2026-11-23: boot 48s, SMOKE PASS, oracle: 1 near-tie departure (tool_call, informational). Single samples: code 88 tok/s, prose 38 tok/s, 10.4k prompt TTFT 6.1s. Not the recipe's 200G numbers.
 
-Context: CONTEXT=262144 (256k, Victor 2026-11-23) -> 4 streams (rank0 log: 4 whole contexts fit); MAX_STREAMS=4 default.
+Context: CONTEXT=262144 (256k, the owner 2026-11-23) -> 4 streams (rank0 log: 4 whole contexts fit); MAX_STREAMS=4 default.
 Registered in ops/spark-lane as lane `inkling2-tp4` (up|down|verify|rotate; host-process census via pgrep pseudo-container; exclusive). Backup: ops/spark-lane.bak-20261124T055455Z.

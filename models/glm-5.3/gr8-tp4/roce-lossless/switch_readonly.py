@@ -4,7 +4,7 @@ process and is redacted from anything printed. Output: a compact summary + raw J
 import base64, json, os, subprocess, sys, urllib.request, urllib.error
 
 HOST = sys.argv[1] if len(sys.argv) > 1 else "192.168.0.213"
-BW = "/Users/agent/.hermes/bin/vaultwarden-victor-bw"
+BW = "/Users/agent/.hermes/bin/vaultwarden-bw"
 OUT = os.path.expanduser("~/.hermes/profiles/spark/cache/scratch/switch_audit")
 os.makedirs(OUT, exist_ok=True)
 

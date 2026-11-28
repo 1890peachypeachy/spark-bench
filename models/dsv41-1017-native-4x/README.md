@@ -13,7 +13,7 @@ Staged on spark3: `/var/tmp/dsv41-native-recipe/`
 | Model | DeepSeek-V4.1-Flash-1017 **EXL3 3.5bpw** (LibertAI/tonyd2wild) | DeepSeek-V4.1-Flash-1017 **native FP8 / MXFP4**, DeepSeek's own release |
 | Engine | TensorFold v0.3.5 (`0a0b69a5`) + patches 0003/0004, from tonyd2wild recipe | TensorFold `5940208` + **25 Mia patches** (0001-0025) |
 | Served name | `GLM-5.3-Flash-EXL3` | `GLM-5.3-Flash-EXL3` (deliberately identical — Hermes needs no change) |
-| Context | 262,144 | 262,144 (recipe default is 1,048,576; Victor's standing 256K constraint) |
+| Context | 262,144 | 262,144 (recipe default is 1,048,576; the owner's standing 256K constraint) |
 | Vision / video | no | **yes** — image_url + video_url, vision tower on rank 0 |
 | DSpark drafts | no | **yes** — checkpoint's own draft blocks |
 | Weight location | local NVMe per node (`/var/tmp/tf1017`, NFS to spark4) | NFS from spark3 (`/var/tmp/models`, export `dsv41-nfs`) |
@@ -37,7 +37,7 @@ HF_CACHE=/var/tmp/models            # holds hub/, so the snapshot is found in pl
 NFS_PATH=/export                    # dsv41-nfs export root
 SERVED_NAME=GLM-5.3-Flash-EXL3
 PORT=8888
-CONTEXT=262144                      # Victor: 256K even though the model does 1M
+CONTEXT=262144                      # the owner: 256K even though the model does 1M
 POOL=2097152
 PARALLEL=16
 WORKER_ENGRAM_DIR=/var/tmp/tf1017/engram

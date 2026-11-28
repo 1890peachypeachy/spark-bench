@@ -8,7 +8,7 @@ label, tclass = sys.argv[1], int(sys.argv[2])
 secs = int(sys.argv[3]) if len(sys.argv) > 3 else 12
 SW = "192.168.0.213"
 PORTS = {"qsfp56-dd-1-1": "spark4", "qsfp56-dd-2-1": "spark2", "qsfp56-dd-3-1": "spark1", "qsfp56-dd-4-1": "spark3"}
-BW = "/Users/agent/.hermes/bin/vaultwarden-victor-bw"
+BW = "/Users/agent/.hermes/bin/vaultwarden-bw"
 pw = [i for i in json.loads(subprocess.run([BW, "list", "items", "--raw"], capture_output=True, text=True).stdout) if "CRS804" in i.get("name", "")][0]["login"]["password"]
 
 

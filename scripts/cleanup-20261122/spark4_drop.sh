@@ -2,7 +2,7 @@
 # Runs ON spark4 as user spark4 (all targets are owned by it). Drops the ComfyUI + DeepSeek payload that is replicated on other Sparks.
 set -u
 M=/var/tmp/spark4-dropped-manifest-20261122.txt
-echo "# spark4 payload dropped 2026-11-22 (Victor). Peers verified identical (names+sizes): comfy h3/models/yue2 on spark1+spark3; tf1017 engram/model on spark2+spark3." > $M
+echo "# spark4 payload dropped 2026-11-22 (the owner). Peers verified identical (names+sizes): comfy h3/models/yue2 on spark1+spark3; tf1017 engram/model on spark2+spark3." > $M
 for d in /var/tmp/comfy/h3 /var/tmp/comfy/models /var/tmp/comfy/yue2 /var/tmp/tf1017/engram /var/tmp/tf1017/model /var/tmp/tf1017/cache; do
   echo "## $d" >> $M; find "$d" -type f -printf '%s %p\n' 2>/dev/null >> $M
 done

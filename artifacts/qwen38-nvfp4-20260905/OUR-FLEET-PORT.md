@@ -2,7 +2,7 @@
 
 Port of the `neko-legends/spark-bench` Qwen3.8-Flash-Next NVFP4 TP4 lane to the
 `1890peachypeachy` 4× DGX Spark fleet (CRS504 switched fabric). Supersedes the
-GLM-5.3-Flash FP8 TP4 lane as the high-throughput option (Victor: "GLM FP8 too slow").
+GLM-5.3-Flash FP8 TP4 lane as the high-throughput option (the owner: "GLM FP8 too slow").
 
 ## Sources
 - Upstream: `neko-legends/spark-bench` `0a64e52` — `artifacts/qwen38-nvfp4-20260905/launch-qwen38-tp4.sh`
@@ -38,7 +38,7 @@ streams them to every node. Verified against the real checkpoint:
 - Checkpoint downloading to spark3 `~/models/qwen38-flash-next-nvfp4` (~133 GB)
 - Image pulling to spark3 (9.7 GB) — to fan out to all 4
 - NCCL 2.30.7 staged on all 4 nodes (243M each, `~/nccl-2.30.7/lib/libnccl.so.2`, verified `NCCL version 2.30.7`)
-- spark4 NVFP4-RedHat removed (freed 185G) per Victor directive to make room
+- spark4 NVFP4-RedHat removed (freed 185G) per the owner directive to make room
 
 ## Boot recipe (after staging complete)
 ```bash

@@ -55,15 +55,15 @@ categories:
         prompt: |
           From this note, extract ONLY the commitments that have BOTH an owner
           and a deadline, as JSON: {"commitments": [{"owner": "...",
-          "deadline": "..."}]}. Note: "Victor will ask the accountant about Q3
+          "deadline": "..."}]}. Note: "the owner will ask the accountant about Q3
           sales tax by Wednesday. Anna hopes to review scripts soon. The team
           should celebrate Friday. Marcus files the tax form by April 15."
-        score: {mode: json_contains, value: {"commitments": [{"owner": "Victor"}, {"owner": "Marcus"}]}}
+        score: {mode: json_contains, value: {"commitments": [{"owner": "the owner"}, {"owner": "Marcus"}]}}
       - id: ext-t2-distractor-dates
         tier: 2
         prompt: |
           Read carefully. Email: "Re: the March 4 webinar — Anna can't make that
-          date anymore, move it to March 11. Victor asked if the 18th works but
+          date anymore, move it to March 11. The owner asked if the 18th works but
           that's the week he's at the conference starting March 15, so keep it
           the 11th. Original backup slot was Feb 26." On what date is the webinar
           finally scheduled? Reply with the date only.

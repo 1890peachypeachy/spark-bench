@@ -9,7 +9,7 @@ KEYS = ("tx-packet", "tx-drop-packet", "tx-bytes", "tx-queue1-byte", "tx-queue3-
 
 
 def snap():
-    BW = "/Users/agent/.hermes/bin/vaultwarden-victor-bw"
+    BW = "/Users/agent/.hermes/bin/vaultwarden-bw"
     pw = [i for i in json.loads(subprocess.run([BW, "list", "items", "--raw"], capture_output=True, text=True).stdout) if "CRS804" in i.get("name", "")][0]["login"]["password"]
     r = urllib.request.Request("http://192.168.0.213/rest/interface/ethernet/switch/qos/port")
     r.add_header("Authorization", "Basic " + base64.b64encode(f"admin:{pw}".encode()).decode())

@@ -86,9 +86,9 @@ Reachable at `http://<tailscale-ip>:8188` (spark2 = `100.71.248.116`).
 2. **`--disable-pinned-memory`.** ComfyUI page-locks up to 90% of system RAM; pinned pages
    can't swap so the kernel can only SIGKILL. Tony's measured 3090 fix: host RAM
    29,866 MB -> 7,508 MB from this flag alone.
-3. **No container memory cap** (removed 2026-10-01 at Victor's direction -- he runs one model at
+3. **No container memory cap** (removed 2026-10-01 at the owner's direction -- he runs one model at
    a time). Earlier builds used `--memory 72g` as a blast-radius limit. Context: the two legacy
-   labs still carry caps that Victor explicitly asked for on 2026-09-27 after a co-tenancy OOM
+   labs still carry caps that the owner explicitly asked for on 2026-09-27 after a co-tenancy OOM
    wedged the node (`notes/spark2-lab-memory-caps-2026-09-27`, "do not remove the caps") -- those
    are a *different* decision about two programs sharing the GPU and still stand.
    The residual risk while spark2 also hosts a GLM/TP rank: an oversized job can starve the node

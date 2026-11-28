@@ -11,7 +11,7 @@
    "tier": 1,
    "ok": true,
    "latency_s": 4.61,
-   "output": "```json\n{\"commitments\": [{\"owner\": \"Victor\", \"deadline\": \"Wednesday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}\n```\n\n**Excluded items:**\n- *Anna hopes to review scripts soon* \u2014 \"hopes\" is not a commitment, and \"soon\" is not a concrete deadline.\n- *The team should celebrate Friday* \u2014 \"the team\" is not a specific owner, and \"should\" indicates a suggestion rather than a commitment.",
+   "output": "```json\n{\"commitments\": [{\"owner\": \"the owner\", \"deadline\": \"Wednesday\"}, {\"owner\": \"Marcus\", \"deadline\": \"April 15\"}]}\n```\n\n**Excluded items:**\n- *Anna hopes to review scripts soon* \u2014 \"hopes\" is not a commitment, and \"soon\" is not a concrete deadline.\n- *The team should celebrate Friday* \u2014 \"the team\" is not a specific owner, and \"should\" indicates a suggestion rather than a commitment.",
    "prompt_tokens": 91,
    "completion_tokens": 174,
    "tok_s": 37.74,

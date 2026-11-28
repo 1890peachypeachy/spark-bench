@@ -4,7 +4,7 @@ Method: [inference-optimisation skill](https://github.com/sybil-solutions/infere
 Ceilings and the profile: [THEORY.md](THEORY.md). Raw runs: `ledger.jsonl` (skill's `bench.py`), `spec.jsonl` (DSpark
 counters per run), on spark3 under `/var/tmp/ernie55/hillclimb/` and copied here when a stage ends.
 
-## Targets and constraints (set 2026-11-25; Victor: "focus on optimizing vLLM for ERNIE", lane free)
+## Targets and constraints (set 2026-11-25; the owner: "focus on optimizing vLLM for ERNIE", lane free)
 
 - Primary: **c1 decode** (agent loop). Secondary: **c4 aggregate**, cold prefill (~5K and ~20K tokens), short TTFT, startup.
 - **Lossless only** (no quality trades). A change that alters numerics beyond summation order is labelled and gated by a
@@ -133,7 +133,7 @@ compressor projection if cuBLASLt does not fix it.
 
 ### 2026-11-25 23:04 → 11-26 05:20 — stage 3: public-recipe levers, FlashIndexer on GB10, concurrency (hc3.sh, 33 boots)
 
-Trigger: Baidu's vLLM recipe (k=7, FlashIndexer) and SGLang's low-latency blog; Victor: "faster prefill, decode and
+Trigger: Baidu's vLLM recipe (k=7, FlashIndexer) and SGLang's low-latency blog; the owner: "faster prefill, decode and
 concurrency across the board". Same bench (6-prompt panel, seed 1234, T=0.6, thinking on), plus `conc.py` (c8/c16, and
 c32/c64 where MAX_SEQS allows) and `longpf.py` (cold 156K/231K-token prefill + 3 needles). Raw: `results/2026-11-26/`.
 

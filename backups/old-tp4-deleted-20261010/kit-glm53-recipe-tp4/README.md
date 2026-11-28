@@ -21,7 +21,7 @@ endpoint with tool calling, reasoning and images, 262k context, up to 32 concurr
 > Upstream is preserved on the `upstream-reference` remote for re-sync.
 >
 > **The measurements below are knapcio's, not ours.** This recipe has **not** been run
-> or validated on Victor's four Sparks, and upstream itself notes a fresh deployment
+> or validated on the owner's four Sparks, and upstream itself notes a fresh deployment
 > from the public package had not been tested across all four nodes. Do not treat its
 > numbers as our numbers, and do not cite it as a verified lane. Marker added 2026-09-26.
 

@@ -1,4 +1,4 @@
-# spark4 payload dropped 2026-11-22 (Victor). Peers verified identical (names+sizes): comfy h3/models/yue2 on spark1+spark3; tf1017 engram/model on spark2+spark3.
+# spark4 payload dropped 2026-11-22 (the owner). Peers verified identical (names+sizes): comfy h3/models/yue2 on spark1+spark3; tf1017 engram/model on spark2+spark3.
 ## /var/tmp/comfy/h3
 1956172304 /var/tmp/comfy/h3/loras/pika_h3_flex_ref2va_v1_bf16.safetensors
 1956172304 /var/tmp/comfy/h3/loras/pika_h3_flex_fl2va_v1_bf16.safetensors
