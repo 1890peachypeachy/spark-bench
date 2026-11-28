@@ -12,7 +12,7 @@ OUT=$HC/results/$NAME
 mkdir -p "$OUT"
 rm -f "$OUT/contaminated"
 # an exp env file may pin its own phases (SKIP_LONG=0 adds the 66K cold/warm block, CONC/SHORTCTX/LONGCTX levels)
-eval "$(grep -E '^(SKIP_LONG|CONC|LONG|SHORTCTX|LONGCTX|LONGCTX_TOK|LONGCTX_REPS|PROBES)=' "$HC/exps/$NAME.env" 2>/dev/null)"
+eval "$(grep -E '^(SKIP_LONG|CONC|LONG|SHORTCTX|LONGCTX|LONGCTX_TOK|LONGCTX_REPS|PROBES|REPLAY)=' "$HC/exps/$NAME.env" 2>/dev/null)"
 metric() { curl -s --max-time 3 http://127.0.0.1:8888/metrics | awk -v k="$1" '$1==k{print $2}'; }
 count() { local c; c=$(metric tensorfold:request_latency_seconds_count); echo "${c%.*}"; }
 running() { local r; r=$(metric tensorfold:requests_running); echo "${r%.*}"; }
@@ -72,6 +72,33 @@ print(n)")
     echo "== long"
     python3 -I /var/tmp/ernie55/w3_bench.py --only cold66k,warm450,warm3312 > "$OUT/long.txt" 2>&1; echo "long rc=$?"
     grep -E "COLD|WARM" "$OUT/long.txt"
+  fi
+  if [ "${REPLAY:-0}" = 1 ]; then
+    # prompt-cache sizing: agent replay (agent_replay.py) with MemAvailable sampled on all 4 Sparks every 10 s
+    echo "== replay"
+    grep -m1 "streams at once" "$HC/logs/${NAME}_r0.log" | sed 's/^.*model /model /' | cut -c1-260 > "$OUT/budget.txt"
+    cat "$OUT/budget.txt"
+    c0=$(count)
+    MEMLOG="$OUT/memavail.log"; : > "$MEMLOG"
+    ( while :; do t=$(date +%s); for h in local spark@10.73.0.1 spark2@10.73.0.2 spark4@10.73.0.4; do
+        if [ $h = local ]; then m=$(awk '/MemAvailable/{print $2}' /proc/meminfo)
+        else m=$(ssh -o BatchMode=yes -o ConnectTimeout=5 $h "awk '/MemAvailable/{print \$2}' /proc/meminfo" 2>/dev/null); fi
+        echo "$t $h ${m:-NA}"; done >> "$MEMLOG"; sleep 10; done ) &
+    sampler=$!
+    timeout 3600 python3 -I $HC/agent_replay.py --url http://127.0.0.1:8888 --model GLM-5.3-Flash-EXL3 --out "$OUT/replay.json" > "$OUT/replay.log" 2>&1
+    echo "replay rc=$?"
+    kill $sampler 2>/dev/null; wait $sampler 2>/dev/null
+    n=$(grep -o '"requests": [0-9]*' "$OUT/replay.log" | tail -1 | awk '{print $2}')
+    check replay "${n:-0}" "$c0"
+    grep -E '^\{"summary' "$OUT/replay.log" | cut -c1-600
+    python3 -I -c "
+import sys, collections
+m = collections.defaultdict(list)
+for l in open(sys.argv[1]):
+    p = l.split()
+    if len(p) == 3 and p[2].isdigit(): m[p[1]].append(int(p[2]) / 1048576)
+print('min MemAvailable GiB:', {h: round(min(v), 1) for h, v in m.items()})" "$MEMLOG" | tee "$OUT/memavail-min.txt"
+    grep -E "prompt cache: " "$HC/logs/${NAME}_r0.log" | tail -1 | sed 's/^.*prompt cache: /last prompt cache: /' | cut -c1-260
   fi
   if [ "${PROBES:-0}" = 1 ]; then
     # correctness on the WARM server, after the whole workload (the PAD corruption seen in x0 try 1 needed a long
