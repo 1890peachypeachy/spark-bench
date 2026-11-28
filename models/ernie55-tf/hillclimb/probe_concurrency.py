@@ -23,6 +23,9 @@ import urllib.request
 WORDS = ("alpha river stone cloud ember quartz maple orbit cedar delta falcon harbor iris juniper kepler lumen "
          "meadow nickel onyx prism quill raven sierra tundra umber violet willow xenon yarrow zephyr").split()
 MODES = {  # name: (concurrency, thinking, temperature, max_tokens)
+    # unscored: fills the prompt cache, so every scored mode resumes the same way (a cold first pass prefills
+    # differently and can flip greedy formatting, e.g. newline vs comma, which reads as a batching difference)
+    "warmup": (1, False, 0.0, 96),
     "solo-nothink": (1, False, 0.0, 96),
     "c2-nothink": (2, False, 0.0, 96),
     "c8-nothink": (8, False, 0.0, 96),
@@ -92,7 +95,9 @@ def main():
                "all3": sum(f == 3 for f in found), "pad_replies": pad,
                "finish": sorted({r["finish"] for r in rs}), "ctok": [r["ctok"] for r in rs],
                "sample": [r["content"][:40] for r in rs[:3]]}
-        if mode == "solo-nothink":
+        if mode == "warmup":
+            pass
+        elif mode == "solo-nothink":
             solo = shas
         elif solo and not thinking and temp == 0.0:
             row["identical_to_solo"] = f"{sum(x == y for x, y in zip(shas, solo))}/{a.docs}"
